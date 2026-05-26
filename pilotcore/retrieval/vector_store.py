@@ -73,6 +73,7 @@ def add_vector(
     page,
     chunk_id,
     document_id,
+    metadata=None,
 ):
 
     index = load_user_index(user_id)
@@ -92,6 +93,7 @@ def add_vector(
             "source": source,
             "page": page,
             "chunk_id": chunk_id,
+            "metadata": metadata or {},
         }
     )
     save_index(user_id, index, documents)
@@ -158,6 +160,7 @@ def search_vectors(
                     text=doc["text"],
                     source=doc.get("source"),
                     page_number=doc.get("page"),
+                    metadata=doc.get("metadata", {}),
                 ),
                 score=float(distance),
             )

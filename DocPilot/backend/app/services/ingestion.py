@@ -1,27 +1,49 @@
-from pypdf import PdfReader
-
-from pdf2image import convert_from_path
-
-from docx import Document
+from dataclasses import dataclass, field
+import logging
+import mimetypes
+import os
+import re
+import time
 
 import pandas as pd
-
-import markdown
-
 import pytesseract
-
-from PIL import Image
-
-import os
-import time
 import requests
+from docx import Document
+from pdf2image import convert_from_path
+from PIL import Image
+from pypdf import PdfReader
 
-from DocPilot.backend.app.services.rag import add_chunks
+try:
+    from pptx import Presentation
+except ImportError:
+    Presentation = None
+
+try:
+    import fitz
+except ImportError:
+    fitz = None
 
 from pilotcore.config import TRACEPILOT_URL
 
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-POPPLER_PATH = r"C:\Users\Adhi\Desktop\poppler-26.02.0\Library\bin"
+logger = logging.getLogger(__name__)
+
+
+class TextExtractionError(Exception):
+    pass
+
+
+@dataclass
+class TextSection:
+    text: str
+    metadata: dict = field(default_factory=dict)
+
+
+def clean_text(text):
+    text = (text or "").replace("\x00", "")
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
 
 
 def chunk_text(
@@ -68,187 +90,320 @@ def chunk_text(
     return chunks
 
 
-def extract_pdf_text(
-    file_path,
-):
+def detect_type(file_path, mime_type=None):
+    extension = os.path.splitext(file_path)[1].lower()
+    detected_mime = mime_type or mimetypes.guess_type(file_path)[0] or ""
+    return extension, detected_mime
 
+
+def extract_pdf_text(file_path):
+    if fitz is not None:
+        return extract_pdf_text_pymupdf(file_path)
+
+    return extract_pdf_text_pypdf(file_path)
+
+
+def extract_pdf_text_pymupdf(file_path):
+    sections = []
+
+    with fitz.open(file_path) as doc:
+        for page_index, page in enumerate(doc, start=1):
+            text = clean_text(page.get_text("text"))
+            if text:
+                sections.append(
+                    TextSection(
+                        text=text,
+                        metadata={"page": page_index},
+                    )
+                )
+
+        page_count = doc.page_count
+
+    logger.info("PDF digital extraction processed %s pages with PyMuPDF", page_count)
+    logger.info("PDF digital extraction produced %s chars", sum(len(s.text) for s in sections))
+    return sections
+
+
+def extract_pdf_text_pypdf(file_path):
     reader = PdfReader(file_path)
+    sections = []
 
-    full_text = ""
+    for page_number, page in enumerate(reader.pages, start=1):
+        text = clean_text(page.extract_text() or "")
+        if text:
+            sections.append(
+                TextSection(
+                    text=text,
+                    metadata={"page": page_number},
+                )
+            )
 
-    for page in reader.pages:
-
-        text = page.extract_text() or ""
-
-        full_text += text + "\n"
-
-    return full_text
+    logger.info("PDF digital extraction processed %s pages with pypdf", len(reader.pages))
+    logger.info("PDF digital extraction produced %s chars", sum(len(s.text) for s in sections))
+    return sections
 
 
-def extract_pdf_ocr(
-    file_path,
-):
+def extract_pdf_ocr(file_path):
+    try:
+        images = convert_from_path(file_path)
+        logger.info("OCR pages processed: %s", len(images))
 
-    images = convert_from_path(
+        sections = []
+        for page_number, image in enumerate(images, start=1):
+            text = clean_text(pytesseract.image_to_string(image))
+            if text:
+                sections.append(
+                    TextSection(
+                        text=text,
+                        metadata={"page": page_number, "ocr": True},
+                    )
+                )
+
+        logger.info("OCR extracted %s chars", sum(len(s.text) for s in sections))
+        return sections
+
+    except Exception as e:
+        logger.exception("OCR failed: %s", e)
+        return []
+
+
+def extract_pdf_sections(file_path):
+    sections = extract_pdf_text(file_path)
+
+    if sections:
+        return sections
+
+    logger.info("OCR triggered")
+    return extract_pdf_ocr(file_path)
+
+
+def extract_docx_sections(file_path):
+    doc = Document(file_path)
+    text = "\n".join(para.text for para in doc.paragraphs)
+
+    return [
+        TextSection(
+            text=clean_text(text),
+            metadata={},
+        )
+    ]
+
+
+def extract_pptx_sections(file_path):
+    if Presentation is None:
+        raise TextExtractionError("PPTX extraction dependency is not installed")
+
+    presentation = Presentation(file_path)
+    sections = []
+
+    for slide_number, slide in enumerate(presentation.slides, start=1):
+        parts = []
+
+        for shape in slide.shapes:
+            if hasattr(shape, "text") and shape.text:
+                parts.append(shape.text)
+
+            if getattr(shape, "has_table", False):
+                for row in shape.table.rows:
+                    cells = [cell.text.strip() for cell in row.cells if cell.text.strip()]
+                    if cells:
+                        parts.append(" | ".join(cells))
+
+        try:
+            notes = slide.notes_slide.notes_text_frame.text
+            if notes:
+                parts.append(notes)
+        except Exception:
+            pass
+
+        text = clean_text("\n".join(parts))
+        if text:
+            sections.append(
+                TextSection(
+                    text=text,
+                    metadata={"slide": slide_number},
+                )
+            )
+
+    logger.info("PPTX slides processed: %s", len(presentation.slides))
+    return sections
+
+
+def extract_txt_sections(file_path):
+    with open(
         file_path,
-        poppler_path=POPPLER_PATH,
+        "r",
+        encoding="utf-8",
+        errors="ignore",
+    ) as f:
+        return [TextSection(text=clean_text(f.read()), metadata={})]
+
+
+def extract_csv_sections(file_path):
+    df = pd.read_csv(file_path)
+    return dataframe_to_sections(df)
+
+
+def extract_xlsx_sections(file_path):
+    sheets = pd.read_excel(file_path, sheet_name=None)
+    sections = []
+
+    for sheet_name, df in sheets.items():
+        for section in dataframe_to_sections(df):
+            section.metadata["sheet"] = sheet_name
+            sections.append(section)
+
+    logger.info("XLSX sheets processed: %s", len(sheets))
+    return sections
+
+
+def dataframe_to_sections(df):
+    sections = []
+    df = df.fillna("")
+
+    for row_number, row in df.iterrows():
+        parts = []
+
+        for column, value in row.items():
+            value = str(value).strip()
+            if value:
+                parts.append(f"{column}: {value}")
+
+        text = clean_text("\n".join(parts))
+        if text:
+            sections.append(
+                TextSection(
+                    text=text,
+                    metadata={"row": int(row_number) + 1},
+                )
+            )
+
+    return sections
+
+
+def extract_image_sections(file_path):
+    try:
+        image = Image.open(file_path)
+        text = clean_text(pytesseract.image_to_string(image))
+        logger.info("Image OCR extracted %s chars", len(text))
+        return [TextSection(text=text, metadata={"ocr": True})]
+
+    except Exception as e:
+        logger.exception("Image OCR failed: %s", e)
+        return []
+
+
+def extract_text_sections(file_path, mime_type=None):
+    extension, detected_mime = detect_type(file_path, mime_type)
+
+    extractors = {
+        ".pdf": extract_pdf_sections,
+        ".docx": extract_docx_sections,
+        ".pptx": extract_pptx_sections,
+        ".txt": extract_txt_sections,
+        ".md": extract_txt_sections,
+        ".csv": extract_csv_sections,
+        ".xlsx": extract_xlsx_sections,
+        ".png": extract_image_sections,
+        ".jpg": extract_image_sections,
+        ".jpeg": extract_image_sections,
+        ".webp": extract_image_sections,
+    }
+
+    extractor = extractors.get(extension)
+
+    if not extractor:
+        raise TextExtractionError(f"Unsupported file type: {extension or detected_mime}")
+
+    logger.info(
+        "Extractor selected: %s extension=%s mime=%s",
+        extractor.__name__,
+        extension,
+        detected_mime,
     )
 
-    text = ""
+    try:
+        sections = extractor(file_path)
+    except TextExtractionError:
+        raise
+    except Exception as e:
+        logger.exception("Extraction failed: %s", e)
+        raise TextExtractionError("Could not extract text from document") from e
 
-    for image in images:
+    cleaned_sections = []
+    for section in sections:
+        text = clean_text(section.text)
+        if text:
+            section.text = text
+            cleaned_sections.append(section)
 
-        text += pytesseract.image_to_string(image)
+    extracted_length = sum(len(section.text) for section in cleaned_sections)
+    logger.info("Extracted text length: %s", extracted_length)
 
-    return text
+    if not cleaned_sections:
+        if extension == ".pdf":
+            raise TextExtractionError("Could not extract text from PDF")
+        raise TextExtractionError("Could not extract text from document")
 
-
-def extract_docx_text(
-    file_path,
-):
-
-    doc = Document(file_path)
-
-    return "\n".join(para.text for para in doc.paragraphs)
-
-
-def extract_txt_text(
-    file_path,
-):
-
-    with open(
-        file_path,
-        "r",
-        encoding="utf-8",
-    ) as f:
-
-        return f.read()
+    return cleaned_sections
 
 
-def extract_md_text(
-    file_path,
-):
-
-    with open(
-        file_path,
-        "r",
-        encoding="utf-8",
-    ) as f:
-
-        return markdown.markdown(f.read())
-
-
-def extract_csv_text(
-    file_path,
-):
-
-    df = pd.read_csv(file_path)
-
-    return df.to_string()
-
-
-def extract_xlsx_text(
-    file_path,
-):
-
-    df = pd.read_excel(file_path)
-
-    return df.to_string()
-
-
-def extract_image_text(
-    file_path,
-):
-
-    image = Image.open(file_path)
-
-    return pytesseract.image_to_string(image)
-
-
-def extract_text(
-    file_path,
-):
-
-    ext = os.path.splitext(file_path)[1].lower()
-
-    if ext == ".pdf":
-
-        text = extract_pdf_text(file_path)
-
-        if len(text.strip()) < 10:
-
-            print("OCR triggered")
-
-            text = extract_pdf_ocr(file_path)
-
-        return text
-
-    elif ext == ".docx":
-
-        return extract_docx_text(file_path)
-
-    elif ext == ".txt":
-
-        return extract_txt_text(file_path)
-
-    elif ext == ".md":
-
-        return extract_md_text(file_path)
-
-    elif ext == ".csv":
-
-        return extract_csv_text(file_path)
-
-    elif ext == ".xlsx":
-
-        return extract_xlsx_text(file_path)
-
-    elif ext in [
-        ".png",
-        ".jpg",
-        ".jpeg",
-    ]:
-
-        return extract_image_text(file_path)
-
-    else:
-
-        raise Exception("Unsupported file type")
+def extract_text(file_path, mime_type=None):
+    return "\n\n".join(section.text for section in extract_text_sections(file_path, mime_type))
 
 
 def process_document(
     file_path,
     user_id,
     document_id,
+    mime_type=None,
 ):
+    from DocPilot.backend.app.services.rag import add_chunks
 
     start_time = time.perf_counter()
 
-    text = extract_text(file_path)
+    sections = extract_text_sections(file_path, mime_type)
 
-    text = " ".join(text.split())
+    all_chunks = []
+    source_file = os.path.basename(file_path)
+    extension, _ = detect_type(file_path, mime_type)
+    chunk_id = 0
 
-    if len(text.split()) < 5:
-        return
-
-    chunks = chunk_text(text)
-
-    all_chunks = [
-        {
-            "document_id": document_id,
-            "text": chunk,
-            "source": os.path.basename(file_path),
-            "page": 1,
-            "chunk_id": i,
+    for section in sections:
+        metadata = {
+            "source_file": source_file,
+            "file_type": extension.lstrip("."),
+            **section.metadata,
         }
-        for i, chunk in enumerate(chunks)
-    ]
+
+        page = metadata.get("page") or metadata.get("slide") or metadata.get("row") or 1
+
+        for chunk in chunk_text(section.text):
+            all_chunks.append(
+                {
+                    "document_id": document_id,
+                    "text": chunk,
+                    "source": source_file,
+                    "source_file": source_file,
+                    "file_type": extension.lstrip("."),
+                    "page": page,
+                    "chunk_id": chunk_id,
+                    "metadata": metadata,
+                }
+            )
+            chunk_id += 1
+
+    logger.info("Chunk count: %s", len(all_chunks))
+
+    if not all_chunks:
+        raise TextExtractionError("Could not extract enough text from document")
 
     add_chunks(all_chunks, user_id)
 
-    print(f"Embedded {len(chunks)} chunks successfully")
+    logger.info("Embedded %s chunks successfully", len(all_chunks))
 
     latency_ms = (time.perf_counter() - start_time) * 1000
+    char_count = sum(len(section.text) for section in sections)
 
     try:
         resp = requests.post(
@@ -256,17 +411,17 @@ def process_document(
             json={
                 "document_id": str(document_id),
                 "user_id": str(user_id),
-                "filename": os.path.basename(file_path),
+                "filename": source_file,
                 "chunk_count": len(all_chunks),
-                "char_count": len(text),
+                "char_count": char_count,
                 "latency_ms": round(latency_ms, 2),
                 "status": "success",
             },
             timeout=5,
         )
 
-        print(f"[TracePilot] document ingest status={resp.status_code}")
-        print(f"[TracePilot] response={resp.text}")
+        logger.info("[TracePilot] document ingest status=%s", resp.status_code)
+        logger.info("[TracePilot] response=%s", resp.text)
 
     except Exception as e:
-        print(f"[TracePilot] document ingest failed: {repr(e)}")
+        logger.info("[TracePilot] document ingest failed: %r", e)

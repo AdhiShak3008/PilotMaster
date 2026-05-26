@@ -14,6 +14,7 @@ def add_chunks(chunks, user_id):
             page=chunk["page"],
             chunk_id=chunk["chunk_id"],
             document_id=chunk["document_id"],
+            metadata=chunk.get("metadata"),
         )
 
 

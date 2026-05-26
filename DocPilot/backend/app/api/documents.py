@@ -13,6 +13,7 @@ import os
 
 from DocPilot.backend.app.services.ingestion import (
     process_document,
+    TextExtractionError,
 )
 
 from pilotcore.retrieval.vector_store import (
@@ -61,6 +62,7 @@ async def upload_document(
     allowed_extensions = [
         ".pdf",
         ".docx",
+        ".pptx",
         ".txt",
         ".md",
         ".csv",
@@ -68,6 +70,7 @@ async def upload_document(
         ".png",
         ".jpg",
         ".jpeg",
+        ".webp",
     ]
 
     file_ext = os.path.splitext(file.filename)[1].lower()
@@ -104,11 +107,25 @@ async def upload_document(
 
     db.refresh(document)
 
-    process_document(
-        file_path,
-        current_user.id,
-        document.id,
-    )
+    try:
+
+        process_document(
+            file_path,
+            current_user.id,
+            document.id,
+            mime_type=file.content_type,
+        )
+
+    except TextExtractionError as exc:
+
+        db.delete(document)
+
+        db.commit()
+
+        raise HTTPException(
+            status_code=422,
+            detail=str(exc),
+        ) from exc
 
     return {
         "message": "Document uploaded",
