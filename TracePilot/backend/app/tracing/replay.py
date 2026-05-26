@@ -1,4 +1,4 @@
-from app.tracing.trace_manager import get_trace
+from TracePilot.backend.app.tracing.trace_manager import get_trace
 
 
 def replay_trace(trace_id: str):

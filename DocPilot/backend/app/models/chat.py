@@ -9,7 +9,7 @@ from sqlalchemy import (
 
 from sqlalchemy.sql import func
 
-from app.db.database import Base
+from DocPilot.backend.app.db.database import Base
 
 
 class ChatSession(Base):

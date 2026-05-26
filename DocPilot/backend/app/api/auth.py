@@ -14,26 +14,26 @@ from fastapi.security import (
 
 from sqlalchemy.orm import Session
 
-from app.db.session import get_db
+from DocPilot.backend.app.db.session import get_db
 
-from app.models.user import User
+from DocPilot.backend.app.models.user import User
 
-from app.schemas.auth import (
+from DocPilot.backend.app.schemas.auth import (
     UserCreate,
 )
 
-from app.schemas.password import (
+from DocPilot.backend.app.schemas.password import (
     ForgotPasswordRequest,
     ResetPasswordRequest,
 )
 
-from app.core.security import (
+from DocPilot.backend.app.core.security import (
     hash_password,
     verify_password,
     create_access_token,
 )
 
-from app.core.dependencies import (
+from DocPilot.backend.app.core.dependencies import (
     get_current_user,
 )
 

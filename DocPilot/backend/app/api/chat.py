@@ -8,19 +8,19 @@ from groq import AuthenticationError
 
 from sqlalchemy.orm import Session
 
-from app.services.rag import (
+from DocPilot.backend.app.services.rag import (
     ask_question,
 )
 
-from app.core.dependencies import (
+from DocPilot.backend.app.core.dependencies import (
     get_current_user,
 )
 
-from app.db.session import get_db
+from DocPilot.backend.app.db.session import get_db
 
-from app.schemas.chat import ChatRequest
+from DocPilot.backend.app.schemas.chat import ChatRequest
 
-from app.models.chat import (
+from DocPilot.backend.app.models.chat import (
     ChatSession,
     ChatMessage,
 )

@@ -16,7 +16,8 @@ import os
 import time
 import requests
 
-from app.services.rag import add_chunks
+from DocPilot.backend.app.services.rag import add_chunks
+
 from pilotcore.config import TRACEPILOT_URL
 
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"

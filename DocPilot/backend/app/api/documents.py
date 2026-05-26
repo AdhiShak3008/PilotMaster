@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 import shutil
 import os
 
-from app.services.ingestion import (
+from DocPilot.backend.app.services.ingestion import (
     process_document,
 )
 
@@ -20,15 +20,15 @@ from pilotcore.retrieval.vector_store import (
     rebuild_index_without_document,
 )
 
-from app.core.dependencies import (
+from DocPilot.backend.app.core.dependencies import (
     get_current_user,
 )
 
-from app.db.session import get_db
+from DocPilot.backend.app.db.session import get_db
 
-from app.models.document import Document
+from DocPilot.backend.app.models.document import Document
 
-from app.schemas.document import (
+from DocPilot.backend.app.schemas.document import (
     DocumentResponse,
 )
 

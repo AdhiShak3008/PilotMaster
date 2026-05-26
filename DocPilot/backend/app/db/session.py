@@ -1,4 +1,4 @@
-from app.db.database import SessionLocal
+from DocPilot.backend.app.db.database import SessionLocal
 
 
 def get_db():

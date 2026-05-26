@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 
 from sqlalchemy.sql import func
 
-from app.db.database import Base
+from DocPilot.backend.app.db.database import Base
 
 
 class Document(Base):

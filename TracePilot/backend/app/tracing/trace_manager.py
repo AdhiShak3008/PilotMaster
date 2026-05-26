@@ -1,7 +1,7 @@
 import json
 
-from app.db.database import get_connection
-from app.models.trace import Trace, RetrievedChunk
+from TracePilot.backend.app.db.database import get_connection
+from TracePilot.backend.app.models.trace import Trace, RetrievedChunk
 
 
 def save_trace(trace: Trace):
@@ -9,7 +9,8 @@ def save_trace(trace: Trace):
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("""
+    cursor.execute(
+        """
     INSERT INTO traces (
         trace_id, query, retrieved_chunks, prompt, response, latency,
         timestamp, model_name, retrieval_score_avg, response_length,
@@ -18,18 +19,34 @@ def save_trace(trace: Trace):
         user_id, source, evaluator_version, prompt_version, retriever_version
     )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        trace.trace_id, trace.query,
-        json.dumps([chunk.dict() for chunk in trace.retrieved_chunks]),
-        trace.prompt, trace.response, trace.latency, str(trace.timestamp),
-        trace.model_name, trace.retrieval_score_avg, trace.response_length,
-        trace.chunk_count, trace.parent_trace_id, trace.retrieval_quality,
-        trace.grounded, trace.top_retrieval_score,
-        json.dumps(trace.spans), json.dumps(trace.failure_types),
-        trace.prompt_mode, json.dumps(trace.evaluation),
-        trace.user_id, trace.source,
-        trace.evaluator_version, trace.prompt_version, trace.retriever_version
-    ))
+    """,
+        (
+            trace.trace_id,
+            trace.query,
+            json.dumps([chunk.dict() for chunk in trace.retrieved_chunks]),
+            trace.prompt,
+            trace.response,
+            trace.latency,
+            str(trace.timestamp),
+            trace.model_name,
+            trace.retrieval_score_avg,
+            trace.response_length,
+            trace.chunk_count,
+            trace.parent_trace_id,
+            trace.retrieval_quality,
+            trace.grounded,
+            trace.top_retrieval_score,
+            json.dumps(trace.spans),
+            json.dumps(trace.failure_types),
+            trace.prompt_mode,
+            json.dumps(trace.evaluation),
+            trace.user_id,
+            trace.source,
+            trace.evaluator_version,
+            trace.prompt_version,
+            trace.retriever_version,
+        ),
+    )
 
     conn.commit()
     conn.close()
@@ -40,8 +57,7 @@ def _row_to_trace(row) -> Trace:
         trace_id=row["trace_id"],
         query=row["query"],
         retrieved_chunks=[
-            RetrievedChunk(**chunk)
-            for chunk in json.loads(row["retrieved_chunks"])
+            RetrievedChunk(**chunk) for chunk in json.loads(row["retrieved_chunks"])
         ],
         prompt=row["prompt"],
         response=row["response"],
@@ -75,7 +91,7 @@ def get_traces(retrieval_quality=None):
     if retrieval_quality:
         cursor.execute(
             "SELECT * FROM traces WHERE retrieval_quality = ? ORDER BY timestamp DESC",
-            (retrieval_quality,)
+            (retrieval_quality,),
         )
     else:
         cursor.execute("SELECT * FROM traces ORDER BY timestamp DESC")

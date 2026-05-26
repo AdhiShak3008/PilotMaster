@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String
 
-from app.db.database import Base
+from DocPilot.backend.app.db.database import Base
 
 
 class User(Base):

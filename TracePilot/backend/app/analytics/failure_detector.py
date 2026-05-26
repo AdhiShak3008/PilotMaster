@@ -1,4 +1,4 @@
-from app.tracing.trace_manager import get_traces
+from TracePilot.backend.app.tracing.trace_manager import get_traces
 
 
 def detect_failures():
@@ -19,12 +19,14 @@ def detect_failures():
 
         if reasons:
 
-            failures.append({
-                "trace_id": trace.trace_id,
-                "query": trace.query,
-                "reasons": reasons,
-                "latency": trace.latency,
-                "retrieval_quality": trace.retrieval_quality
-            })
+            failures.append(
+                {
+                    "trace_id": trace.trace_id,
+                    "query": trace.query,
+                    "reasons": reasons,
+                    "latency": trace.latency,
+                    "retrieval_quality": trace.retrieval_quality,
+                }
+            )
 
     return failures

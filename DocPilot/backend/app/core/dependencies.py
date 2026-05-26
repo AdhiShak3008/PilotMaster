@@ -6,11 +6,11 @@ from jose import JWTError, jwt
 
 from sqlalchemy.orm import Session
 
-from app.db.session import get_db
+from DocPilot.backend.app.db.session import get_db
 
-from app.models.user import User
+from DocPilot.backend.app.models.user import User
 
-from app.core.security import SECRET_KEY, ALGORITHM
+from DocPilot.backend.app.core.security import SECRET_KEY, ALGORITHM
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 

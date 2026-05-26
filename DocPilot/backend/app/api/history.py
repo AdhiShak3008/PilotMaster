@@ -5,14 +5,14 @@ from fastapi import (
 
 from sqlalchemy.orm import Session
 
-from app.db.session import get_db
+from DocPilot.backend.app.db.session import get_db
 
-from app.models.chat import (
+from DocPilot.backend.app.models.chat import (
     ChatSession,
     ChatMessage,
 )
 
-from app.core.dependencies import (
+from DocPilot.backend.app.core.dependencies import (
     get_current_user,
 )
 
