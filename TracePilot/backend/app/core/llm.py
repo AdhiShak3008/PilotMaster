@@ -1,0 +1,1 @@
+from pilotcore.generation.generator import generate_response
