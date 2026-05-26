@@ -35,9 +35,9 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60")
 
 BASE_PROD_URL = "https://shak3008-pilotmaster-backend.hf.space"
 
-TRACEPILOT_URL = os.getenv("TRACEPILOT_URL", f"{BASE_PROD_URL}/tracepilot")
+TRACEPILOT_URL = os.getenv("TRACEPILOT_URL", BASE_PROD_URL)
 
-DOCPILOT_URL = os.getenv("DOCPILOT_URL", f"{BASE_PROD_URL}/docpilot")
+DOCPILOT_URL = os.getenv("DOCPILOT_URL", BASE_PROD_URL)
 
 # =========================
 # Storage
