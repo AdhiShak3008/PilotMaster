@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-const api = axios.create({ baseURL: "http://127.0.0.1:8000/tracepilot" });
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL + "/tracepilot",
+});
 
 const relevanceColor = { high: "#4caf50", moderate: "#ff9800", low: "#f44336", none: "#555" };
 const confColor = { high: "#4caf50", medium: "#ff9800", low: "#f44336", none: "#555" };
