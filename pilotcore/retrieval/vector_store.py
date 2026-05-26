@@ -83,6 +83,8 @@ def add_vector(
 
     index.add(vector)
 
+    print("FAISS INDEX SIZE:", index.ntotal)
+
     documents.append(
         {
             "document_id": document_id,

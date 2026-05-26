@@ -54,7 +54,7 @@ The tool an AI engineer opens while DocPilot is running. Every time a user asks 
 
 Every response is judged across four independent dimensions:
 
-**Retrieval Relevance** — did the vector store find chunks that are actually related to the query? Measured by L2 embedding distance. Scores below 0.8 are high, 0.8–1.2 are moderate, above 1.2 are low.
+Scores below 0.8 are high, 0.8–1.2 are medium, above 1.2 are low.
 
 **Grounding Confidence** — did the model answer using the retrieved evidence? Measured by word overlap between the response and the chunks, with stopwords excluded and a length penalty applied to longer responses. If the model correctly says "I don't have enough information", it is rewarded with high grounding.
 

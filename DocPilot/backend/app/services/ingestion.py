@@ -246,6 +246,8 @@ def process_document(
 
     add_chunks(all_chunks, user_id)
 
+    print(f"Embedded {len(chunks)} chunks successfully")
+
     latency_ms = (time.perf_counter() - start_time) * 1000
 
     try:
