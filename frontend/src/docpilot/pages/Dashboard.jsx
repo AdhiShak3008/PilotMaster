@@ -12,6 +12,12 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
   const [username, setUsername] = useState("");
   const [uploading, setUploading] = useState(false);
   const [asking, setAsking] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+  const [loadingSessionId, setLoadingSessionId] = useState(null);
+  const [deletingSessionId, setDeletingSessionId] = useState(null);
+  const [resetting, setResetting] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -19,23 +25,47 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
   }, [messages]);
 
   useEffect(() => {
-    apiRequest("/history/sessions").then(setSessions).catch(() => {});
-    apiRequest("/billing/me").then(d => setUsername(d.username)).catch(() => {});
+    const loadDashboard = async () => {
+      setInitialLoading(true);
+      try {
+        const [sessionData, billingData] = await Promise.all([
+          apiRequest("/history/sessions"),
+          apiRequest("/billing/me"),
+        ]);
+        setSessions(sessionData);
+        setUsername(billingData.username);
+      } catch {}
+      finally { setInitialLoading(false); }
+    };
+    loadDashboard();
   }, []);
 
-  const fetchSessions = () =>
-    apiRequest("/history/sessions").then(setSessions).catch(() => {});
+  const fetchSessions = async () => {
+    setLoadingSessions(true);
+    try {
+      const data = await apiRequest("/history/sessions");
+      setSessions(data);
+    } catch {}
+    finally { setLoadingSessions(false); }
+  };
 
   const loadSession = async (sessionId) => {
-    const data = await apiRequest(`/history/${sessionId}`);
-    // Align keys directly with your backend metrics payload structure
-    setMessages(data.map(m => ({ 
-      role: m.role, 
-      content: m.content, 
-      sources: m.sources,
-      timestamp: m.timestamp || m.created_at || new Date().toISOString()
-    })));
-    setCurrentSessionId(sessionId);
+    if (loadingSessionId || deletingSessionId) return;
+    setLoadingSessionId(sessionId);
+    try {
+      const data = await apiRequest(`/history/${sessionId}`);
+      // Align keys directly with your backend metrics payload structure
+      setMessages(data.map(m => ({ 
+        role: m.role, 
+        content: m.content, 
+        sources: m.sources,
+        timestamp: m.timestamp || m.created_at || new Date().toISOString()
+      })));
+      setCurrentSessionId(sessionId);
+      setSidebarOpen(false);
+    } finally {
+      setLoadingSessionId(null);
+    }
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -53,7 +83,7 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
   });
 
   const uploadFile = async () => {
-    if (!file) return;
+    if (!file || uploading) return;
     setUploading(true);
     const formData = new FormData();
     formData.append("file", file);
@@ -62,11 +92,11 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
       if (data.detail) { alert(data.detail); }
       else { alert(data.message); setSource(file.name); }
     } catch { alert("Upload failed"); }
-    setUploading(false);
+    finally { setUploading(false); }
   };
 
   const askQuestion = async () => {
-    if (!question) return;
+    if (!question || asking) return;
     const q = question;
     setQuestion("");
     setMessages(prev => [
@@ -98,20 +128,32 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
         }; 
         return u; 
       });
+    } finally {
+      setAsking(false);
     }
-    setAsking(false);
   };
 
   const resetMemory = async () => {
-    await apiRequest("/docs/reset", "DELETE");
-    setMessages([]); setQuestion(""); setSource(""); setFile(null); setCurrentSessionId(null);
+    if (resetting) return;
+    setResetting(true);
+    try {
+      await apiRequest("/docs/reset", "DELETE");
+      setMessages([]); setQuestion(""); setSource(""); setFile(null); setCurrentSessionId(null);
+      fetchSessions();
+    } finally {
+      setResetting(false);
+    }
   };
 
   return (
-    <div style={{ display: "flex", width: "100%", height: "100%", background: "#111", color: "white", fontFamily: "Arial", overflow: "hidden" }}>
+    <div className="docpilot-root" style={{ display: "flex", width: "100%", height: "100%", background: "#111", color: "white", fontFamily: "Arial", overflow: "hidden" }}>
+      {(initialLoading || uploading || resetting) && (
+        <LoadingOverlay text={uploading ? "Uploading document..." : resetting ? "Resetting..." : "Loading dashboard..."} />
+      )}
+      {sidebarOpen && <button className="mobile-drawer-backdrop" aria-label="Close conversations" onClick={() => setSidebarOpen(false)} />}
 
       {/* SIDEBAR */}
-      <div style={{ width: "280px", flexShrink: 0, background: "#0d0d0d", borderRight: "1px solid #1e1e1e", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div className={`docpilot-sidebar ${sidebarOpen ? "is-open" : ""}`} style={{ width: "280px", flexShrink: 0, background: "#0d0d0d", borderRight: "1px solid #1e1e1e", display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
         {/* SIDEBAR HEADER */}
         <div style={{ padding: "24px 24px 16px", flexShrink: 0 }}>
@@ -130,11 +172,12 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
             {isDragActive ? <p style={{ margin: 0 }}>Drop here...</p> : <p style={{ margin: 0 }}>Drag & drop or click to upload</p>}
             {file && <p style={{ margin: "8px 0 0", color: "#888", fontSize: "12px" }}>{file.name}</p>}
           </div>
-          <button onClick={uploadFile} disabled={uploading} style={{
+          <button onClick={uploadFile} disabled={uploading || !file} style={{
             width: "100%", padding: "11px", background: "#1a1a1a", color: uploading ? "#555" : "white",
-            border: "1px solid #2a2a2a", borderRadius: "10px", cursor: uploading ? "not-allowed" : "pointer", fontSize: "14px",
+            border: "1px solid #2a2a2a", borderRadius: "10px", cursor: uploading || !file ? "not-allowed" : "pointer", fontSize: "14px",
+            opacity: uploading || !file ? 0.7 : 1, transition: "opacity 0.15s",
           }}>
-            {uploading ? "Uploading..." : "Upload"}
+            {uploading ? <ButtonContent text="Uploading..." /> : "Upload"}
           </button>
         </div>
 
@@ -149,21 +192,35 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
         {/* SESSIONS */}
         <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 16px" }}>
           <p style={{ margin: "0 0 10px", fontSize: "11px", color: "#333", textTransform: "uppercase", letterSpacing: "0.08em" }}>Conversations</p>
+          {loadingSessions && sessions.length === 0 && (
+            <p style={{ color: "#333", fontSize: "12px", display: "flex", alignItems: "center", gap: "8px" }}><Spinner /> Loading...</p>
+          )}
           {sessions.map(session => (
             <div key={session.id} onClick={() => loadSession(session.id)} style={{
               padding: "12px 14px", marginBottom: "6px", borderRadius: "10px",
               background: currentSessionId === session.id ? "#1e1e1e" : "#141414",
-              border: "1px solid #1e1e1e", cursor: "pointer", fontSize: "13px",
+              border: "1px solid #1e1e1e", cursor: loadingSessionId || deletingSessionId ? "not-allowed" : "pointer", fontSize: "13px",
               display: "flex", justifyContent: "space-between", alignItems: "center",
+              opacity: loadingSessionId && loadingSessionId !== session.id ? 0.7 : 1,
+              transition: "opacity 0.15s",
             }}>
               <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, color: "#ccc" }}>
                 {session.title || `Chat #${session.id}`}
               </span>
+              {deletingSessionId === session.id && (
+                <span style={{ color: "#444", marginLeft: "8px", display: "inline-flex" }}><Spinner size={12} /></span>
+              )}
               <button onClick={async (e) => {
                 e.stopPropagation();
-                await apiRequest(`/history/${session.id}`, "DELETE");
-                if (currentSessionId === session.id) { setMessages([]); setCurrentSessionId(null); }
-                fetchSessions();
+                if (deletingSessionId) return;
+                setDeletingSessionId(session.id);
+                try {
+                  await apiRequest(`/history/${session.id}`, "DELETE");
+                  if (currentSessionId === session.id) { setMessages([]); setCurrentSessionId(null); }
+                  fetchSessions();
+                } finally {
+                  setDeletingSessionId(null);
+                }
               }} style={{ background: "transparent", border: "none", color: "#444", cursor: "pointer", fontSize: "14px", marginLeft: "8px", flexShrink: 0 }}>✕</button>
             </div>
           ))}
@@ -171,28 +228,30 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
       </div>
 
       {/* MAIN */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div className="docpilot-main" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
         {/* THIN HEADER */}
-        <div style={{ padding: "12px 24px", borderBottom: "1px solid #1e1e1e", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <p style={{ margin: 0, fontSize: "13px", color: "#555" }}>
+        <div className="docpilot-topbar" style={{ padding: "12px 24px", borderBottom: "1px solid #1e1e1e", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <button className="mobile-menu-button" onClick={() => setSidebarOpen(true)} aria-label="Open conversations">☰</button>
+          <p className="docpilot-active-document" style={{ margin: 0, fontSize: "13px", color: "#555" }}>
             Active Document: <span style={{ color: source ? "#aaa" : "#333" }}>{source || "None"}</span>
           </p>
-          <div style={{ display: "flex", gap: "8px" }}>
+          <div className="docpilot-actions" style={{ display: "flex", gap: "8px" }}>
             {[
               { label: "← Home", onClick: onHome, color: "#aaa" },
               { label: "TracePilot →", onClick: onTracePilot, color: "#7c4dff" },
-              { label: "Reset", onClick: resetMemory, color: "#aaa" },
+              { label: resetting ? <ButtonContent text="Resetting..." /> : "Reset", onClick: resetMemory, color: "#aaa", disabled: resetting },
               { label: "Logout", onClick: onLogout, color: "#aaa" },
             ].map(btn => (
-              <button key={btn.label} onClick={btn.onClick} style={{
+              <button key={String(btn.label)} onClick={btn.onClick} disabled={btn.disabled} style={{
                 padding: "8px 14px", background: "#161616", color: btn.color,
-                border: "1px solid #222", borderRadius: "8px", cursor: "pointer", fontSize: "13px",
+                border: "1px solid #222", borderRadius: "8px", cursor: btn.disabled ? "not-allowed" : "pointer", fontSize: "13px",
+                opacity: btn.disabled ? 0.7 : 1, transition: "opacity 0.15s",
               }}>{btn.label}</button>
             ))}
           </div>
         </div>{/* CHAT AREA */}
-<div style={{ flex: 1, overflowY: "auto", padding: "32px 60px" }}>
+<div className="docpilot-chat-area" style={{ flex: 1, overflowY: "auto", padding: "32px 60px" }}>
   {messages.length === 0 && (
     <p style={{ color: "#333", fontSize: "16px" }}>Ask questions about your document...</p>
   )}
@@ -201,11 +260,11 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
     .map((msg, i) => (
       <div key={i} style={{ marginBottom: "28px", display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
         {msg.role === "user" ? (
-          <div style={{ background: "#1e1e1e", padding: "14px 20px", borderRadius: "18px", maxWidth: "65%", fontSize: "16px", lineHeight: 1.6, color: "#eee" }}>
+          <div className="docpilot-message-user text-wrap-safe" style={{ background: "#1e1e1e", padding: "14px 20px", borderRadius: "18px", maxWidth: "65%", fontSize: "16px", lineHeight: 1.6, color: "#eee" }}>
             {msg.content}
           </div>
         ) : (
-          <div style={{ maxWidth: "80%", fontSize: "16px", lineHeight: 1.8, color: "#ccc" }}>
+          <div className="docpilot-message-assistant text-wrap-safe" style={{ maxWidth: "80%", fontSize: "16px", lineHeight: 1.8, color: "#ccc" }}>
             
             {/* REMOVED CONTAINER BUBBLE STYLE HERE — JUST RAW TEXT CONTENT */}
             <div>
@@ -231,8 +290,8 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
 </div>
 
         {/* INPUT */}
-        <div style={{ padding: "16px 24px", borderTop: "1px solid #1e1e1e", flexShrink: 0, background: "#111" }}>
-          <div style={{ display: "flex", gap: "12px" }}>
+        <div className="docpilot-input-bar" style={{ padding: "16px 24px", borderTop: "1px solid #1e1e1e", flexShrink: 0, background: "#111" }}>
+          <div className="docpilot-input-row" style={{ display: "flex", gap: "12px" }}>
             <input
               type="text"
               placeholder="Ask something..."
@@ -249,9 +308,42 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
               padding: "16px 28px", borderRadius: "14px", border: "1px solid #222",
               background: "#1e1e1e", color: asking ? "#555" : "white",
               cursor: asking ? "not-allowed" : "pointer", fontSize: "15px",
-            }}>Send</button>
+              opacity: asking ? 0.7 : 1, transition: "opacity 0.15s",
+            }}>{asking ? <ButtonContent text="Sending..." /> : "Send"}</button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function Spinner({ size = 14 }) {
+  return (
+    <span style={{
+      width: `${size}px`, height: `${size}px`, border: "2px solid currentColor",
+      borderTopColor: "transparent", borderRadius: "999px", display: "inline-block",
+      animation: "pilot-spin 0.8s linear infinite",
+    }} />
+  );
+}
+
+function ButtonContent({ text }) {
+  return <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px" }}><Spinner />{text}</span>;
+}
+
+function LoadingOverlay({ text }) {
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(13, 13, 13, 0.55)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      color: "#ddd", zIndex: 10, pointerEvents: "none",
+    }}>
+      <div style={{
+        display: "flex", alignItems: "center", gap: "10px", padding: "14px 18px",
+        background: "#161616", border: "1px solid #2a2a2a", borderRadius: "10px",
+        boxShadow: "0 18px 50px rgba(0,0,0,0.35)",
+      }}>
+        <Spinner /> {text}
       </div>
     </div>
   );

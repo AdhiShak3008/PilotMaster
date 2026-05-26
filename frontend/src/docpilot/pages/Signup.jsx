@@ -15,9 +15,14 @@ function Signup({
   const [password,
     setPassword] =
     useState("");
+  const [loading,
+    setLoading] =
+    useState(false);
 
   const signup =
     async () => {
+      if (loading) return;
+      setLoading(true);
       try {
         await apiRequest(
           "/auth/signup",
@@ -41,6 +46,8 @@ function Signup({
         alert(
           "Signup failed"
         );
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -68,6 +75,7 @@ function Signup({
       <div
         style={{
           width: "420px",
+          maxWidth: "90vw",
         }}
       >
         <h1
@@ -212,6 +220,8 @@ function Signup({
         <button
           onClick={signup}
 
+          disabled={loading}
+
           style={{
             width: "100%",
 
@@ -234,10 +244,16 @@ function Signup({
               "16px",
 
             cursor:
-              "pointer",
+              loading ? "not-allowed" : "pointer",
+
+            opacity:
+              loading ? 0.7 : 1,
+
+            transition:
+              "opacity 0.15s",
           }}
         >
-          Sign Up
+          {loading ? <ButtonContent text="Loading..." /> : "Sign Up"}
         </button>
 
         <p
@@ -263,6 +279,28 @@ function Signup({
         </p>
       </div>
     </div>
+  );
+}
+
+function Spinner({ size = 16 }) {
+  return (
+    <span style={{
+      width: `${size}px`,
+      height: `${size}px`,
+      border: "2px solid currentColor",
+      borderTopColor: "transparent",
+      borderRadius: "999px",
+      display: "inline-block",
+      animation: "pilot-spin 0.8s linear infinite",
+    }} />
+  );
+}
+
+function ButtonContent({ text }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+      <Spinner /> {text}
+    </span>
   );
 }
 

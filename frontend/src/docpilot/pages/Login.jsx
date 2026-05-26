@@ -15,9 +15,14 @@ function Login({
   const [password,
     setPassword] =
     useState("");
+  const [loading,
+    setLoading] =
+    useState(false);
 
   const login =
     async () => {
+      if (loading) return;
+      setLoading(true);
 
       try {
 
@@ -43,7 +48,7 @@ function Login({
           data.access_token
         );
 
-        onLogin();
+        await onLogin();
 
       } catch (error) {
 
@@ -52,6 +57,8 @@ function Login({
         alert(
           "Wrong email or password"
         );
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -164,9 +171,16 @@ function Login({
         <button
           onClick={login}
 
-          style={buttonStyle}
+          disabled={loading}
+
+          style={{
+            ...buttonStyle,
+            cursor: loading ? "not-allowed" : "pointer",
+            opacity: loading ? 0.7 : 1,
+            transition: "opacity 0.15s",
+          }}
         >
-          Login
+          {loading ? <ButtonContent text="Loading..." /> : "Login"}
         </button>
 
         <p
@@ -299,5 +313,27 @@ const buttonStyle = {
   boxSizing:
     "border-box",
 };
+
+function Spinner({ size = 16 }) {
+  return (
+    <span style={{
+      width: `${size}px`,
+      height: `${size}px`,
+      border: "2px solid currentColor",
+      borderTopColor: "transparent",
+      borderRadius: "999px",
+      display: "inline-block",
+      animation: "pilot-spin 0.8s linear infinite",
+    }} />
+  );
+}
+
+function ButtonContent({ text }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+      <Spinner /> {text}
+    </span>
+  );
+}
 
 export default Login;
