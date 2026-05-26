@@ -56,11 +56,14 @@ def chunk_text(
 
             chunks.append(chunk)
 
-        start = end - overlap
+        next_start = end - overlap
 
-        if start < 0:
+        # Ensure forward progress to avoid infinite loops
+        if next_start <= start:
 
-            start = 0
+            next_start = start + 1
+
+        start = next_start
 
     return chunks
 
