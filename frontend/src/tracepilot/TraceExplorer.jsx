@@ -5,7 +5,7 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL + "/tracepilot",
 });
 
-const relevanceColor = { high: "#4caf50", medium: "#ff9800", low: "#f44336", none: "#555", moderate: "#ff9800" };
+const relevanceColor = { high: "#4caf50", medium: "#ff9800", low: "#f44336", none: "#555" };
 const confColor = { high: "#4caf50", medium: "#ff9800", low: "#f44336", none: "#555" };
 const riskColor = { low: "#4caf50", medium: "#ff9800", high: "#f44336" };
 const ansColor = { high: "#4caf50", partial: "#ff9800", none: "#f44336", unknown: "#555" };
