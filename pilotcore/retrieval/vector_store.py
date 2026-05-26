@@ -100,7 +100,7 @@ def search_vectors(
     query_embedding,
     trace_id: str,
     source=None,
-    top_k=3,
+    top_k=10,
 ):
 
     start_time = time.perf_counter()
@@ -140,10 +140,12 @@ def search_vectors(
         retrieved_chunks.append(
             RetrievedChunk(
                 chunk=Chunk(
-                    chunk_id=str(doc.get(
-                        "chunk_id",
-                        uuid.uuid4(),
-                    )),
+                    chunk_id=str(
+                        doc.get(
+                            "chunk_id",
+                            uuid.uuid4(),
+                        )
+                    ),
                     document_id=str(
                         doc.get(
                             "document_id",
@@ -162,18 +164,14 @@ def search_vectors(
         if len(retrieved_chunks) >= top_k:
             break
 
-    latency_ms = (
-        time.perf_counter() - start_time
-    ) * 1000
+    latency_ms = (time.perf_counter() - start_time) * 1000
 
     emit_event(
         "vector_retrieval.completed",
         {
             "trace_id": trace_id,
             "latency_ms": latency_ms,
-            "retrieved_chunks": len(
-                retrieved_chunks
-            ),
+            "retrieved_chunks": len(retrieved_chunks),
             "user_id": user_id,
         },
     )
