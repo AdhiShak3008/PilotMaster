@@ -22,7 +22,7 @@ from DocPilot.backend.app.models import (
 )
 from DocPilot.backend.app.api import history
 
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 

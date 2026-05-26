@@ -26,11 +26,19 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
     const [loadingTraceId, setLoadingTraceId] = useState(null);
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
-    useEffect(() => {
-        fetchTraces();
-        const interval = setInterval(fetchTraces, 3000);
-        return () => clearInterval(interval);
-    }, []);
+   useEffect(() => {
+    const fetchIfVisible = () => {
+        if (document.visibilityState === "visible") {
+            fetchTraces();
+        }
+    };
+
+    fetchIfVisible();
+
+    const interval = setInterval(fetchIfVisible, 30000);
+
+    return () => clearInterval(interval);
+}, []);
 
     function fetchTraces() {
         setLoadingTraces(true);
