@@ -2,25 +2,25 @@ from fastapi import FastAPI
 
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import (
+from DocPilot.backend.app.api import (
     chat,
     documents,
     auth,
     billing,
 )
 
-from app.db.database import (
+from DocPilot.backend.app.db.database import (
     engine,
     Base,
 )
 
-from app.models import (
+from DocPilot.backend.app.models import (
     User,
     Document,
     ChatSession,
     ChatMessage,
 )
-from app.api import history
+from DocPilot.backend.app.api import history
 
 Base.metadata.create_all(bind=engine)
 

@@ -4,12 +4,31 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 
-from app.db.database import init_db
-from app.pipelines.pipeline_runner import PipelineRunner
-from app.tracing.trace_manager import get_traces, get_trace_by_id, save_trace
-from app.tracing.replay import replay_trace as run_replay
-from app.analytics.failure_detector import detect_failures
-from app.models.trace import Trace, RetrievedChunk
+from TracePilot.backend.app.db.database import (
+    init_db,
+    get_connection,
+)
+
+from TracePilot.backend.app.pipelines.pipeline_runner import PipelineRunner
+
+from TracePilot.backend.app.tracing.trace_manager import (
+    get_traces,
+    get_trace_by_id,
+    save_trace,
+)
+
+from TracePilot.backend.app.tracing.replay import (
+    replay_trace as run_replay,
+)
+
+from TracePilot.backend.app.analytics.failure_detector import (
+    detect_failures,
+)
+
+from TracePilot.backend.app.models.trace import (
+    Trace,
+    RetrievedChunk,
+)
 
 app = FastAPI()
 
@@ -79,47 +98,68 @@ class IngestDocumentRequest(BaseModel):
 
 @app.post("/ingest/document")
 def ingest_document(request: IngestDocumentRequest):
-    from app.db.database import get_connection
+
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("""
+
+    cursor.execute(
+        """
         INSERT INTO ingestion_traces
-        (document_id, user_id, filename, chunk_count, char_count, latency_ms, status, timestamp)
+        (
+            document_id,
+            user_id,
+            filename,
+            chunk_count,
+            char_count,
+            latency_ms,
+            status,
+            timestamp
+        )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        request.document_id,
-        request.user_id,
-        request.filename,
-        request.chunk_count,
-        request.char_count,
-        request.latency_ms,
-        request.status,
-        str(datetime.utcnow()),
-    ))
+        """,
+        (
+            request.document_id,
+            request.user_id,
+            request.filename,
+            request.chunk_count,
+            request.char_count,
+            request.latency_ms,
+            request.status,
+            str(datetime.utcnow()),
+        ),
+    )
+
     conn.commit()
     conn.close()
-    return {"status": "ok", "document_id": request.document_id}
+
+    return {
+        "status": "ok",
+        "document_id": request.document_id,
+    }
 
 
 @app.get("/ingestion-traces")
 def get_ingestion_traces():
-    from app.db.database import get_connection
+
     conn = get_connection()
     cursor = conn.cursor()
+
     cursor.execute("SELECT * FROM ingestion_traces ORDER BY timestamp DESC")
+
     rows = cursor.fetchall()
+
     conn.close()
+
     return [dict(row) for row in rows]
 
 
 @app.post("/ingest")
 def ingest_trace(request: IngestRequest):
+
     trace = Trace(
         trace_id=request.trace_id,
         query=request.query,
-        retrieved_chunks=[
-            RetrievedChunk(**c.dict()) for c in request.retrieved_chunks
-        ],
+        retrieved_chunks=[RetrievedChunk(**c.dict()) for c in request.retrieved_chunks],
         prompt=request.prompt,
         response=request.response,
         latency=request.latency,
@@ -142,38 +182,55 @@ def ingest_trace(request: IngestRequest):
         prompt_version=request.prompt_version or "1.0",
         retriever_version=request.retriever_version or "vector_v1",
     )
+
     save_trace(trace)
-    return {"status": "ok", "trace_id": trace.trace_id}
+
+    return {
+        "status": "ok",
+        "trace_id": trace.trace_id,
+    }
 
 
 @app.post("/events")
 def receive_event(request: EventRequest):
-    return {"status": "ok"}
+
+    return {
+        "status": "ok",
+    }
 
 
 @app.post("/ask")
 def ask_question(request: QueryRequest):
+
     runner = PipelineRunner()
-    return runner.run(request.query, prompt_mode=request.prompt_mode)
+
+    return runner.run(
+        request.query,
+        prompt_mode=request.prompt_mode,
+    )
 
 
 @app.get("/analytics/failures")
 def get_failures():
+
     return detect_failures()
 
 
 @app.get("/traces")
 def get_all_traces(retrieval_quality: str | None = None):
+
     return get_traces(retrieval_quality)
 
 
 @app.get("/traces/compare")
 def compare_traces(trace_id_1: str, trace_id_2: str):
+
     trace_1 = get_trace_by_id(trace_id_1)
     trace_2 = get_trace_by_id(trace_id_2)
 
     if isinstance(trace_1, dict):
         raise HTTPException(status_code=404, detail="First trace not found")
+
     if isinstance(trace_2, dict):
         raise HTTPException(status_code=404, detail="Second trace not found")
 
@@ -196,7 +253,9 @@ def compare_traces(trace_id_1: str, trace_id_2: str):
         },
         "differences": {
             "latency_delta": round(trace_2.latency - trace_1.latency, 2),
-            "retrieval_score_delta": round(trace_2.retrieval_score_avg - trace_1.retrieval_score_avg, 2),
+            "retrieval_score_delta": round(
+                trace_2.retrieval_score_avg - trace_1.retrieval_score_avg, 2
+            ),
             "response_length_delta": trace_2.response_length - trace_1.response_length,
             "response_changed": trace_1.response != trace_2.response,
         },
@@ -205,12 +264,16 @@ def compare_traces(trace_id_1: str, trace_id_2: str):
 
 @app.get("/traces/{trace_id}")
 def fetch_trace(trace_id: str):
+
     return get_trace_by_id(trace_id)
 
 
 @app.post("/traces/{trace_id}/replay")
 def replay_trace_endpoint(trace_id: str):
+
     result = run_replay(trace_id)
+
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
+
     return result
