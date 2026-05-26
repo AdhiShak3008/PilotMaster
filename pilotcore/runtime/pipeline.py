@@ -40,6 +40,24 @@ def run_pipeline(
 
     trace.retrieval_result = retrieval_result
 
+    # ===== Retrieval debug =====
+    print("\n===== RETRIEVAL DEBUG =====")
+    print("QUERY:", query)
+
+    if trace.retrieval_result and getattr(
+        trace.retrieval_result, "retrieved_chunks", None
+    ):
+        for i, c in enumerate(trace.retrieval_result.retrieved_chunks):
+            chunk_text = getattr(getattr(c, "chunk", None), "text", "")
+            score = getattr(c, "score", None)
+            print(f"\nRANK {i + 1}")
+            print(chunk_text[:500])
+            print("SCORE:", score)
+    else:
+        print("(no retrieved chunks)")
+
+    print("===========================\n")
+
     # Filter irrelevant chunks — but for broad document queries,
     # keep top chunks even if scores are high (no relevant embedding match expected)
     if trace.retrieval_result:

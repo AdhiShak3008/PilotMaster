@@ -27,7 +27,7 @@ POPPLER_PATH = r"C:\Users\Adhi\Desktop\poppler-26.02.0\Library\bin"
 def chunk_text(
     text,
     chunk_size=500,
-    overlap=50,
+    overlap=80,
 ):
 
     chunks = []
@@ -38,9 +38,29 @@ def chunk_text(
 
         end = start + chunk_size
 
-        chunks.append(text[start:end])
+        if end < len(text):
 
-        start += chunk_size - overlap
+            sentence_end = text.rfind(".", start, end)
+
+            newline_end = text.rfind("\n", start, end)
+
+            boundary = max(sentence_end, newline_end)
+
+            if boundary != -1 and boundary > start:
+
+                end = boundary + 1
+
+        chunk = text[start:end].strip()
+
+        if chunk:
+
+            chunks.append(chunk)
+
+        start = end - overlap
+
+        if start < 0:
+
+            start = 0
 
     return chunks
 
