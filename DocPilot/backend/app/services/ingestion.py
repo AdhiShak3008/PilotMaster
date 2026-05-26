@@ -61,7 +61,7 @@ def chunk_text(
         # Ensure forward progress to avoid infinite loops
         if next_start <= start:
 
-            break
+            next_start = end
 
         start = next_start
 
