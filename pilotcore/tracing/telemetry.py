@@ -4,10 +4,12 @@ from pilotcore.config import TRACEPILOT_URL
 
 def emit_event(event_type: str, payload: dict):
     try:
-        requests.post(
+        resp = requests.post(
             f"{TRACEPILOT_URL}/tracepilot/events",
             json={"event_type": event_type, "payload": payload},
-            timeout=1,
+            timeout=5,
         )
-    except Exception:
-        pass
+        print(f"[TracePilot] events status={resp.status_code}")
+        print(f"[TracePilot] events response={resp.text}")
+    except Exception as e:
+        print(f"[TracePilot] events failed: {repr(e)}")

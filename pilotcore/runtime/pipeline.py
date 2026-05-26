@@ -1,6 +1,12 @@
 import time
 import requests
-from pilotcore.config import TRACEPILOT_URL, GROQ_MODEL, EVALUATOR_VERSION, PROMPT_VERSION, RETRIEVER_VERSION
+from pilotcore.config import (
+    TRACEPILOT_URL,
+    GROQ_MODEL,
+    EVALUATOR_VERSION,
+    PROMPT_VERSION,
+    RETRIEVER_VERSION,
+)
 from pilotcore.tracing.trace_context import generate_trace_id
 from pilotcore.tracing.trace_manager import create_trace
 from pilotcore.retrieval.runtime import retrieve
@@ -40,7 +46,9 @@ def run_pipeline(
         all_chunks = trace.retrieval_result.retrieved_chunks
         filtered = [c for c in all_chunks if c.score < 1.4]
         # If filtering removed everything, fall back to top 3 chunks as general context
-        trace.retrieval_result.retrieved_chunks = filtered if filtered else all_chunks[:3]
+        trace.retrieval_result.retrieved_chunks = (
+            filtered if filtered else all_chunks[:3]
+        )
 
     response = generate_response(trace)
     trace.final_response = response
@@ -105,10 +113,14 @@ def _emit_trace(trace, latency_ms: float, evaluation: dict, user_id=None, source
     }
 
     try:
-        requests.post(
+        resp = requests.post(
             f"{TRACEPILOT_URL}/tracepilot/ingest",
             json=payload,
-            timeout=2,
+            timeout=5,
         )
-    except Exception:
-        pass
+
+        print(f"[TracePilot] ingest status={resp.status_code}")
+        print(f"[TracePilot] response={resp.text}")
+
+    except Exception as e:
+        print(f"[TracePilot] ingest failed: {repr(e)}")
