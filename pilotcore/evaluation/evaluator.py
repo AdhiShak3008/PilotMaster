@@ -1,10 +1,54 @@
 STOPWORDS = {
-    "the", "is", "a", "an", "to", "of", "and", "in", "on", "for",
-    "what", "how", "who", "why", "when", "where", "which", "was",
-    "were", "are", "be", "been", "being", "i", "it", "this", "that",
-    "do", "does", "did", "about", "tell", "me", "explain", "describe",
-    "give", "get", "has", "have", "had", "will", "would", "could",
-    "should", "can", "may", "might", "its", "their", "there",
+    "the",
+    "is",
+    "a",
+    "an",
+    "to",
+    "of",
+    "and",
+    "in",
+    "on",
+    "for",
+    "what",
+    "how",
+    "who",
+    "why",
+    "when",
+    "where",
+    "which",
+    "was",
+    "were",
+    "are",
+    "be",
+    "been",
+    "being",
+    "i",
+    "it",
+    "this",
+    "that",
+    "do",
+    "does",
+    "did",
+    "about",
+    "tell",
+    "me",
+    "explain",
+    "describe",
+    "give",
+    "get",
+    "has",
+    "have",
+    "had",
+    "will",
+    "would",
+    "could",
+    "should",
+    "can",
+    "may",
+    "might",
+    "its",
+    "their",
+    "there",
 }
 
 ABSTENTION_PHRASES = [
@@ -23,8 +67,25 @@ ABSTENTION_PHRASES = [
 ]
 
 # Query types that signal intent beyond simple keyword lookup
-BROAD_QUERY_VERBS = {"explain", "describe", "tell", "elaborate", "discuss", "summarize", "overview"}
-FACTUAL_QUERY_WORDS = {"what", "which", "who", "when", "where", "how many", "how much"}
+BROAD_QUERY_VERBS = {
+    "explain",
+    "describe",
+    "tell",
+    "elaborate",
+    "discuss",
+    "summarize",
+    "overview",
+}
+
+FACTUAL_QUERY_WORDS = {
+    "what",
+    "which",
+    "who",
+    "when",
+    "where",
+    "how many",
+    "how much",
+}
 
 
 def _chunk_texts(chunks: list) -> list[str]:
@@ -38,27 +99,41 @@ def _meaningful_words(text: str) -> set:
 def _classify_query(query: str) -> str:
     """
     Classify query intent to inform answerability evaluation.
-    Returns: direct_fact | broad_query | abstention_likely | keyword_trap
+
+    Returns:
+        direct_fact
+        broad_query
+        abstention_likely
+        keyword_trap
     """
+
     q = query.lower().strip()
     words = set(q.split())
 
     if any(v in words for v in BROAD_QUERY_VERBS):
         return "broad_query"
 
-    # Keyword trap: query is about a person/entity that only appears incidentally
-    if q.startswith("who is") or q.startswith("what is") and len(words) <= 5:
+    if q.startswith("who is") or (q.startswith("what is") and len(words) <= 5):
         return "direct_fact"
 
     return "direct_fact"
 
 
-def evaluate_retrieval_relevance(query: str, chunks: list, scores: list[float]) -> dict:
+def evaluate_retrieval_relevance(
+    query: str,
+    chunks: list,
+    scores: list[float],
+) -> dict:
     """
     Did retrieval fetch semantically relevant context?
-    Uses L2 distance — lower is better.
-    Filters out irrelevant chunks (score > 1.4) before evaluation.
+
+    Uses L2 distance:
+    LOWER = BETTER
+
+    Current thresholds calibrated using
+    real production traces from PilotMaster.
     """
+
     if not chunks or not scores:
         return {
             "retrieval_relevance": "none",
@@ -66,38 +141,63 @@ def evaluate_retrieval_relevance(query: str, chunks: list, scores: list[float]) 
             "top_retrieval_score": 0.0,
         }
 
-    # Only consider relevant chunks for scoring
+    # Ignore noisy retrievals
     relevant_scores = [s for s in scores if s < 1.4]
 
     if not relevant_scores:
         return {
             "retrieval_relevance": "low",
-            "retrieval_score_avg": round(sum(scores) / len(scores), 4),
-            "top_retrieval_score": round(min(scores), 4),
+            "retrieval_score_avg": round(
+                sum(scores) / len(scores),
+                4,
+            ),
+            "top_retrieval_score": round(
+                min(scores),
+                4,
+            ),
         }
 
     top_score = min(relevant_scores)
-    avg_score = round(sum(scores) / len(scores), 4)
 
-    if top_score < 0.8:
+    avg_score = round(
+        sum(scores) / len(scores),
+        4,
+    )
+
+    # =========================
+    # L2 Distance Thresholds
+    # LOWER = BETTER
+    # =========================
+
+    if top_score < 1.15:
         relevance = "high"
-    elif top_score < 1.2:
-        relevance = "moderate"
+
+    elif top_score < 1.35:
+        relevance = "medium"
+
     else:
         relevance = "low"
 
     return {
         "retrieval_relevance": relevance,
         "retrieval_score_avg": avg_score,
-        "top_retrieval_score": round(top_score, 4),
+        "top_retrieval_score": round(
+            top_score,
+            4,
+        ),
     }
 
 
-def evaluate_grounding(response: str, chunks: list) -> dict:
+def evaluate_grounding(
+    response: str,
+    chunks: list,
+) -> dict:
     """
     Did the model answer USING retrieved evidence?
+
     Abstention is rewarded as correct grounded behavior.
     """
+
     abstained = any(phrase in response.lower() for phrase in ABSTENTION_PHRASES)
 
     if abstained:
@@ -110,7 +210,9 @@ def evaluate_grounding(response: str, chunks: list) -> dict:
         }
 
     response_words = _meaningful_words(response)
+
     all_chunk_words = set()
+
     for text in _chunk_texts(chunks):
         all_chunk_words.update(_meaningful_words(text))
 
@@ -124,22 +226,33 @@ def evaluate_grounding(response: str, chunks: list) -> dict:
         }
 
     overlap = response_words.intersection(all_chunk_words)
-    faithfulness = round(len(overlap) / len(response_words), 2)
 
-    # Penalize long responses more — longer = more likely to expand beyond evidence
-    length_penalty = min(1.0, len(response_words) / 150)
-    adjusted_hallucination = round((1.0 - faithfulness) * (0.7 + 0.3 * length_penalty), 2)
+    faithfulness = round(
+        len(overlap) / len(response_words),
+        2,
+    )
+
+    # Penalize long responses
+    length_penalty = min(
+        1.0,
+        len(response_words) / 150,
+    )
+
+    adjusted_hallucination = round(
+        (1.0 - faithfulness) * (0.7 + 0.3 * length_penalty),
+        2,
+    )
 
     grounded = len(overlap) >= 3
+
     grounding_confidence = (
-        "high" if faithfulness > 0.5 else
-        "medium" if faithfulness > 0.25 else
-        "low"
+        "high" if faithfulness > 0.5 else "medium" if faithfulness > 0.25 else "low"
     )
+
     hallucination_risk = (
-        "low" if adjusted_hallucination < 0.35 else
-        "medium" if adjusted_hallucination < 0.6 else
-        "high"
+        "low"
+        if adjusted_hallucination < 0.35
+        else "medium" if adjusted_hallucination < 0.6 else "high"
     )
 
     return {
@@ -151,12 +264,19 @@ def evaluate_grounding(response: str, chunks: list) -> dict:
     }
 
 
-def evaluate_answerability(query: str, chunks: list, scores: list[float] = None) -> dict:
+def evaluate_answerability(
+    query: str,
+    chunks: list,
+    scores: list[float] = None,
+) -> dict:
     """
-    Did the retrieved context actually contain enough information to answer?
-    Intent-aware: broad queries are harder to fully answer than direct facts.
-    Keyword traps are detected when entity appears incidentally.
+    Did retrieved context contain enough
+    information to answer?
+
+    Intent-aware:
+    broad queries are harder to fully answer.
     """
+
     if not chunks:
         return {
             "answerability": "none",
@@ -166,9 +286,10 @@ def evaluate_answerability(query: str, chunks: list, scores: list[float] = None)
         }
 
     query_type = _classify_query(query)
+
     query_words = _meaningful_words(query)
 
-    # Filter to only relevant chunks (ignore noise chunks with high L2 distance)
+    # Ignore noisy chunks
     if scores:
         relevant_chunks = [c for c, s in zip(chunks, scores) if s < 1.4]
     else:
@@ -183,6 +304,7 @@ def evaluate_answerability(query: str, chunks: list, scores: list[float] = None)
         }
 
     all_chunk_words = set()
+
     for text in _chunk_texts(relevant_chunks):
         all_chunk_words.update(_meaningful_words(text))
 
@@ -195,23 +317,37 @@ def evaluate_answerability(query: str, chunks: list, scores: list[float] = None)
         }
 
     overlap = query_words.intersection(all_chunk_words)
-    coverage = round(len(overlap) / len(query_words), 2)
 
-    # Broad queries are inherently partial — document can never fully cover "explain"
+    coverage = round(
+        len(overlap) / len(query_words),
+        2,
+    )
+
+    # Broad conceptual queries
     if query_type == "broad_query":
+
         if coverage >= 0.4:
-            answerability, sufficiency = "partial", "partial"
+            answerability = "partial"
+            sufficiency = "partial"
+
         else:
-            answerability, sufficiency = "none", "insufficient"
+            answerability = "none"
+            sufficiency = "insufficient"
 
     # Direct fact queries
     else:
+
         if coverage >= 0.5:
-            answerability, sufficiency = "high", "sufficient"
+            answerability = "high"
+            sufficiency = "sufficient"
+
         elif coverage >= 0.2:
-            answerability, sufficiency = "partial", "partial"
+            answerability = "partial"
+            sufficiency = "partial"
+
         else:
-            answerability, sufficiency = "none", "insufficient"
+            answerability = "none"
+            sufficiency = "insufficient"
 
     return {
         "answerability": answerability,
@@ -221,13 +357,32 @@ def evaluate_answerability(query: str, chunks: list, scores: list[float] = None)
     }
 
 
-def run_evaluation(query: str, response: str, chunks: list, scores: list[float]) -> dict:
+def run_evaluation(
+    query: str,
+    response: str,
+    chunks: list,
+    scores: list[float],
+) -> dict:
     """
     Full multi-dimensional evaluation contract.
     """
-    retrieval = evaluate_retrieval_relevance(query, chunks, scores)
-    grounding = evaluate_grounding(response, chunks)
-    answerability = evaluate_answerability(query, chunks, scores)
+
+    retrieval = evaluate_retrieval_relevance(
+        query,
+        chunks,
+        scores,
+    )
+
+    grounding = evaluate_grounding(
+        response,
+        chunks,
+    )
+
+    answerability = evaluate_answerability(
+        query,
+        chunks,
+        scores,
+    )
 
     return {
         **retrieval,
