@@ -6,6 +6,11 @@ import pickle
 import os
 
 from pilotcore.config import VECTOR_STORE_DIR
+from pilotcore.retrieval.bm25 import (
+    build_bm25,
+    load_bm25,
+    save_bm25,
+)
 from pilotcore.retrieval.embeddings import get_embedding
 from pilotcore.schemas.chunk import Chunk
 from pilotcore.schemas.retrieval import RetrievedChunk, RetrievalResult
@@ -33,6 +38,14 @@ def get_docs_path(user_id: int):
     return os.path.join(get_user_vector_dir(user_id), "documents.pkl")
 
 
+def get_bm25_path(user_id: int):
+
+    return os.path.join(
+        get_user_vector_dir(user_id),
+        "bm25.pkl",
+    )
+
+
 def load_user_index(user_id: int):
 
     index_path = get_index_path(user_id)
@@ -56,6 +69,11 @@ def load_user_documents(user_id: int):
     return []
 
 
+def load_user_bm25(user_id: int):
+
+    return load_bm25(get_bm25_path(user_id))
+
+
 def save_index(user_id, index, documents):
 
     faiss.write_index(index, get_index_path(user_id))
@@ -63,6 +81,17 @@ def save_index(user_id, index, documents):
     with open(get_docs_path(user_id), "wb") as f:
 
         pickle.dump(documents, f)
+
+    try:
+        bm25 = build_bm25(documents)
+
+        save_bm25(
+            bm25,
+            get_bm25_path(user_id),
+        )
+
+    except Exception as e:
+        print(f"BM25 save failed: {e}")
 
 
 def add_vector(
