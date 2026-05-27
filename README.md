@@ -15,6 +15,8 @@ PilotMaster is an observable AI execution ecosystem built around a single idea: 
 
 Most RAG applications are black boxes. You upload a document, ask a question, and get an answer. You have no idea which chunks were retrieved, whether the model stayed grounded in the evidence, or whether the response was faithful to the source material. PilotMaster changes that.
 
+Every AI response in PilotMaster is replayable, inspectable, and versioned. TracePilot exposes retrieved chunks, prompt construction behavior, evaluator outputs, latency spans, and execution lineage in real time — turning opaque AI behavior into an observable, auditable execution trace.
+
 ---
 
 ## What it is
@@ -54,7 +56,7 @@ The tool an AI engineer opens while DocPilot is running. Every time a user asks 
 
 Every response is judged across four independent dimensions:
 
-Scores below 0.8 are high, 0.8–1.2 are medium, above 1.2 are low.
+Retrieval relevance currently uses heuristic L2 distance bands as observability signals rather than absolute truth. In practice these thresholds are intentionally conservative — low retrieval scores can still produce correct answers if the model stays grounded in the evidence. The scoring exists to surface where the system may be operating on weak signals, not to declare answers right or wrong.
 
 **Grounding Confidence** — did the model answer using the retrieved evidence? Measured by word overlap between the response and the chunks, with stopwords excluded and a length penalty applied to longer responses. If the model correctly says "I don't have enough information", it is rewarded with high grounding.
 
@@ -126,33 +128,52 @@ Open `http://localhost:5173`. Sign up, log in, and you're in PilotMaster.
 
 ---
 
-## 🌐 Production Cloud Deployment
+## 🌐 Unified Deployment on Hugging Face Spaces
 
-PilotMaster is architected to decouple cleanly across managed infrastructure tiers for production environments:
+PilotMaster is currently deployed as a unified full-stack application on Hugging Face Spaces using Docker.
 
-### 1. Database Tier (Serverless Postgres)
+The deployment architecture intentionally keeps the system consolidated into a single runtime environment:
 
-- **Provider:** Neon.tech or Supabase.
-- **Setup:** Provision a managed PostgreSQL instance and use the provided serverless connection string (`postgresql://...`) to replace your local database URL.
+- FastAPI serves both DocPilot and TracePilot through mounted sub-apps
+- React + Vite frontend is bundled into the same deployment surface
+- PilotCore runs as the shared execution kernel underneath both applications
+- Trace telemetry is emitted internally within the same deployment environment
+- PostgreSQL is hosted externally through Neon
+- FAISS indexes persist inside the runtime filesystem during active sessions
 
-### 2. Backend API Substrate (FastAPI Core)
+### Current deployment stack
 
-- **Provider:** Render or Railway (Python Web Service Web Tier).
-- **Build Command:** `pip install -r DocPilot/backend/requirements.txt && pip install -e .`
-- **Start Command:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
-- **Environment Variables Required:**
-  - `GROQ_API_KEY`: Production hardware passkey from console.groq.com.
-  - `DATABASE_URL`: Your live cloud connection string.
-  - `SECRET_KEY`: A secure string for handling application auth state.
+| Layer        | Deployment                              |
+| ------------ | --------------------------------------- |
+| Frontend     | Hugging Face Spaces (React + Vite)      |
+| Backend      | Hugging Face Spaces (FastAPI + Docker)  |
+| Database     | Neon PostgreSQL                         |
+| Vector Store | Local FAISS persistence                 |
+| LLM          | Groq API                                |
+| Embeddings   | sentence-transformers (local inference) |
 
-### 3. Frontend Application Layer (React + Vite static edge)
+### Hugging Face Space configuration
 
-- **Provider:** Vercel or Netlify.
-- **Root Directory:** `frontend/`
-- **Build Command:** `npm run build`
-- **Output Directory:** `dist`
-- **Environment Variables Required:**
-  - `VITE_API_BASE_URL`: Point this to your live Render/Railway backend domain.
+The backend runs as a Docker Space with:
+
+```yaml
+sdk: docker
+app_port: 7860
+```
+
+Environment secrets are configured directly through the Hugging Face Space settings:
+
+- `GROQ_API_KEY`
+- `DATABASE_URL`
+- `SECRET_KEY`
+
+### Why Hugging Face Spaces
+
+The current architecture favors operational simplicity over distributed infrastructure complexity.
+
+Keeping the frontend, backend, retrieval runtime, and observability layer inside a unified deployment environment makes debugging significantly easier during rapid iteration. Trace emission, retrieval debugging, and replay inspection all happen within the same runtime surface, which reduces networking complexity and eliminates a large class of cross-service synchronization issues during development.
+
+The long-term direction may eventually separate these concerns into independently scalable services, but the current unified deployment model optimizes for execution visibility, iteration speed, and architectural cohesion.
 
 ## Project structure
 
@@ -189,7 +210,7 @@ Every time a user asks a question in DocPilot, it is PilotCore that actually run
 
 - **Embeddings** — converts text to vectors using `all-mpnet-base-v2` running locally via sentence-transformers. No external embedding API, no network dependency.
 - **Vector store** — manages per-user FAISS indexes on disk. Each user's documents live in their own isolated index. Supports add, search, reset, and selective deletion by document.
-- **Retrieval runtime** — searches the vector store, returns the top-k chunks by L2 distance, then filters out anything above the relevance threshold before the LLM sees it. For broad queries where everything gets filtered, it falls back to the top 3 chunks so the LLM always has context.
+- **Retrieval runtime** — searches the vector store using dense vector retrieval, returns the top 10 chunks by L2 distance, then filters out anything above the relevance threshold before the LLM sees it. The top 7 filtered chunks are injected into the prompt context. For broad queries where most results get filtered due to relevance thresholds, the system preserves enough context so the LLM always has grounding material to work with, rather than forcing a complete fallback. The next evolution is hybrid retrieval combining dense vectors with sparse lexical matching (BM25) and cross-encoder reranking.
 - **Prompt builder** — detects the query type and builds the appropriate prompt. Direct fact questions get a strict QA prompt. Broad requests like "explain the document" get a summarization prompt.
 - **Generation** — calls Groq's `llama-3.1-8b-instant` with the constructed prompt and returns the response.
 - **Evaluation** — runs four independent evaluators on every response: retrieval relevance, grounding confidence, answerability, and hallucination risk. These are computed from the query, the response, and the retrieved chunks — not from the LLM.
@@ -207,7 +228,7 @@ DocPilot is the document intelligence interface. Here's what a typical session l
 
 **Sign up and log in.** Your account is tied to a plan — free users can upload up to 3 documents, pro users have no limit. Plan management lives on the PilotMaster home dashboard.
 
-**Upload a document.** Drag and drop a file into the upload area in the sidebar, or click to browse. Supported formats are PDF, DOCX, TXT, MD, CSV, XLSX, PNG, JPG, and JPEG. The moment you hit Upload, PilotCore takes over — it extracts the text, chunks it into 500-character segments with 50-character overlap, embeds every chunk using `all-mpnet-base-v2`, and stores the vectors in a FAISS index scoped to your user account. For scanned PDFs and images, OCR runs automatically via Tesseract.
+**Upload a document.** Drag and drop a file into the upload area in the sidebar, or click to browse. Supported formats are PDF, DOCX, TXT, MD, CSV, XLSX, PNG, JPG, and JPEG. The moment you hit Upload, PilotCore takes over — it applies a boundary-aware chunking strategy that creates approximately 500-character chunks with 80-character overlap, preferring sentence and newline boundaries to improve semantic coherence during retrieval. Every chunk is then embedded using `all-mpnet-base-v2` and stored in a FAISS index scoped to your user account. For scanned PDFs and images, OCR runs automatically via Tesseract.
 
 **Ask questions.** Type a question in the chat input and hit Send or press Enter. DocPilot calls PilotCore's `run_pipeline`, which embeds your query, searches your vector store, filters out irrelevant chunks, builds a prompt, and calls Groq for generation. The answer appears in the chat with source citations showing which file and page the evidence came from.
 
@@ -223,7 +244,7 @@ DocPilot is the document intelligence interface. Here's what a typical session l
 
 TracePilot is the execution intelligence dashboard. It's designed to be open alongside DocPilot — every question asked in DocPilot automatically appears here within seconds.
 
-**The trace list.** The left sidebar shows every query that has run through PilotCore, newest first. Each entry shows the query text, a color-coded retrieval relevance tag (green = high, orange = moderate, red = low), and additional tags if the query was unanswerable or the model abstained. Latency is shown inline on the right.
+**The trace list.** The left sidebar shows every query that has run through PilotCore, newest first. Each entry shows the query text, a color-coded retrieval relevance tag (green = high, orange = medium, red = low), and additional tags if the query was unanswerable or the model abstained. Latency is shown inline on the right.
 
 **Inspecting a trace.** Click any trace to open the full detail view. At the top you'll see the four evaluation dimensions:
 
@@ -232,9 +253,9 @@ TracePilot is the execution intelligence dashboard. It's designed to be open alo
 - **answerability** — did the document actually contain enough to answer this?
 - **hallucination risk** — how much did the response go beyond the evidence?
 
-Below the tags you'll see the full response, the retrieved chunks with their L2 distance scores (color-coded), and a metrics panel showing faithfulness score, query coverage, query type, and chunk count.
+Below the tags you'll see the full response, the retrieved chunks with their L2 distance scores (color-coded), and a metrics panel showing faithfulness score, query coverage, query type, and chunk count. The ranked chunk inspection shows exactly which documents and passages the retrieval system considered, with retrieval debug logging available to trace why certain chunks were selected or filtered.
 
-**Replay.** Every trace has a Replay button. Clicking it re-runs the exact same query through PilotCore using the same user's vector store, producing a new trace linked to the original via `parent_trace_id`. This lets you compare how the same question performs across different document states or after model changes.
+**Replay.** Every trace has a Replay button. Clicking it re-runs the exact same query through PilotCore using the same user's vector store, producing a new trace linked to the original via `parent_trace_id`. This lets you compare how the same question performs across different document states or after model changes. Replayable traces are the foundation of reproducible debugging — you can step through the same question multiple times and inspect exactly where and why behavior diverges.
 
 **Execution identity.** Every trace carries a complete version snapshot of the system that produced it — `evaluator_version`, `prompt_version`, and `retriever_version`. This means when you replay a trace and the scores change, you can tell whether the difference came from the AI behaving differently or from the evaluation system itself having changed. A hallucination score from evaluator v1 is not the same thing as a hallucination score from evaluator v2, and TracePilot makes that distinction visible.
 
@@ -258,13 +279,27 @@ The result is a system where you can watch the AI think. Not just see the answer
 
 PilotMaster is an early-stage AI runtime and observability platform. It is not a production system at scale. Being honest about the current state and the intended direction is part of what makes the architecture credible.
 
+### Evaluation
+
 **The evaluators are currently heuristic-based.** Grounding, answerability, and hallucination risk are all computed from lexical overlap — word matching between the response and the retrieved chunks. This is fast, deterministic, and inspectable, which makes it a good foundation. But lexical heuristics have a ceiling. The natural evolution here is toward embedding-based semantic evaluation, LLM-as-a-judge scoring, and eventually evaluator ensembles that combine multiple signals. The current evaluators are v1 — they are designed to be replaced, which is exactly why `evaluator_version` is attached to every trace.
 
-**Retrieval is vector similarity only.** FAISS with L2 distance is the entire retrieval stack right now. This works well for focused factual queries but shows weakness on broad or ambiguous ones — a query like "elaborate the document" has no semantic anchor in the chunk space, so the system falls back to top-k regardless of score. The next retrieval evolution is hybrid search: combining dense vector retrieval with sparse keyword matching (BM25), and adding a cross-encoder reranker to re-score the top candidates before they reach the LLM. That would eliminate the contamination problem where an irrelevant chunk sneaks through because it happened to be the closest vector.
+Retrieval relevance thresholds are currently heuristic and intentionally conservative. Correct retrievals may still occasionally be labeled low while remaining practically useful — the system favors avoiding false positives over perfect precision. This means reading evaluator scores requires context: a low retrieval score doesn't necessarily mean the answer is bad, it means the evidence signal was weak according to the current lexical heuristics.
 
-**Trace storage is operationally thin.** TracePilot currently stores traces in SQLite and polls for new ones every 3 seconds. This is fine for a single-user development environment. At scale, this becomes a bottleneck — SQLite doesn’t support concurrent writes, polling is wasteful, and there’s no indexing on spans or evaluation fields. The intended direction is a proper trace store with queryable spans, aggregation pipelines, trace retention policies, and real-time streaming via WebSockets or Server-Sent Events instead of polling.
+### Retrieval
+
+**Retrieval is vector similarity only.** FAISS with L2 distance is the entire retrieval stack right now. This works well for focused factual queries but shows weakness on broad or ambiguous ones — a query like "elaborate the document" has no semantic anchor in the chunk space, so the system falls back to top-k regardless of score. Recent stabilization work has added retrieval debug tracing, FAISS ingestion diagnostics, chunk traversal safeguards, duplicate retrieval prevention, and improved chunk semantic integrity checks to make the current retrieval more robust.
+
+The retrieval roadmap also includes section-aware chunking to preserve document structure, semantic evaluators to measure retrieval quality, and retrieval reranking pipelines. These improvements would eliminate the contamination problem where an irrelevant chunk sneaks through because it happened to be the closest vector.
+
+### Observability
+
+**Trace storage and observability.** TracePilot currently stores traces in SQLite and polls for new ones every 3 seconds. This is fine for a single-user development environment, and it includes retrieval observability tooling with ranked chunk inspection, retrieval debug logging, replayable traces, and retrieval score visibility. At scale, this becomes a bottleneck — SQLite doesn't support concurrent writes, polling is wasteful, and there's no indexing on spans or evaluation fields. The intended direction is a proper trace store with queryable spans, aggregation pipelines, trace retention policies, and real-time streaming via WebSockets or Server-Sent Events instead of polling.
+
+### Prompting
 
 **Prompt versioning is manual.** Right now, bumping `prompt_version` in `pilotcore/config.py` is a manual operation. There is no prompt registry, no A/B testing infrastructure, and no way to compare prompt performance across a dataset. The intended direction is a prompt management layer inside PilotCore where prompt templates are named, versioned, and stored — so TracePilot can show not just what the response was, but exactly which prompt template produced it and how that template has performed historically.
+
+### Lineage
 
 **Evaluator versioning exists but isn’t automated.** Version constants live in `pilotcore/config.py` and are attached to every trace. When you change the evaluation logic and bump the version, all future traces carry the new version and old traces retain the old one. What doesn’t exist yet is automated detection — the system won’t warn you if you change the evaluator without bumping the version. That’s a future guardrail.
 

@@ -63,7 +63,7 @@ def run_pipeline(
     if trace.retrieval_result:
         all_chunks = trace.retrieval_result.retrieved_chunks
         filtered = [c for c in all_chunks if c.score < 1.4]
-        # If filtering removed everything, fall back to top 3 chunks as general context
+        # If filtering removed everything, fall back to top 7 chunks as general context
         trace.retrieval_result.retrieved_chunks = (
             filtered if filtered else all_chunks[:7]
         )
