@@ -128,52 +128,128 @@ Open `http://localhost:5173`. Sign up, log in, and you're in PilotMaster.
 
 ---
 
-## 🌐 Unified Deployment on Hugging Face Spaces
+## 🌐 Production Deployment Architecture
 
-PilotMaster is currently deployed as a unified full-stack application on Hugging Face Spaces using Docker.
+PilotMaster uses a cloud-native deployment architecture designed around modular AI execution, observability, and retrieval-aware runtime orchestration.
 
-The deployment architecture intentionally keeps the system consolidated into a single runtime environment:
+### 1. Frontend Application Layer (Vercel)
 
-- FastAPI serves both DocPilot and TracePilot through mounted sub-apps
-- React + Vite frontend is bundled into the same deployment surface
-- PilotCore runs as the shared execution kernel underneath both applications
-- Trace telemetry is emitted internally within the same deployment environment
-- PostgreSQL is hosted externally through Neon
-- FAISS indexes persist inside the runtime filesystem during active sessions
+- **Provider:** Vercel
+- **Framework:** React + Vite
+- **Responsibilities:**
+  - User authentication
+  - Chat session management
+  - Document uploads
+  - Trace visualization
+  - Replay interface
+  - Runtime analytics display
 
-### Current deployment stack
+The frontend is deployed independently through Vercel to provide globally distributed static delivery, optimized frontend performance, and simplified continuous deployment workflows.
 
-| Layer        | Deployment                              |
-| ------------ | --------------------------------------- |
-| Frontend     | Hugging Face Spaces (React + Vite)      |
-| Backend      | Hugging Face Spaces (FastAPI + Docker)  |
-| Database     | Neon PostgreSQL                         |
-| Vector Store | Local FAISS persistence                 |
-| LLM          | Groq API                                |
-| Embeddings   | sentence-transformers (local inference) |
+---
 
-### Hugging Face Space configuration
+### 2. Backend Runtime Layer (Hugging Face Spaces)
 
-The backend runs as a Docker Space with:
+- **Provider:** Hugging Face Spaces (Docker SDK)
+- **Framework:** FastAPI
+- **Deployment Type:** Unified containerized runtime
+
+The backend infrastructure is deployed through Hugging Face Spaces using Docker-based execution. The platform exposes a unified FastAPI application that mounts both DocPilot and TracePilot as sub-applications under a shared runtime environment.
+
+This backend layer is responsible for:
+
+- Retrieval-Augmented Generation (RAG) execution
+- OCR ingestion pipelines
+- Embedding generation
+- FAISS vector retrieval
+- Prompt construction
+- LLM interaction
+- Response evaluation
+- Trace emission
+- Telemetry collection
+- Replay execution workflows
+
+The deployment architecture intentionally consolidates runtime execution and observability into a single environment to simplify debugging, telemetry inspection, and AI execution traceability.
+
+### Hugging Face Space Configuration
 
 ```yaml
 sdk: docker
 app_port: 7860
 ```
 
-Environment secrets are configured directly through the Hugging Face Space settings:
+### Runtime Startup
+
+```bash
+uvicorn main:app --host 0.0.0.0 --port 7860
+```
+
+### Environment Variables
+
+The backend runtime uses environment variables configured through Hugging Face Space Secrets:
 
 - `GROQ_API_KEY`
 - `DATABASE_URL`
 - `SECRET_KEY`
+- `TRACEPILOT_URL`
+- `DOCPILOT_URL`
 
-### Why Hugging Face Spaces
+---
 
-The current architecture favors operational simplicity over distributed infrastructure complexity.
+### 3. Database Layer (Neon PostgreSQL)
 
-Keeping the frontend, backend, retrieval runtime, and observability layer inside a unified deployment environment makes debugging significantly easier during rapid iteration. Trace emission, retrieval debugging, and replay inspection all happen within the same runtime surface, which reduces networking complexity and eliminates a large class of cross-service synchronization issues during development.
+- **Provider:** Neon
+- **Database Engine:** PostgreSQL
 
-The long-term direction may eventually separate these concerns into independently scalable services, but the current unified deployment model optimizes for execution visibility, iteration speed, and architectural cohesion.
+PilotMaster uses Neon PostgreSQL as the managed cloud database infrastructure for:
+
+- User authentication data
+- Chat history persistence
+- Session management
+- Billing metadata
+- Trace metadata
+- Runtime analytics storage
+
+Neon provides serverless PostgreSQL scaling with managed infrastructure while maintaining compatibility with standard PostgreSQL tooling and ORM workflows.
+
+---
+
+### 4. Vector Retrieval Layer (FAISS)
+
+- **Vector Engine:** Facebook AI Similarity Search (FAISS)
+- **Embedding Model:** sentence-transformers/all-mpnet-base-v2
+
+The retrieval layer uses semantic vector embeddings combined with FAISS similarity search to retrieve contextually relevant chunks from uploaded documents.
+
+The retrieval pipeline includes:
+
+1. Document ingestion
+2. Boundary-aware chunking
+3. Embedding generation
+4. Vector indexing
+5. Semantic similarity retrieval
+6. Context injection into prompts
+
+The system currently supports semantic vector retrieval and is designed to evolve toward hybrid retrieval architectures combining dense semantic search with lexical ranking strategies.
+
+---
+
+### 5. Observability & Execution Intelligence
+
+TracePilot functions as the observability subsystem of the ecosystem.
+
+Every query execution automatically emits:
+
+- Retrieved chunks
+- Retrieval scores
+- Prompt metadata
+- Evaluation metrics
+- Hallucination risk
+- Grounding confidence
+- Runtime latency
+- Replayable execution traces
+
+This architecture transforms traditional RAG systems from opaque response generators into transparent and inspectable AI execution pipelines.
 
 ## Project structure
 
