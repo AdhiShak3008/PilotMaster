@@ -30,7 +30,7 @@ def run_pipeline(
     )
 
     retrieval_result = retrieve(
-        strategy="vector",
+        strategy="hybrid",
         query=query,
         user_id=user_id,
         source=source,
@@ -57,16 +57,6 @@ def run_pipeline(
         print("(no retrieved chunks)")
 
     print("===========================\n")
-
-    # Filter irrelevant chunks — but for broad document queries,
-    # keep top chunks even if scores are high (no relevant embedding match expected)
-    if trace.retrieval_result:
-        all_chunks = trace.retrieval_result.retrieved_chunks
-        filtered = [c for c in all_chunks if c.score < 1.4]
-        # If filtering removed everything, fall back to top 7 chunks as general context
-        trace.retrieval_result.retrieved_chunks = (
-            filtered if filtered else all_chunks[:7]
-        )
 
     response = generate_response(trace)
     trace.final_response = response
