@@ -19,6 +19,26 @@ Every AI response in PilotMaster is replayable, inspectable, and versioned. Trac
 
 ---
 
+---
+
+## How PilotMaster happened
+
+DocPilot and TracePilot originally started as completely separate projects.
+
+DocPilot began as an AI document intelligence platform focused on ingestion, retrieval, OCR pipelines, semantic search, and grounded question answering over uploaded files.
+
+TracePilot started as a different idea entirely — an observability and replay system for LLM execution. The goal was to inspect prompts, traces, evaluator outputs, latency spans, and retrieval behavior instead of treating AI systems like black boxes.
+
+For a while they evolved independently.
+
+But over time the separation started feeling artificial.
+
+The moment retrieval debugging became serious, the systems naturally began depending on each other. You couldn't meaningfully improve retrieval quality without replaying traces. You couldn't debug grounding failures without inspecting chunk rankings. You couldn't tune evaluators without observing real retrieval behavior. OCR failures, hallucination analysis, replayable execution traces, retrieval observability, and evaluator lineage all started collapsing into the same workflow.
+
+Eventually it became obvious that the projects were converging toward the same destination.
+
+PilotMaster emerged as the inevitable merge of both systems into a unified AI engineering platform — one side focused on AI execution, the other focused on understanding and inspecting that execution in real time.
+
 ## What it is
 
 PilotMaster is made up of three layers that work together:
@@ -42,8 +62,8 @@ The tool an AI engineer opens while DocPilot is running. Every time a user asks 
 1. User types a question in DocPilot
 2. DocPilot calls `run_pipeline(query, user_id, source)` in PilotCore
 3. PilotCore embeds the query using `all-mpnet-base-v2` (sentence-transformers, runs locally)
-4. PilotCore searches the user's FAISS vector store for relevant chunks
-5. Irrelevant chunks (L2 distance > 1.4) are filtered out before the LLM sees them
+4. PilotCore runs hybrid retrieval using FAISS semantic retrieval and BM25 lexical retrieval
+5. Retrieved chunks are merged, deduplicated, and assembled into the final context before the LLM sees them
 6. PilotCore builds a prompt — QA-style for direct questions, summarization-style for broad requests
 7. PilotCore calls Groq (`llama-3.1-8b-instant`) for generation
 8. PilotCore runs four-dimensional evaluation on the response
@@ -56,7 +76,7 @@ The tool an AI engineer opens while DocPilot is running. Every time a user asks 
 
 Every response is judged across four independent dimensions:
 
-Retrieval relevance currently uses heuristic L2 distance bands as observability signals rather than absolute truth. In practice these thresholds are intentionally conservative — low retrieval scores can still produce correct answers if the model stays grounded in the evidence. The scoring exists to surface where the system may be operating on weak signals, not to declare answers right or wrong.
+Retrieval relevance originally relied on heuristic FAISS L2 distance bands, but the evaluator evolved once hybrid retrieval was introduced. The system now uses more query-aware retrieval evaluation instead of assuming vector distance alone defines retrieval quality. In practice these thresholds are intentionally conservative — low retrieval scores can still produce correct answers if the model stays grounded in the evidence. The scoring exists to surface where the system may be operating on weak signals, not to declare answers right or wrong.
 
 **Grounding Confidence** — did the model answer using the retrieved evidence? Measured by word overlap between the response and the chunks, with stopwords excluded and a length penalty applied to longer responses. If the model correctly says "I don't have enough information", it is rewarded with high grounding.
 
@@ -68,14 +88,14 @@ Retrieval relevance currently uses heuristic L2 distance bands as observability 
 
 ## Tech stack
 
-| Layer        | Technology                                                               |
-| ------------ | ------------------------------------------------------------------------ |
-| LLM          | Groq — llama-3.1-8b-instant                                              |
-| Embeddings   | sentence-transformers — all-mpnet-base-v2 (local, no server needed)      |
-| Vector store | FAISS (per-user, persisted to disk)                                      |
-| Backend      | FastAPI (unified server, DocPilot + TracePilot mounted as sub-apps)      |
-| Database     | PostgreSQL (DocPilot users/docs/chat), SQLite (TracePilot traces)        |
-| Frontend     | React + Vite (unified app, tab-switched between DocPilot and TracePilot) |
+| Layer      | Technology                                                               |
+| ---------- | ------------------------------------------------------------------------ |
+| LLM        | Groq — llama-3.1-8b-instant                                              |
+| Embeddings | sentence-transformers — all-mpnet-base-v2 (local, no server needed)      |
+| Retrieval  | Hybrid retrieval — FAISS semantic search + BM25 lexical retrieval        |
+| Backend    | FastAPI (unified server, DocPilot + TracePilot mounted as sub-apps)      |
+| Database   | PostgreSQL (users, docs, chats, persistent traces, telemetry)            |
+| Frontend   | React + Vite (unified app, tab-switched between DocPilot and TracePilot) |
 
 ---
 
@@ -91,7 +111,7 @@ Retrieval relevance currently uses heuristic L2 distance bands as observability 
 
 ```bash
 # Install Python dependencies
-pip install -r DocPilot/backend/requirements.txt
+pip install -r requirements.txt
 pip install -e .
 
 # Install frontend dependencies
@@ -100,15 +120,11 @@ cd frontend && npm install
 
 ### Configure
 
-Copy `.env.example` to `.env` and fill in your values:
-
-```bash
-cp .env.example .env
-```
+Create a `.env` file at the project root and fill in your values:
 
 ```env
 GROQ_API_KEY=your_groq_api_key_here
-DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/rag_saas
+DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/pilotmaster
 SECRET_KEY=your_secret_key_here
 ```
 
@@ -219,7 +235,7 @@ Neon provides serverless PostgreSQL scaling with managed infrastructure while ma
 - **Vector Engine:** Facebook AI Similarity Search (FAISS)
 - **Embedding Model:** sentence-transformers/all-mpnet-base-v2
 
-The retrieval layer uses semantic vector embeddings combined with FAISS similarity search to retrieve contextually relevant chunks from uploaded documents.
+The retrieval layer evolved from pure semantic vector search into a hybrid retrieval architecture combining FAISS semantic retrieval with BM25 lexical retrieval. This shift happened after observing that vector-only retrieval often ranked broad generic skill chunks above highly relevant exact-match sections like Education and Projects.
 
 The retrieval pipeline includes:
 
@@ -230,7 +246,7 @@ The retrieval pipeline includes:
 5. Semantic similarity retrieval
 6. Context injection into prompts
 
-The system currently supports semantic vector retrieval and is designed to evolve toward hybrid retrieval architectures combining dense semantic search with lexical ranking strategies.
+The system now supports hybrid retrieval combining dense semantic search with sparse lexical ranking using BM25. Current fusion is intentionally simple — merge + dedupe — while future retrieval work includes Reciprocal Rank Fusion (RRF), cross-encoder reranking, and section-aware retrieval weighting.
 
 ---
 
@@ -304,7 +320,7 @@ DocPilot is the document intelligence interface. Here's what a typical session l
 
 **Sign up and log in.** Your account is tied to a plan — free users can upload up to 3 documents, pro users have no limit. Plan management lives on the PilotMaster home dashboard.
 
-**Upload a document.** Drag and drop a file into the upload area in the sidebar, or click to browse. Supported formats are PDF, DOCX, TXT, MD, CSV, XLSX, PNG, JPG, and JPEG. The moment you hit Upload, PilotCore takes over — it applies a boundary-aware chunking strategy that creates approximately 500-character chunks with 80-character overlap, preferring sentence and newline boundaries to improve semantic coherence during retrieval. Every chunk is then embedded using `all-mpnet-base-v2` and stored in a FAISS index scoped to your user account. For scanned PDFs and images, OCR runs automatically via Tesseract.
+**Upload a document.** Drag and drop a file into the upload area in the sidebar, or click to browse. Supported formats are PDF, DOCX, TXT, MD, CSV, XLSX, PNG, JPG, and JPEG. The moment you hit Upload, PilotCore takes over — it applies a boundary-aware chunking strategy that creates approximately 500-character chunks with 80-character overlap, preferring sentence and newline boundaries to improve semantic coherence during retrieval. Every chunk is then embedded using `all-mpnet-base-v2` and stored in a FAISS index scoped to your user account. For scanned PDFs and images, OCR runs automatically via a stabilized Tesseract + pdf2image fallback pipeline with safer failure handling and OCR-aware ingestion diagnostics.
 
 **Ask questions.** Type a question in the chat input and hit Send or press Enter. DocPilot calls PilotCore's `run_pipeline`, which embeds your query, searches your vector store, filters out irrelevant chunks, builds a prompt, and calls Groq for generation. The answer appears in the chat with source citations showing which file and page the evidence came from.
 
@@ -363,13 +379,13 @@ Retrieval relevance thresholds are currently heuristic and intentionally conserv
 
 ### Retrieval
 
-**Retrieval is vector similarity only.** FAISS with L2 distance is the entire retrieval stack right now. This works well for focused factual queries but shows weakness on broad or ambiguous ones — a query like "elaborate the document" has no semantic anchor in the chunk space, so the system falls back to top-k regardless of score. Recent stabilization work has added retrieval debug tracing, FAISS ingestion diagnostics, chunk traversal safeguards, duplicate retrieval prevention, and improved chunk semantic integrity checks to make the current retrieval more robust.
+**Retrieval is now hybrid.** The system combines FAISS semantic retrieval with BM25 lexical retrieval. This works well for focused factual queries but shows weakness on broad or ambiguous ones — a query like "elaborate the document" has no semantic anchor in the chunk space, so the system falls back to top-k regardless of score. Recent stabilization work added retrieval debug tracing, FAISS ingestion diagnostics, chunk traversal safeguards, duplicate retrieval prevention, OCR ingestion stabilization, hybrid retrieval integration, BM25 persistence, and improved chunk semantic integrity checks. Retrieval quality optimization became a major phase of the project once the system moved beyond basic infrastructure debugging.
 
 The retrieval roadmap also includes section-aware chunking to preserve document structure, semantic evaluators to measure retrieval quality, and retrieval reranking pipelines. These improvements would eliminate the contamination problem where an irrelevant chunk sneaks through because it happened to be the closest vector.
 
 ### Observability
 
-**Trace storage and observability.** TracePilot currently stores traces in SQLite and polls for new ones every 3 seconds. This is fine for a single-user development environment, and it includes retrieval observability tooling with ranked chunk inspection, retrieval debug logging, replayable traces, and retrieval score visibility. At scale, this becomes a bottleneck — SQLite doesn't support concurrent writes, polling is wasteful, and there's no indexing on spans or evaluation fields. The intended direction is a proper trace store with queryable spans, aggregation pipelines, trace retention policies, and real-time streaming via WebSockets or Server-Sent Events instead of polling.
+**Trace storage and observability.** TracePilot originally stored traces in local SQLite, but this became a problem after Hugging Face rebuilds repeatedly wiped observability history due to ephemeral container storage. Trace persistence was later migrated to PostgreSQL-backed storage so telemetry, replay history, and traces survive redeploys and runtime restarts. This is fine for a single-user development environment, and it includes retrieval observability tooling with ranked chunk inspection, retrieval debug logging, replayable traces, and retrieval score visibility. At scale, this becomes a bottleneck — SQLite doesn't support concurrent writes, polling is wasteful, and there's no indexing on spans or evaluation fields. The intended direction is a proper trace store with queryable spans, aggregation pipelines, trace retention policies, and real-time streaming via WebSockets or Server-Sent Events instead of polling.
 
 ### Prompting
 
@@ -382,3 +398,12 @@ The retrieval roadmap also includes section-aware chunking to preserve document 
 **Trace lineage is shallow.** `parent_trace_id` links a replay to its original trace, which is the beginning of execution lineage. What’s missing is deeper lineage — tracking which document version was active, which evaluator version scored it, which prompt template was used, and how all of those evolved over time. Full execution lineage is what turns a trace store into a genuine audit trail for AI behavior.
 
 These are not oversights. They are the known frontier of the system — the places where the architecture is intentionally designed to grow.
+
+Additional future retrieval work includes:
+
+- Reciprocal Rank Fusion (RRF)
+- Section-aware chunking
+- Cross-encoder reranking
+- Metadata-aware prompts
+- Retrieval analytics dashboards
+- Trace filtering and replay analytics
