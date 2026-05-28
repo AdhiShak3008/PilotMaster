@@ -1,3 +1,5 @@
+import re
+
 STOPWORDS = {
     "the",
     "is",
@@ -94,7 +96,12 @@ def _chunk_texts(chunks: list) -> list[str]:
 
 def _meaningful_words(text: str) -> set:
 
-    return {w for w in text.lower().split() if w not in STOPWORDS and len(w) > 2}
+    words = re.findall(
+        r"\b[a-zA-Z0-9]+\b",
+        text.lower(),
+    )
+
+    return {w for w in words if w not in STOPWORDS and len(w) > 2}
 
 
 def _classify_query(query: str) -> str:
