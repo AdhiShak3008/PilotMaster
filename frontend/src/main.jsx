@@ -5,15 +5,19 @@ import App from "./App.jsx";
 const style = document.createElement("style");
 style.textContent = `
   :root {
-    --bg-primary: #0b0d14;
-    --bg-secondary: #11141d;
-    --surface: #151925;
-    --surface-hover: #1b2130;
-    --surface-strong: #101522;
-    --border: #343b4f;
+    --bg-primary: #0a0c12;
+    --bg-secondary: #101522;
+
+    --surface: #171c28;
+    --surface-hover: #21283a;
+    --surface-strong: #141927;
+
+    --border: #3f4a63;
+
     --text-primary: #f3f4f6;
-    --text-secondary: #d1d5db;
-    --text-muted: #9ca3af;
+    --text-secondary: #d7dce5;
+    --text-muted: #a5afc2;
+
     --success: #65d46e;
     --purple: #8b5cf6;
     --danger: #ef4444;
