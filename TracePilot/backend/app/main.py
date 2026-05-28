@@ -230,6 +230,13 @@ def clear_all_traces():
     return {"status": "ok", "message": "All traces cleared."}
 
 
+@app.delete("/traces/reset")
+def reset_traces():
+
+    delete_all_traces()
+    return {"status": "ok", "message": "TracePilot reset complete."}
+
+
 @app.get("/traces/compare")
 def compare_traces(trace_id_1: str, trace_id_2: str):
 

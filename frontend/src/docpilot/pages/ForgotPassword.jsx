@@ -243,11 +243,11 @@ const inputStyle = {
 
   borderRadius: "14px",
 
-  border: "1px solid #333",
+  border: "1px solid var(--border)",
 
-  background: "#1d1d1d",
+  background: "var(--surface)",
 
-  color: "white",
+  color: "var(--text-primary)",
 
   fontSize: "16px",
 
@@ -261,11 +261,11 @@ const buttonStyle = {
 
   borderRadius: "14px",
 
-  border: "1px solid #333",
+  border: "1px solid var(--border)",
 
-  background: "#2a2a2a",
+  background: "var(--surface-hover)",
 
-  color: "white",
+  color: "var(--text-primary)",
 
   fontSize: "16px",
 

@@ -120,6 +120,7 @@ def delete_all_traces():
 
     conn = get_connection()
     cursor = conn.cursor()
+    cursor.execute("DELETE FROM ingestion_traces")
     cursor.execute("DELETE FROM traces")
     conn.commit()
     conn.close()

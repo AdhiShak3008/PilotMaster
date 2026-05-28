@@ -25,6 +25,8 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
     const [loadingTraces, setLoadingTraces] = useState(true);
     const [loadingTraceId, setLoadingTraceId] = useState(null);
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [resetting, setResetting] = useState(false);
+    const [resetMessage, setResetMessage] = useState("");
 
    useEffect(() => {
     const fetchIfVisible = () => {
@@ -72,16 +74,24 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
         }
     }
 
-    async function clearTraces() {
-        if (window.confirm("Clear all TracePilot traces? This action cannot be undone.")) {
-            try {
-                await api.delete("/traces");
-                setSelectedTrace(null);
-                setSelectedId(null);
-                fetchTraces();
-            } catch (error) {
-                console.error("Failed to clear traces", error);
-            }
+    async function resetTraces() {
+        if (!window.confirm("Are you sure you want to delete all traces?")) return;
+        if (resetting) return;
+        setResetting(true);
+        setResetMessage("");
+        try {
+            await api.delete("/traces/reset");
+            setSelectedTrace(null);
+            setSelectedId(null);
+            fetchTraces();
+            setResetMessage("Trace history cleared.");
+            setTimeout(() => setResetMessage(""), 3500);
+        } catch (error) {
+            console.error("Failed to reset traces", error);
+            setResetMessage("Failed to reset traces.");
+            setTimeout(() => setResetMessage(""), 3500);
+        } finally {
+            setResetting(false);
         }
     }
 
@@ -92,11 +102,11 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
     const groundedCount = traces.filter(t => t.grounded).length;
 
     return (
-        <div className="trace-root" style={{ display: "flex", flexDirection: "column", height: "100%", background: "#0d0d0d", color: "#e0e0e0", fontFamily: "monospace" }}>
+        <div className="trace-root" style={{ display: "flex", flexDirection: "column", height: "100%", background: "var(--bg-primary)", color: "var(--text-primary)", fontFamily: "monospace" }}>
             {sidebarOpen && <button className="mobile-drawer-backdrop" aria-label="Close traces" onClick={() => setSidebarOpen(false)} />}
 
             {/* HEADER */}
-            <div className="trace-header" style={{ padding: "24px 32px 20px", borderBottom: "1px solid #1e1e1e", flexShrink: 0 }}>
+            <div className="trace-header" style={{ padding: "24px 32px 20px", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
                 <button className="mobile-menu-button trace-mobile-list-button" onClick={() => setSidebarOpen(true)} aria-label="Open trace list">☰</button>
                 <h1 className="trace-title" style={{
                     margin: 0, fontSize: "42px", fontFamily: "Georgia, serif",
@@ -104,29 +114,34 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
                 }}>
                     TracePilot
                 </h1>
-                <p style={{ margin: "6px 0 0", color: "#555", fontSize: "13px" }}>
+                <p style={{ margin: "6px 0 0", color: "var(--text-muted)", fontSize: "13px" }}>
                     execution intelligence layer
                 </p>
                 {onHome && (
-                    <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
-                        <button onClick={onHome} style={{
-                            padding: "7px 14px", background: "transparent",
-                            color: "#555", border: "1px solid #2a2a2a", borderRadius: "8px",
-                            cursor: "pointer", fontSize: "12px",
-                        }}>← Home</button>
-                        {onDocPilot && (
-                            <button onClick={onDocPilot} style={{
-                                padding: "7px 14px", background: "transparent",
-                                color: "#4caf50", border: "1px solid #2a2a2a", borderRadius: "8px",
+                    <>
+                        <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
+                            <button onClick={onHome} style={{
+                                padding: "7px 14px", background: "var(--surface)",
+                                color: "var(--text-secondary)", border: "1px solid var(--border)", borderRadius: "8px",
                                 cursor: "pointer", fontSize: "12px",
-                            }}>DocPilot →</button>
+                            }}>← Home</button>
+                            {onDocPilot && (
+                                <button onClick={onDocPilot} style={{
+                                    padding: "7px 14px", background: "var(--surface)",
+                                    color: "var(--success)", border: "1px solid var(--border)", borderRadius: "8px",
+                                    cursor: "pointer", fontSize: "12px",
+                                }}>DocPilot →</button>
+                            )}
+                            <button onClick={resetTraces} disabled={resetting} style={{
+                                padding: "7px 14px", background: "var(--surface)",
+                                color: "var(--danger)", border: "1px solid var(--border)", borderRadius: "8px",
+                                cursor: resetting ? "not-allowed" : "pointer", fontSize: "12px", opacity: resetting ? 0.75 : 1,
+                            }}>{resetting ? "Resetting..." : "Reset Traces"}</button>
+                        </div>
+                        {resetMessage && (
+                            <p style={{ margin: "12px 0 0", color: "var(--text-primary)", fontSize: "0.82rem", opacity: 0.85 }}>{resetMessage}</p>
                         )}
-                        <button onClick={clearTraces} style={{
-                            padding: "7px 14px", background: "transparent",
-                            color: "#ef4444", border: "1px solid #2a2a2a", borderRadius: "8px",
-                            cursor: "pointer", fontSize: "12px",
-                        }}>Clear Traces</button>
-                    </div>
+                    </>
                 )}
 
                 {/* STAT PILLS */}
@@ -143,18 +158,18 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
             </div>
 
             {/* BODY */}
-            <div className="trace-body" style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-
+            <div className="trace-body" style={{ display: "flex", flex: 1, overflow: "hidden" }}>var(--border)", overflowY: "auto", padding: "1rem", background: "var(--bg-secondary)
+var(--text-muted)
                 {/* SIDEBAR */}
-                <div className={`trace-sidebar ${sidebarOpen ? "is-open" : ""}`} style={{ width: "34%", borderRight: "1px solid #1e1e1e", overflowY: "auto", padding: "1rem", background: "#0d0d0d" }}>
-                    <p style={{ margin: "0 0 0.75rem", fontSize: "0.72rem", color: "#444", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                <div className={`trace-sidebar ${sidebarOpen ? "is-open" : ""}`} style={{ width: "34%", borderRight: "1px solid var(--border)", overflowY: "auto", padding: "1rem", background: "var(--bg-secondary)" }}>
+                    <p style={{ margin: "0 0 0.75rem", fontSize: "0.72rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
                         {traces.length} trace{traces.length !== 1 ? "s" : ""}
                     </p>
                     {loadingTraces && traces.length === 0 && (
-                        <p style={{ color: "#333", fontSize: "0.82rem", display: "flex", alignItems: "center", gap: "8px" }}><Spinner /> Loading traces...</p>
+                        <p style={{ color: "var(--text-muted)", fontSize: "0.82rem", display: "flex", alignItems: "center", gap: "8px" }}><Spinner /> Loading traces...</p>
                     )}
                     {!loadingTraces && traces.length === 0 && (
-                        <p style={{ color: "#333", fontSize: "0.82rem" }}>No traces yet. Ask a question in DocPilot.</p>
+                        <p style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>No traces yet. Ask a question in DocPilot.</p>
                     )}
                     {traces.map(trace => {
                         const rel = trace.evaluation?.retrieval_relevance || trace.retrieval_quality;
@@ -162,22 +177,22 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
                             <div key={trace.trace_id} onClick={() => loadTrace(trace.trace_id)} style={{
                                 padding: "0.75rem 0.9rem",
                                 marginBottom: "0.4rem",
-                                border: `1px solid ${selectedId === trace.trace_id ? "#444" : "#1e1e1e"}`,
-                                background: selectedId === trace.trace_id ? "#161616" : "#111",
+                                border: `1px solid ${selectedId === trace.trace_id ? "#4b5563" : "var(--border)"}`,
+                                background: selectedId === trace.trace_id ? "var(--surface-hover)" : "var(--surface)",
                                 cursor: loadingTraceId ? "not-allowed" : "pointer",
                                 opacity: loadingTraceId && loadingTraceId !== trace.trace_id ? 0.7 : 1,
                                 borderRadius: "6px",
                                 transition: "border-color 0.15s, opacity 0.15s",
                             }}>
-                                <p style={{ margin: "0 0 0.5rem", fontSize: "0.83rem", color: "#ccc", lineHeight: 1.4 }}>
+                                <p style={{ margin: "0 0 0.5rem", fontSize: "0.83rem", color: "var(--text-secondary)", lineHeight: 1.4 }}>
                                     {trace.query}
                                 </p>
                                 <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", alignItems: "center" }}>
-                                    <Tag color={relevanceColor[rel] || "#555"}>{rel}</Tag>
+                                    <Tag color={relevanceColor[rel] || "var(--text-muted)"}>{rel}</Tag>
                                     {trace.evaluation?.answerability === "none" && <Tag color="#f44336">unanswerable</Tag>}
                                     {trace.evaluation?.abstained && <Tag color="#7c4dff">abstained</Tag>}
                                     {trace.parent_trace_id && <Tag color="#7c4dff">replay</Tag>}
-                                    <span style={{ marginLeft: "auto", fontSize: "0.68rem", color: "#444" }}>
+                                    <span style={{ marginLeft: "auto", fontSize: "0.68rem", color: "var(--text-muted)" }}>
                                         {loadingTraceId === trace.trace_id ? <Spinner size={12} /> : `${trace.latency?.toFixed(0)} ms`}
                                     </span>
                                 </div>
@@ -189,7 +204,7 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
                 {/* DETAIL PANEL */}
                 <div className="trace-detail-panel" style={{ flex: 1, overflowY: "auto", padding: "1.75rem 2rem" }}>
                     {!selectedTrace ? (
-                        <div className="trace-empty-state" style={{ color: "#2a2a2a", fontSize: "0.9rem", marginTop: "2rem", textAlign: "center" }}>
+                        <div className="trace-empty-state" style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginTop: "2rem", textAlign: "center" }}>
                             ← select a trace to inspect
                         </div>
                     ) : (
@@ -197,8 +212,8 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
                             {/* TRACE HEADER */}
                             <div className="trace-detail-header text-wrap-safe" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
                                 <div style={{ flex: 1, marginRight: "1rem" }}>
-                                    <p style={{ margin: "0 0 0.25rem", fontSize: "0.7rem", color: "#444", textTransform: "uppercase", letterSpacing: "0.08em" }}>query</p>
-                                    <h2 style={{ margin: 0, fontSize: "1rem", color: "#fff", fontWeight: "500", lineHeight: 1.4 }}>
+                                    <p style={{ margin: "0 0 0.25rem", fontSize: "0.7rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>query</p>
+                                    <h2 style={{ margin: 0, fontSize: "1rem", color: "var(--text-primary)", fontWeight: "500", lineHeight: 1.4 }}>
                                         {selectedTrace.query}
                                     </h2>
                                 </div>
@@ -206,8 +221,8 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
                                     onClick={() => replayTrace(selectedTrace.trace_id)}
                                     disabled={replaying}
                                     style={{
-                                        background: "#161616", color: replaying ? "#666" : "#aaa",
-                                        border: "1px solid #2a2a2a", padding: "0.45rem 1rem",
+                                        background: "var(--surface)", color: replaying ? "var(--text-muted)" : "var(--text-secondary)",
+                                        border: "1px solid var(--border)", padding: "0.45rem 1rem",
                                         cursor: replaying ? "not-allowed" : "pointer", borderRadius: "6px",
                                         fontSize: "0.78rem", flexShrink: 0,
                                         opacity: replaying ? 0.7 : 1,
@@ -218,16 +233,16 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
                             </div>
 
                             {/* EVALUATION TAGS */}
-                            <div className="trace-eval-row" style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "1.5rem", padding: "0.75rem", background: "#111", borderRadius: "6px", border: "1px solid #1e1e1e" }}>
+                            <div className="trace-eval-row" style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "1.5rem", padding: "0.75rem", background: "var(--surface)", borderRadius: "6px", border: "1px solid var(--border)" }}>
                                 {(() => {
                                     const ev = selectedTrace.evaluation || {};
                                     return (<>
-                                        <Tag color={relevanceColor[ev.retrieval_relevance] || "#555"}>retrieval: {ev.retrieval_relevance || "—"}</Tag>
-                                        <Tag color={confColor[ev.grounding_confidence] || "#555"}>grounding: {ev.grounding_confidence || "—"}</Tag>
-                                        <Tag color={ansColor[ev.answerability] || "#555"}>answerability: {ev.answerability || "—"}</Tag>
-                                        <Tag color={riskColor[ev.hallucination_risk] || "#555"}>hallucination risk: {ev.hallucination_risk || "—"}</Tag>
+                                        <Tag color={relevanceColor[ev.retrieval_relevance] || "var(--text-muted)"}>retrieval: {ev.retrieval_relevance || "—"}</Tag>
+                                        <Tag color={confColor[ev.grounding_confidence] || "var(--text-muted)"}>grounding: {ev.grounding_confidence || "—"}</Tag>
+                                        <Tag color={ansColor[ev.answerability] || "var(--text-muted)"}>answerability: {ev.answerability || "—"}</Tag>
+                                        <Tag color={riskColor[ev.hallucination_risk] || "var(--text-muted)"}>hallucination risk: {ev.hallucination_risk || "—"}</Tag>
                                         {ev.abstained && <Tag color="#7c4dff">abstained ✓</Tag>}
-                                        <span className="trace-meta" style={{ marginLeft: "auto", fontSize: "0.72rem", color: "#444" }}>
+                                        <span className="trace-meta" style={{ marginLeft: "auto", fontSize: "0.72rem", color: "var(--text-muted)" }}>
                                             {selectedTrace.model_name} · {selectedTrace.latency?.toFixed(0)} ms
                                             {selectedTrace.parent_trace_id && ` · replay of ${selectedTrace.parent_trace_id.slice(0, 8)}…`}
                                         </span>
@@ -237,25 +252,25 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
 
                             {/* RESPONSE */}
                             <Section title="Response">
-                                <div className="text-wrap-safe" style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: "6px", padding: "1rem" }}>
-                                    <p style={{ margin: 0, lineHeight: 1.75, color: "#ccc", fontSize: "0.85rem" }}>{selectedTrace.response}</p>
+                                <div className="text-wrap-safe" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "6px", padding: "1rem" }}>
+                                    <p style={{ margin: 0, lineHeight: 1.75, color: "var(--text-secondary)", fontSize: "0.85rem" }}>{selectedTrace.response}</p>
                                 </div>
                             </Section>
 
                             {/* CHUNKS */}
                             <Section title={`Retrieved Chunks (${selectedTrace.retrieved_chunks?.length || 0})`}>
                                 {selectedTrace.retrieved_chunks?.length === 0 && (
-                                    <p style={{ color: "#333", fontSize: "0.82rem" }}>No chunks retrieved.</p>
+                                    <p style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>No chunks retrieved.</p>
                                 )}
                                 {selectedTrace.retrieved_chunks?.map((chunk, i) => (
-                                    <div className="text-wrap-safe" key={i} style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: "6px", padding: "0.75rem", marginBottom: "0.5rem" }}>
+                                    <div className="text-wrap-safe" key={i} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "6px", padding: "0.75rem", marginBottom: "0.5rem" }}>
                                         <div className="trace-chunk-tags" style={{ display: "flex", gap: "0.4rem", marginBottom: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
-                                            <Tag color="#2a2a2a">rank {chunk.rank}</Tag>
+                                            <Tag color="var(--text-muted)">rank {chunk.rank}</Tag>
                                             <Tag color={chunk.score < 0.8 ? "#4caf50" : chunk.score < 1.2 ? "#ff9800" : "#f44336"}>
                                                 score {chunk.score?.toFixed(3)}
                                             </Tag>
                                         </div>
-                                        <p style={{ margin: 0, fontSize: "0.8rem", color: "#888", lineHeight: 1.6 }}>{chunk.text}</p>
+                                        <p style={{ margin: 0, fontSize: "0.8rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{chunk.text}</p>
                                     </div>
                                 ))}
                             </Section>
@@ -280,9 +295,9 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
                                 <Section title="Spans">
                                     <div className="trace-spans-row" style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                                         {selectedTrace.spans.map((span, i) => (
-                                            <div key={i} style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: "6px", padding: "0.5rem 0.75rem", fontSize: "0.75rem", color: "#666" }}>
-                                                <span style={{ color: "#aaa" }}>{span.name || span.span_type}</span>
-                                                {span.duration_ms && <span style={{ marginLeft: "0.5rem", color: "#444" }}>{span.duration_ms} ms</span>}
+                                            <div key={i} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "6px", padding: "0.5rem 0.75rem", fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                                                <span style={{ color: "var(--text-muted)" }}>{span.name || span.span_type}</span>
+                                                {span.duration_ms && <span style={{ marginLeft: "0.5rem", color: "var(--text-muted)" }}>{span.duration_ms} ms</span>}
                                             </div>
                                         ))}
                                     </div>
@@ -297,9 +312,12 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
 }
 
 function Tag({ color, children }) {
+    const isCssVar = typeof color === "string" && color.trim().startsWith("var(");
+    const backgroundColor = isCssVar ? color : color + "18";
+    const borderColor = isCssVar ? color : `${color}40`;
     return (
         <span style={{
-            background: color + "18", color, border: `1px solid ${color}40`,
+            background: backgroundColor, color, border: `1px solid ${borderColor}`,
             borderRadius: "4px", padding: "0.15rem 0.5rem", fontSize: "0.7rem",
             fontWeight: "500", whiteSpace: "nowrap",
         }}>{children}</span>
@@ -323,7 +341,7 @@ function ButtonContent({ text }) {
 function Section({ title, children }) {
     return (
         <div style={{ marginBottom: "1.5rem" }}>
-            <p style={{ margin: "0 0 0.6rem", fontSize: "0.68rem", color: "#444", textTransform: "uppercase", letterSpacing: "0.1em" }}>{title}</p>
+            <p style={{ margin: "0 0 0.6rem", fontSize: "0.68rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>{title}</p>
             {children}
         </div>
     );
@@ -331,18 +349,18 @@ function Section({ title, children }) {
 
 function Stat({ label, value, color }) {
     return (
-        <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: "8px", padding: "8px 16px", minWidth: "100px" }}>
-            <p style={{ margin: 0, fontSize: "0.65rem", color: "#444", textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</p>
-            <p style={{ margin: "3px 0 0", fontSize: "1rem", fontWeight: "600", color: color || "#ccc" }}>{value}</p>
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "8px", padding: "8px 16px", minWidth: "100px" }}>
+            <p style={{ margin: 0, fontSize: "0.65rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</p>
+            <p style={{ margin: "3px 0 0", fontSize: "1rem", fontWeight: "600", color: color || "var(--text-secondary)" }}>{value}</p>
         </div>
     );
 }
 
 function MetricBox({ label, value }) {
     return (
-        <div style={{ background: "#0d0d0d", border: "1px solid #1e1e1e", borderRadius: "6px", padding: "0.6rem 0.9rem", minWidth: "110px" }}>
-            <p style={{ margin: 0, fontSize: "0.65rem", color: "#444", textTransform: "uppercase", letterSpacing: "0.07em" }}>{label}</p>
-            <p style={{ margin: "4px 0 0", fontSize: "0.88rem", color: "#aaa", fontWeight: "500" }}>{value}</p>
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "6px", padding: "0.6rem 0.9rem", minWidth: "110px" }}>
+            <p style={{ margin: 0, fontSize: "0.65rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.07em" }}>{label}</p>
+            <p style={{ margin: "4px 0 0", fontSize: "0.88rem", color: "var(--text-secondary)", fontWeight: "500" }}>{value}</p>
         </div>
     );
 }

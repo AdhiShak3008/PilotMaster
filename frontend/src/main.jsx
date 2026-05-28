@@ -4,10 +4,25 @@ import App from "./App.jsx";
 
 const style = document.createElement("style");
 style.textContent = `
+  :root {
+    --bg-primary: #0f1115;
+    --bg-secondary: #151821;
+    --surface: #181b23;
+    --surface-hover: #20232c;
+    --surface-strong: #121620;
+    --border: #2b2f36;
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    --success: #65d46e;
+    --purple: #8b5cf6;
+    --danger: #ef4444;
+  }
+
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #0d0d0d; }
-  body { min-width: 0; }
-  button, input { font: inherit; }
+  html, body, #root { width: 100%; height: 100%; overflow: hidden; background: var(--bg-primary); color: var(--text-primary); }
+  body { min-width: 0; font-family: Inter, system-ui, sans-serif; }
+  button, input { font: inherit; color: inherit; }
   @keyframes pilot-spin { to { transform: rotate(360deg); } }
 
   .mobile-menu-button { display: none; }
@@ -99,9 +114,9 @@ style.textContent = `
       width: 36px !important;
       height: 36px !important;
       padding: 0 !important;
-      background: #161616 !important;
-      color: #aaa !important;
-      border: 1px solid #222 !important;
+      background: var(--surface) !important;
+      color: var(--text-secondary) !important;
+      border: 1px solid var(--border) !important;
       border-radius: 8px !important;
       cursor: pointer !important;
       flex-shrink: 0 !important;

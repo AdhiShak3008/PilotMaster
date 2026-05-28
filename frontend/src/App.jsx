@@ -3,6 +3,21 @@ import { apiRequest, loginRequest } from "./docpilot/api.js";
 import DocPilotDashboard from "./docpilot/pages/Dashboard.jsx";
 import TraceExplorer from "./tracepilot/TraceExplorer.jsx";
 
+const theme = {
+    bgPrimary: "var(--bg-primary)",
+    bgSecondary: "var(--bg-secondary)",
+    surface: "var(--surface)",
+    surfaceHover: "var(--surface-hover)",
+    surfaceStrong: "var(--surface-strong)",
+    border: "var(--border)",
+    textPrimary: "var(--text-primary)",
+    textSecondary: "var(--text-secondary)",
+    textMuted: "var(--text-muted)",
+    success: "var(--success)",
+    purple: "var(--purple)",
+    danger: "var(--danger)",
+};
+
 export default function App() {
     const [auth, setAuth] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -100,20 +115,20 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
     };
     return (
         <div className="pilot-home" style={{
-            background: "#0d0d0d", color: "white", fontFamily: "Arial",
+            background: theme.bgPrimary, color: theme.textPrimary, fontFamily: "Arial",
             width: "100vw", height: "100vh", boxSizing: "border-box",
             display: "grid", gridTemplateRows: "auto 1fr auto", overflow: "hidden",
         }}>
             {/* TOP BAR */}
-            <div className="pilot-home-topbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "22px 48px", borderBottom: "1px solid #1a1a1a" }}>
+            <div className="pilot-home-topbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "22px 48px", borderBottom: `1px solid ${theme.border}` }}>
                 <div>
                     <h1 style={{ margin: 0, fontSize: "34px", fontFamily: "Georgia, serif", fontWeight: "600", letterSpacing: "-1.5px", color: "white" }}>PilotMaster</h1>
                     <p style={{ margin: "3px 0 0", fontSize: "12px", color: "#999", letterSpacing: "0.05em" }}>observable AI execution ecosystem</p>
                 </div>
                 <div className="pilot-home-actions" style={{ display: "flex", alignItems: "center", gap: "20px" }}>
                     <div style={{ textAlign: "right" }}>
-                        <p style={{ margin: 0, fontSize: "14px", color: "#aaa" }}>{username}</p>
-                        <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#444", textTransform: "uppercase", letterSpacing: "0.08em" }}>{currentPlan}</p>
+                        <p style={{ margin: 0, fontSize: "14px", color: theme.textSecondary }}>{username}</p>
+                        <p style={{ margin: "2px 0 0", fontSize: "11px", color: theme.textMuted, textTransform: "uppercase", letterSpacing: "0.08em" }}>{currentPlan}</p>
                     </div>
                     {currentPlan === "free" ? (
                         <button onClick={upgradePlan} disabled={planLoading} style={{ ...btnStyle, color: "#ccc", borderColor: "#555", ...disabledStyle(planLoading) }}>
@@ -130,7 +145,7 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
 
             {/* CENTER */}
             <div className="pilot-home-center" style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: "28px" }}>
-                <p style={{ margin: 0, fontSize: "11px", color: "#888", letterSpacing: "0.12em", textTransform: "uppercase" }}>select a workspace</p>
+                <p style={{ margin: 0, fontSize: "11px", color: theme.textMuted, letterSpacing: "0.12em", textTransform: "uppercase" }}>select a workspace</p>
                 <div className="pilot-home-grid" style={{ display: "flex", gap: "20px" }}>
                     <ProductCard
                         name="DocPilot"
@@ -150,9 +165,9 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
             </div>
 
             {/* FOOTER */}
-            <div className="pilot-home-footer" style={{ padding: "14px 48px", borderTop: "1px solid #161616", display: "flex", justifyContent: "space-between" }}>
-                <p style={{ margin: 0, fontSize: "11px", color: "#888" }}>PilotMaster · execution kernel: PilotCore</p>
-                <p style={{ margin: 0, fontSize: "11px", color: "#888" }}>llama-3.1-8b-instant · all-mpnet-base-v2</p>
+            <div className="pilot-home-footer" style={{ padding: "14px 48px", borderTop: `1px solid ${theme.border}`, display: "flex", justifyContent: "space-between" }}>
+                <p style={{ margin: 0, fontSize: "11px", color: theme.textMuted }}>PilotMaster · execution kernel: PilotCore</p>
+                <p style={{ margin: 0, fontSize: "11px", color: theme.textMuted }}>llama-3.1-8b-instant · all-mpnet-base-v2</p>
             </div>
         </div>
     );
@@ -168,16 +183,16 @@ function ProductCard({ name, description, tags, onClick, accent }) {
             onMouseLeave={() => setHovered(false)}
             style={{
                 width: "320px", padding: "28px", borderRadius: "14px", cursor: "pointer",
-                background: hovered ? "#171717" : "#101010",
-                border: `1px solid ${hovered ? "#313131" : "#232323"}`,
+                background: hovered ? theme.surfaceHover : theme.surface,
+                border: `1px solid ${hovered ? "#323c4e" : theme.border}`,
                 transition: "all 0.15s ease",
                 display: "flex", flexDirection: "column", gap: "14px",
                 boxSizing: "border-box",
             }}
         >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h2 style={{ margin: 0, fontSize: "26px", fontFamily: "Georgia, serif", fontWeight: "600", letterSpacing: "-1px", color: "white" }}>{name}</h2>
-                <span style={{ fontSize: "18px", color: hovered ? accent : "#2a2a2a", transition: "color 0.15s" }}>→</span>
+                <h2 style={{ margin: 0, fontSize: "26px", fontFamily: "Georgia, serif", fontWeight: "600", letterSpacing: "-1px", color: theme.textPrimary }}>{name}</h2>
+                <span style={{ fontSize: "18px", color: hovered ? accent : theme.textMuted, transition: "color 0.15s" }}>→</span>
             </div>
             <p style={{ margin: 0, fontSize: "13px", color: "#bbb", lineHeight: 1.6 }}>{description}</p>
             <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
@@ -215,7 +230,7 @@ function Login({ onLogin, goToSignup, goToForgot }) {
     return (
         <AuthShell>
             <h1 className="auth-title" style={authTitleStyle}>PilotMaster</h1>
-            <p style={{ margin: "0 0 36px", color: "#3a3a3a", fontSize: "14px", textAlign: "center" }}>observable AI execution ecosystem</p>
+            <p style={{ margin: "0 0 36px", color: theme.textMuted, fontSize: "14px", textAlign: "center" }}>observable AI execution ecosystem</p>
             <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
             <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && login()} style={inputStyle} />
@@ -223,7 +238,7 @@ function Login({ onLogin, goToSignup, goToForgot }) {
                 {loading ? <ButtonContent text="Loading..." /> : "Login"}
             </button>
             <p onClick={goToSignup} style={linkStyle}>Don't have an account? Sign up</p>
-            <p onClick={goToForgot} style={{ ...linkStyle, color: "#3a3a3a", marginTop: "10px" }}>Forgot password?</p>
+            <p onClick={goToForgot} style={{ ...linkStyle, color: theme.textSecondary, marginTop: "10px" }}>Forgot password?</p>
         </AuthShell>
     );
 }
@@ -248,7 +263,7 @@ function Signup({ goToLogin }) {
     return (
         <AuthShell>
             <h1 className="auth-title" style={authTitleStyle}>PilotMaster</h1>
-            <p style={{ margin: "0 0 36px", color: "#3a3a3a", fontSize: "14px", textAlign: "center" }}>create your account</p>
+            <p style={{ margin: "0 0 36px", color: theme.textMuted, fontSize: "14px", textAlign: "center" }}>create your account</p>
             <input placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} style={inputStyle} />
             <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
             <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} style={inputStyle} />
@@ -292,7 +307,7 @@ function ForgotPassword({ goBack }) {
                 {tokenLoading ? <ButtonContent text="Loading..." /> : "Generate Reset Token"}
             </button>
             {generatedToken && (
-                <div style={{ background: "#141414", border: "1px solid #222", borderRadius: "10px", padding: "12px", fontSize: "12px", color: "#666", wordBreak: "break-all", marginBottom: "14px" }}>
+                <div style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "10px", padding: "12px", fontSize: "12px", color: theme.textSecondary, wordBreak: "break-all", marginBottom: "14px" }}>
                     Token: {generatedToken}
                 </div>
             )}
@@ -308,7 +323,7 @@ function ForgotPassword({ goBack }) {
 
 function AuthShell({ children }) {
     return (
-        <div className="auth-shell" style={{ background: "#0d0d0d", width: "100vw", height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", fontFamily: "Arial", boxSizing: "border-box", overflow: "hidden" }}>
+        <div className="auth-shell" style={{ background: theme.bgPrimary, width: "100vw", height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", fontFamily: "Arial", boxSizing: "border-box", overflow: "hidden" }}>
             <div className="auth-panel" style={{ width: "500px", display: "flex", flexDirection: "column" }}>
                 {children}
             </div>
@@ -318,7 +333,7 @@ function AuthShell({ children }) {
 
 function Splash() {
     return (
-        <div style={{ background: "#0d0d0d", color: "#555", width: "100vw", height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", fontFamily: "Arial", fontSize: "14px", gap: "10px" }}>
+        <div style={{ background: theme.bgPrimary, color: theme.textMuted, width: "100vw", height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", fontFamily: "Arial", fontSize: "14px", gap: "10px" }}>
             <Spinner /> Loading...
         </div>
     );
@@ -346,13 +361,13 @@ function disabledStyle(disabled) {
 
 const inputStyle = {
     width: "100%", padding: "20px 22px", marginBottom: "16px", borderRadius: "14px",
-    border: "1px solid #1e1e1e", background: "#141414", color: "white",
+    border: `1px solid ${theme.border}`, background: theme.surface, color: theme.textPrimary,
     fontSize: "17px", outline: "none", boxSizing: "border-box",
 };
 
 const primaryBtnStyle = {
-    width: "100%", padding: "20px", borderRadius: "14px", border: "1px solid #2a2a2a",
-    background: "#1a1a1a", color: "white", fontSize: "17px", cursor: "pointer",
+    width: "100%", padding: "20px", borderRadius: "14px", border: `1px solid ${theme.border}`,
+    background: theme.surfaceHover, color: theme.textPrimary, fontSize: "17px", cursor: "pointer",
     fontWeight: "600", marginBottom: "8px", boxSizing: "border-box",
 };
 
@@ -362,10 +377,10 @@ const authTitleStyle = {
 };
 
 const linkStyle = {
-    margin: "14px 0 0", color: "#555", textAlign: "center", cursor: "pointer", fontSize: "15px",
+    margin: "14px 0 0", color: theme.textSecondary, textAlign: "center", cursor: "pointer", fontSize: "15px",
 };
 
 const btnStyle = {
-    padding: "10px 20px", background: "#141414", color: "#888",
-    border: "1px solid #222", borderRadius: "10px", cursor: "pointer", fontSize: "13px",
+    padding: "10px 20px", background: theme.surface, color: theme.textSecondary,
+    border: `1px solid ${theme.border}`, borderRadius: "10px", cursor: "pointer", fontSize: "13px",
 };
