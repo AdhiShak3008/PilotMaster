@@ -116,6 +116,15 @@ def get_trace_by_id(trace_id: str):
     return _row_to_trace(row)
 
 
+def delete_all_traces():
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM traces")
+    conn.commit()
+    conn.close()
+
+
 def get_trace(trace_id: str) -> dict | None:
 
     conn = get_connection()

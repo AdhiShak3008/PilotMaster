@@ -72,6 +72,19 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
         }
     }
 
+    async function clearTraces() {
+        if (window.confirm("Clear all TracePilot traces? This action cannot be undone.")) {
+            try {
+                await api.delete("/traces");
+                setSelectedTrace(null);
+                setSelectedId(null);
+                fetchTraces();
+            } catch (error) {
+                console.error("Failed to clear traces", error);
+            }
+        }
+    }
+
     const avgLatency = traces.length
         ? Math.round(traces.reduce((s, t) => s + (t.latency || 0), 0) / traces.length)
         : 0;
@@ -108,6 +121,11 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
                                 cursor: "pointer", fontSize: "12px",
                             }}>DocPilot →</button>
                         )}
+                        <button onClick={clearTraces} style={{
+                            padding: "7px 14px", background: "transparent",
+                            color: "#ef4444", border: "1px solid #2a2a2a", borderRadius: "8px",
+                            cursor: "pointer", fontSize: "12px",
+                        }}>Clear Traces</button>
                     </div>
                 )}
 

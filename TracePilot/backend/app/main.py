@@ -15,6 +15,7 @@ from TracePilot.backend.app.tracing.trace_manager import (
     get_traces,
     get_trace_by_id,
     save_trace,
+    delete_all_traces,
 )
 
 from TracePilot.backend.app.tracing.replay import (
@@ -220,6 +221,13 @@ def get_failures():
 def get_all_traces(retrieval_quality: str | None = None):
 
     return get_traces(retrieval_quality)
+
+
+@app.delete("/traces")
+def clear_all_traces():
+
+    delete_all_traces()
+    return {"status": "ok", "message": "All traces cleared."}
 
 
 @app.get("/traces/compare")

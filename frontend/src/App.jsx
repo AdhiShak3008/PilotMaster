@@ -108,7 +108,7 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
             <div className="pilot-home-topbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "22px 48px", borderBottom: "1px solid #1a1a1a" }}>
                 <div>
                     <h1 style={{ margin: 0, fontSize: "34px", fontFamily: "Georgia, serif", fontWeight: "600", letterSpacing: "-1.5px", color: "white" }}>PilotMaster</h1>
-                    <p style={{ margin: "3px 0 0", fontSize: "12px", color: "#3a3a3a", letterSpacing: "0.05em" }}>observable AI execution ecosystem</p>
+                    <p style={{ margin: "3px 0 0", fontSize: "12px", color: "#999", letterSpacing: "0.05em" }}>observable AI execution ecosystem</p>
                 </div>
                 <div className="pilot-home-actions" style={{ display: "flex", alignItems: "center", gap: "20px" }}>
                     <div style={{ textAlign: "right" }}>
@@ -116,7 +116,7 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
                         <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#444", textTransform: "uppercase", letterSpacing: "0.08em" }}>{currentPlan}</p>
                     </div>
                     {currentPlan === "free" ? (
-                        <button onClick={upgradePlan} disabled={planLoading} style={{ ...btnStyle, color: "#4caf50", borderColor: "#4caf5030", ...disabledStyle(planLoading) }}>
+                        <button onClick={upgradePlan} disabled={planLoading} style={{ ...btnStyle, color: "#ccc", borderColor: "#555", ...disabledStyle(planLoading) }}>
                             {planLoading ? <ButtonContent text="Loading..." /> : "Upgrade to Pro"}
                         </button>
                     ) : (
@@ -130,29 +130,29 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
 
             {/* CENTER */}
             <div className="pilot-home-center" style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: "28px" }}>
-                <p style={{ margin: 0, fontSize: "11px", color: "#333", letterSpacing: "0.12em", textTransform: "uppercase" }}>select a workspace</p>
+                <p style={{ margin: 0, fontSize: "11px", color: "#888", letterSpacing: "0.12em", textTransform: "uppercase" }}>select a workspace</p>
                 <div className="pilot-home-grid" style={{ display: "flex", gap: "20px" }}>
                     <ProductCard
                         name="DocPilot"
                         description="Upload documents. Chat with them. Manage your knowledge base."
                         tags={["RAG", "Chat", "Documents", "Auth"]}
                         onClick={() => onOpen("docpilot")}
-                        accent="#4caf50"
+                        accent="#cccccc"
                     />
                     <ProductCard
                         name="TracePilot"
                         description="Observe every execution. Inspect traces, chunks, evaluation scores and spans."
                         tags={["Traces", "Evaluation", "Observability", "Replay"]}
                         onClick={() => onOpen("tracepilot")}
-                        accent="#7c4dff"
+                        accent="#cccccc"
                     />
                 </div>
             </div>
 
             {/* FOOTER */}
             <div className="pilot-home-footer" style={{ padding: "14px 48px", borderTop: "1px solid #161616", display: "flex", justifyContent: "space-between" }}>
-                <p style={{ margin: 0, fontSize: "11px", color: "#222" }}>PilotMaster · execution kernel: PilotCore</p>
-                <p style={{ margin: 0, fontSize: "11px", color: "#222" }}>llama-3.1-8b-instant · all-mpnet-base-v2</p>
+                <p style={{ margin: 0, fontSize: "11px", color: "#888" }}>PilotMaster · execution kernel: PilotCore</p>
+                <p style={{ margin: 0, fontSize: "11px", color: "#888" }}>llama-3.1-8b-instant · all-mpnet-base-v2</p>
             </div>
         </div>
     );
@@ -168,8 +168,8 @@ function ProductCard({ name, description, tags, onClick, accent }) {
             onMouseLeave={() => setHovered(false)}
             style={{
                 width: "320px", padding: "28px", borderRadius: "14px", cursor: "pointer",
-                background: hovered ? "#141414" : "#111",
-                border: `1px solid ${hovered ? "#2a2a2a" : "#1a1a1a"}`,
+                background: hovered ? "#171717" : "#101010",
+                border: `1px solid ${hovered ? "#313131" : "#232323"}`,
                 transition: "all 0.15s ease",
                 display: "flex", flexDirection: "column", gap: "14px",
                 boxSizing: "border-box",
@@ -179,7 +179,7 @@ function ProductCard({ name, description, tags, onClick, accent }) {
                 <h2 style={{ margin: 0, fontSize: "26px", fontFamily: "Georgia, serif", fontWeight: "600", letterSpacing: "-1px", color: "white" }}>{name}</h2>
                 <span style={{ fontSize: "18px", color: hovered ? accent : "#2a2a2a", transition: "color 0.15s" }}>→</span>
             </div>
-            <p style={{ margin: 0, fontSize: "13px", color: "#555", lineHeight: 1.6 }}>{description}</p>
+            <p style={{ margin: 0, fontSize: "13px", color: "#bbb", lineHeight: 1.6 }}>{description}</p>
             <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
                 {tags.map(tag => (
                     <span key={tag} style={{

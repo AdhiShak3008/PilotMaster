@@ -153,7 +153,7 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
       {sidebarOpen && <button className="mobile-drawer-backdrop" aria-label="Close conversations" onClick={() => setSidebarOpen(false)} />}
 
       {/* SIDEBAR */}
-      <div className={`docpilot-sidebar ${sidebarOpen ? "is-open" : ""}`} style={{ width: "280px", flexShrink: 0, background: "#0d0d0d", borderRight: "1px solid #1e1e1e", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div className={`docpilot-sidebar ${sidebarOpen ? "is-open" : ""}`} style={{ width: "280px", flexShrink: 0, background: "#101010", borderRight: "1px solid #262626", display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
         {/* SIDEBAR HEADER */}
         <div style={{ padding: "24px 24px 16px", flexShrink: 0 }}>
@@ -164,9 +164,9 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
         {/* UPLOAD */}
         <div style={{ padding: "0 16px 16px", flexShrink: 0, borderBottom: "1px solid #1a1a1a" }}>
           <div {...getRootProps()} style={{
-            border: "1px dashed #2a2a2a", borderRadius: "12px", padding: "20px 16px",
-            textAlign: "center", background: isDragActive ? "#1a1a1a" : "#141414",
-            cursor: "pointer", color: "#555", fontSize: "13px", marginBottom: "10px",
+            border: "1px dashed #2e2e2e", borderRadius: "12px", padding: "20px 16px",
+            textAlign: "center", background: isDragActive ? "#1c1c1c" : "#151515",
+            cursor: "pointer", color: "#ccc", fontSize: "13px", marginBottom: "10px",
           }}>
             <input {...getInputProps()} />
             {isDragActive ? <p style={{ margin: 0 }}>Drop here...</p> : <p style={{ margin: 0 }}>Drag & drop or click to upload</p>}
@@ -184,16 +184,16 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
         {/* NEW CHAT */}
         <div style={{ padding: "12px 16px", flexShrink: 0 }}>
           <button onClick={() => { setMessages([]); setCurrentSessionId(null); }} style={{
-            width: "100%", padding: "12px", background: "#161616", color: "white",
-            border: "1px solid #222", borderRadius: "10px", cursor: "pointer", fontSize: "14px",
+            width: "100%", padding: "12px", background: "#1b1b1b", color: "white",
+            border: "1px solid #2b2b2b", borderRadius: "10px", cursor: "pointer", fontSize: "14px",
           }}>+ New Chat</button>
         </div>
 
         {/* SESSIONS */}
         <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 16px" }}>
-          <p style={{ margin: "0 0 10px", fontSize: "11px", color: "#333", textTransform: "uppercase", letterSpacing: "0.08em" }}>Conversations</p>
+          <p style={{ margin: "0 0 10px", fontSize: "11px", color: "#777", textTransform: "uppercase", letterSpacing: "0.08em" }}>Conversations</p>
           {loadingSessions && sessions.length === 0 && (
-            <p style={{ color: "#333", fontSize: "12px", display: "flex", alignItems: "center", gap: "8px" }}><Spinner /> Loading...</p>
+            <p style={{ color: "#777", fontSize: "12px", display: "flex", alignItems: "center", gap: "8px" }}><Spinner /> Loading...</p>
           )}
           {sessions.map(session => (
             <div key={session.id} onClick={() => loadSession(session.id)} style={{
@@ -204,11 +204,11 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
               opacity: loadingSessionId && loadingSessionId !== session.id ? 0.7 : 1,
               transition: "opacity 0.15s",
             }}>
-              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, color: "#ccc" }}>
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, color: "#ddd" }}>
                 {session.title || `Chat #${session.id}`}
               </span>
               {deletingSessionId === session.id && (
-                <span style={{ color: "#444", marginLeft: "8px", display: "inline-flex" }}><Spinner size={12} /></span>
+                <span style={{ color: "#999", marginLeft: "8px", display: "inline-flex" }}><Spinner size={12} /></span>
               )}
               <button onClick={async (e) => {
                 e.stopPropagation();
@@ -221,39 +221,39 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
                 } finally {
                   setDeletingSessionId(null);
                 }
-              }} style={{ background: "transparent", border: "none", color: "#444", cursor: "pointer", fontSize: "14px", marginLeft: "8px", flexShrink: 0 }}>✕</button>
+              }} style={{ background: "transparent", border: "none", color: "#aaa", cursor: "pointer", fontSize: "14px", marginLeft: "8px", flexShrink: 0 }}>✕</button>
             </div>
           ))}
         </div>
       </div>
 
       {/* MAIN */}
-      <div className="docpilot-main" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div className="docpilot-main" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "#0d0d0d" }}>
 
         {/* THIN HEADER */}
-        <div className="docpilot-topbar" style={{ padding: "12px 24px", borderBottom: "1px solid #1e1e1e", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <button className="mobile-menu-button" onClick={() => setSidebarOpen(true)} aria-label="Open conversations">☰</button>
-          <p className="docpilot-active-document" style={{ margin: 0, fontSize: "13px", color: "#555" }}>
-            Active Document: <span style={{ color: source ? "#aaa" : "#333" }}>{source || "None"}</span>
+        <div className="docpilot-topbar" style={{ padding: "12px 24px", borderBottom: "1px solid #1c1c1c", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <button className="mobile-menu-button" onClick={() => setSidebarOpen(true)} aria-label="Open conversations" style={{ color: "#ddd", background: "transparent", border: "1px solid #222", borderRadius: "10px", padding: "8px 12px", cursor: "pointer" }}>☰</button>
+          <p className="docpilot-active-document" style={{ margin: 0, fontSize: "13px", color: "#ccc" }}>
+            Active Document: <span style={{ color: source ? "#ddd" : "#888" }}>{source || "None"}</span>
           </p>
           <div className="docpilot-actions" style={{ display: "flex", gap: "8px" }}>
             {[
-              { label: "← Home", onClick: onHome, color: "#aaa" },
-              { label: "TracePilot →", onClick: onTracePilot, color: "#7c4dff" },
-              { label: resetting ? <ButtonContent text="Resetting..." /> : "Reset", onClick: resetMemory, color: "#aaa", disabled: resetting },
-              { label: "Logout", onClick: onLogout, color: "#aaa" },
+              { label: "← Home", onClick: onHome, color: "#ddd" },
+              { label: "TracePilot →", onClick: onTracePilot, color: "#ddd" },
+              { label: resetting ? <ButtonContent text="Resetting..." /> : "Reset", onClick: resetMemory, color: "#ddd", disabled: resetting },
+              { label: "Logout", onClick: onLogout, color: "#ddd" },
             ].map(btn => (
               <button key={String(btn.label)} onClick={btn.onClick} disabled={btn.disabled} style={{
-                padding: "8px 14px", background: "#161616", color: btn.color,
-                border: "1px solid #222", borderRadius: "8px", cursor: btn.disabled ? "not-allowed" : "pointer", fontSize: "13px",
-                opacity: btn.disabled ? 0.7 : 1, transition: "opacity 0.15s",
+                padding: "8px 14px", background: "#1b1b1b", color: btn.color,
+                border: "1px solid #252525", borderRadius: "8px", cursor: btn.disabled ? "not-allowed" : "pointer", fontSize: "13px",
+                opacity: btn.disabled ? 0.75 : 1, transition: "opacity 0.15s, transform 0.15s",
               }}>{btn.label}</button>
             ))}
           </div>
         </div>{/* CHAT AREA */}
-<div className="docpilot-chat-area" style={{ flex: 1, overflowY: "auto", padding: "32px 60px" }}>
+<div className="docpilot-chat-area" style={{ flex: 1, overflowY: "auto", padding: "32px 60px", background: "#0d0d0d" }}>
   {messages.length === 0 && (
-    <p style={{ color: "#333", fontSize: "16px" }}>Ask questions about your document...</p>
+    <p style={{ color: "#999", fontSize: "16px" }}>Ask questions about your document...</p>
   )}
   {messages
     .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
@@ -273,11 +273,11 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
 
             {/* Sources section remains nicely padded right beneath the unbubbled text */}
             {msg.sources && msg.sources.length > 0 && (
-              <div style={{ marginTop: "16px", paddingLeft: "4px", fontSize: "12px", color: "#444" }}>
-                <p style={{ margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "10px", color: "#555", fontWeight: "bold" }}>Sources</p>
+              <div style={{ marginTop: "16px", paddingLeft: "4px", fontSize: "12px", color: "#aaa" }}>
+                <p style={{ margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "10px", color: "#ccc", fontWeight: "bold" }}>Sources</p>
                 {msg.sources.map((s, idx) => (
-                  <div key={idx} style={{ color: "#666", marginBottom: "2px" }}>
-                    📁 <span style={{ color: "#888" }}>{s.source || s.file_name}</span> · <span style={{ fontStyle: "italic" }}>Page {s.page || s.page_number}</span>
+                  <div key={idx} style={{ color: "#bbb", marginBottom: "2px" }}>
+                    📁 <span style={{ color: "#ddd" }}>{s.source || s.file_name}</span> · <span style={{ fontStyle: "italic" }}>Page {s.page || s.page_number}</span>
                   </div>
                 ))}
               </div>
@@ -305,8 +305,8 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
               }}
             />
             <button onClick={askQuestion} disabled={asking} style={{
-              padding: "16px 28px", borderRadius: "14px", border: "1px solid #222",
-              background: "#1e1e1e", color: asking ? "#555" : "white",
+              padding: "16px 28px", borderRadius: "14px", border: "1px solid #2b2b2b",
+              background: "#1f1f1f", color: asking ? "#888" : "white",
               cursor: asking ? "not-allowed" : "pointer", fontSize: "15px",
               opacity: asking ? 0.7 : 1, transition: "opacity 0.15s",
             }}>{asking ? <ButtonContent text="Sending..." /> : "Send"}</button>
