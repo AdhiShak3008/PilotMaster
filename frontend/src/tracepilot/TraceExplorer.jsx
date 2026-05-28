@@ -158,8 +158,14 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
             </div>
 
             {/* BODY */}
-            <div className="trace-body" style={{ display: "flex", flex: 1, overflow: "hidden" }}>var(--border)", overflowY: "auto", padding: "1rem", background: "var(--bg-secondary)
-var(--text-muted)
+           <div
+  className="trace-body"
+  style={{
+    display: "flex",
+    flex: 1,
+    overflow: "hidden",
+  }}
+>
                 {/* SIDEBAR */}
                 <div className={`trace-sidebar ${sidebarOpen ? "is-open" : ""}`} style={{ width: "34%", borderRight: "1px solid var(--border)", overflowY: "auto", padding: "1rem", background: "var(--bg-secondary)" }}>
                     <p style={{ margin: "0 0 0.75rem", fontSize: "0.72rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
