@@ -1,11 +1,13 @@
-import sqlite3
+import os
+import psycopg
+from psycopg.rows import dict_row
 
-DB_PATH = "tracepilot.db"
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://localhost/tracepilot")
 
 
 def get_connection():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+    conn = psycopg.connect(DATABASE_URL)
+    conn.row_factory = dict_row
     return conn
 
 
@@ -39,13 +41,13 @@ def init_db():
         source TEXT,
         evaluator_version TEXT DEFAULT '1.0',
         prompt_version TEXT DEFAULT '1.0',
-        retriever_version TEXT DEFAULT 'vector_v1'
+        retriever_version TEXT DEFAULT 'hybrid_v1'
     )
     """)
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS ingestion_traces (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         document_id TEXT,
         user_id TEXT,
         filename TEXT,

@@ -18,7 +18,7 @@ def save_trace(trace: Trace):
         top_retrieval_score, spans, failure_types, prompt_mode, evaluation,
         user_id, source, evaluator_version, prompt_version, retriever_version
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """,
         (
             trace.trace_id,
@@ -90,7 +90,7 @@ def get_traces(retrieval_quality=None):
 
     if retrieval_quality:
         cursor.execute(
-            "SELECT * FROM traces WHERE retrieval_quality = ? ORDER BY timestamp DESC",
+            "SELECT * FROM traces WHERE retrieval_quality = %s ORDER BY timestamp DESC",
             (retrieval_quality,),
         )
     else:
@@ -106,7 +106,7 @@ def get_trace_by_id(trace_id: str):
 
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM traces WHERE trace_id = ?", (trace_id,))
+    cursor.execute("SELECT * FROM traces WHERE trace_id = %s", (trace_id,))
     row = cursor.fetchone()
     conn.close()
 
@@ -120,7 +120,7 @@ def get_trace(trace_id: str) -> dict | None:
 
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM traces WHERE trace_id = ?", (trace_id,))
+    cursor.execute("SELECT * FROM traces WHERE trace_id = %s", (trace_id,))
     row = cursor.fetchone()
     conn.close()
 

@@ -115,7 +115,7 @@ def ingest_document(request: IngestDocumentRequest):
             status,
             timestamp
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """,
         (
             request.document_id,
