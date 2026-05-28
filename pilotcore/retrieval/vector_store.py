@@ -225,11 +225,16 @@ def reset_vector_store(user_id: int):
 
     docs_path = get_docs_path(user_id)
 
+    bm25_path = get_bm25_path(user_id)
+
     if os.path.exists(index_path):
         os.remove(index_path)
 
     if os.path.exists(docs_path):
         os.remove(docs_path)
+
+    if os.path.exists(bm25_path):
+        os.remove(bm25_path)
 
     print(f"Vector store reset for user {user_id}")
 
