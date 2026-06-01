@@ -62,8 +62,8 @@ The tool an AI engineer opens while DocPilot is running. Every time a user asks 
 1. User types a question in DocPilot
 2. DocPilot calls `run_pipeline(query, user_id, source)` in PilotCore
 3. PilotCore embeds the query using `all-mpnet-base-v2` (sentence-transformers, runs locally)
-4. PilotCore runs hybrid retrieval using FAISS semantic retrieval and BM25 lexical retrieval
-5. Retrieved chunks are merged, deduplicated, and assembled into the final context before the LLM sees them
+4. PilotCore runs hybrid retrieval using FAISS cosine similarity, BM25 lexical retrieval, and RRF fusion
+5. Retrieved chunks are fused, reranked, and assembled into the final context before the LLM sees them
 6. PilotCore builds a prompt — QA-style for direct questions, summarization-style for broad requests
 7. PilotCore calls Groq (`llama-3.1-8b-instant`) for generation
 8. PilotCore runs four-dimensional evaluation on the response
@@ -88,14 +88,14 @@ Retrieval relevance originally relied on heuristic FAISS L2 distance bands, but 
 
 ## Tech stack
 
-| Layer      | Technology                                                               |
-| ---------- | ------------------------------------------------------------------------ |
-| LLM        | Groq — llama-3.1-8b-instant                                              |
-| Embeddings | sentence-transformers — all-mpnet-base-v2 (local, no server needed)      |
-| Retrieval  | Hybrid retrieval — FAISS semantic search + BM25 lexical retrieval        |
-| Backend    | FastAPI (unified server, DocPilot + TracePilot mounted as sub-apps)      |
-| Database   | PostgreSQL (users, docs, chats, persistent traces, telemetry)            |
-| Frontend   | React + Vite (unified app, tab-switched between DocPilot and TracePilot) |
+| Layer      | Technology                                                                       |
+| ---------- | -------------------------------------------------------------------------------- |
+| LLM        | Groq — llama-3.1-8b-instant                                                      |
+| Embeddings | sentence-transformers — all-mpnet-base-v2 (local, no server needed)              |
+| Retrieval  | Hybrid retrieval — FAISS cosine similarity + BM25 lexical retrieval + RRF fusion |
+| Backend    | FastAPI (unified server, DocPilot + TracePilot mounted as sub-apps)              |
+| Database   | PostgreSQL (users, docs, chats, persistent traces, telemetry)                    |
+| Frontend   | React + Vite (unified app, tab-switched between DocPilot and TracePilot)         |
 
 ---
 
@@ -246,7 +246,7 @@ The retrieval pipeline includes:
 5. Semantic similarity retrieval
 6. Context injection into prompts
 
-The system now supports hybrid retrieval combining dense semantic search with sparse lexical ranking using BM25. Current fusion is intentionally simple — merge + dedupe — while future retrieval work includes Reciprocal Rank Fusion (RRF), cross-encoder reranking, and section-aware retrieval weighting.
+The system now supports hybrid retrieval combining dense semantic search with sparse lexical ranking using BM25. Current fusion is implemented using Reciprocal Rank Fusion (RRF), with a lightweight cross-encoder reranker on the candidate pool, while future work includes section-aware retrieval weighting and metadata-aware prompts.
 
 ---
 
@@ -302,7 +302,7 @@ Every time a user asks a question in DocPilot, it is PilotCore that actually run
 
 - **Embeddings** — converts text to vectors using `all-mpnet-base-v2` running locally via sentence-transformers. No external embedding API, no network dependency.
 - **Vector store** — manages per-user FAISS indexes on disk. Each user's documents live in their own isolated index. Supports add, search, reset, and selective deletion by document.
-- **Retrieval runtime** — searches the vector store using dense vector retrieval, returns the top 10 chunks by L2 distance, then filters out anything above the relevance threshold before the LLM sees it. The top 7 filtered chunks are injected into the prompt context. For broad queries where most results get filtered due to relevance thresholds, the system preserves enough context so the LLM always has grounding material to work with, rather than forcing a complete fallback. The next evolution is hybrid retrieval combining dense vectors with sparse lexical matching (BM25) and cross-encoder reranking.
+- **Retrieval runtime** — searches the vector store using dense vector retrieval with cosine similarity, returns candidate chunks from FAISS and BM25, then fuses them with RRF and reranks with a cross-encoder before the LLM sees them. The top 7 reranked chunks are injected into the prompt context. For broad queries where most results get filtered due to relevance thresholds, the system preserves enough context so the LLM always has grounding material to work with, rather than forcing a complete fallback.
 - **Prompt builder** — detects the query type and builds the appropriate prompt. Direct fact questions get a strict QA prompt. Broad requests like "explain the document" get a summarization prompt.
 - **Generation** — calls Groq's `llama-3.1-8b-instant` with the constructed prompt and returns the response.
 - **Evaluation** — runs four independent evaluators on every response: retrieval relevance, grounding confidence, answerability, and hallucination risk. These are computed from the query, the response, and the retrieved chunks — not from the LLM.
@@ -381,7 +381,7 @@ Retrieval relevance thresholds are currently heuristic and intentionally conserv
 
 **Retrieval is now hybrid.** The system combines FAISS semantic retrieval with BM25 lexical retrieval. This works well for focused factual queries but shows weakness on broad or ambiguous ones — a query like "elaborate the document" has no semantic anchor in the chunk space, so the system falls back to top-k regardless of score. Recent stabilization work added retrieval debug tracing, FAISS ingestion diagnostics, chunk traversal safeguards, duplicate retrieval prevention, OCR ingestion stabilization, hybrid retrieval integration, BM25 persistence, and improved chunk semantic integrity checks. Retrieval quality optimization became a major phase of the project once the system moved beyond basic infrastructure debugging.
 
-The retrieval roadmap also includes section-aware chunking to preserve document structure, semantic evaluators to measure retrieval quality, and retrieval reranking pipelines. These improvements would eliminate the contamination problem where an irrelevant chunk sneaks through because it happened to be the closest vector.
+The retrieval roadmap also includes section-aware chunking to preserve document structure, semantic evaluators to measure retrieval quality, and retrieval analytics dashboards. These improvements would eliminate the contamination problem where an irrelevant chunk sneaks through because it happened to be the closest vector.
 
 ### Observability
 
@@ -401,9 +401,117 @@ These are not oversights. They are the known frontier of the system — the plac
 
 Additional future retrieval work includes:
 
-- Reciprocal Rank Fusion (RRF)
 - Section-aware chunking
-- Cross-encoder reranking
 - Metadata-aware prompts
 - Retrieval analytics dashboards
 - Trace filtering and replay analytics
+
+---
+
+# Roadmap
+
+## Current Retrieval Stack
+
+PilotMaster currently includes:
+
+- Dense semantic retrieval using SentenceTransformers + FAISS
+- Cosine similarity vector search
+- BM25 lexical retrieval
+- Hybrid semantic + keyword retrieval
+- Reciprocal Rank Fusion (RRF)
+- Cross-encoder reranking
+- Retrieval grounding evaluation
+- Trace-level observability and replay tooling
+
+Current evaluation metrics include:
+
+- Faithfulness
+- Hallucination risk
+- Answerability
+- Grounding confidence
+
+TracePilot currently supports:
+
+- Retrieval inspection
+- Chunk ranking visualization
+- Latency tracking
+- Execution spans
+- Replayable traces
+- Retrieval metrics
+
+---
+
+## Planned Improvements
+
+### Parent-Child Retrieval
+
+Retrieve smaller semantic chunks while injecting larger parent context during generation. This is expected to improve fragmented answers and research-paper comprehension.
+
+### Query Rewriting
+
+Rewrite vague user queries into retrieval-optimized search queries before retrieval execution.
+
+Example:
+
+```text
+User Query:
+"What tasks improved most?"
+
+Internal Retrieval Query:
+"Which GLUE tasks showed the largest accuracy gains in BERT?"
+```
+
+### Multi-Query Retrieval
+
+Generate multiple retrieval variants for a single query to improve retrieval recall and semantic coverage.
+
+### Retrieval Benchmark Mode
+
+Add side-by-side retrieval strategy comparison tooling for evaluating:
+
+- BM25
+- FAISS
+- Hybrid RRF
+- Hybrid + Reranking
+
+This would allow direct comparison of:
+
+- latency
+- faithfulness
+- hallucination risk
+- grounding quality
+- retrieval effectiveness
+
+### Metadata-Aware Retrieval
+
+Incorporate:
+
+- section titles
+- page numbers
+- abstracts
+- conclusions
+- headings
+
+into retrieval ranking and filtering.
+
+### Adaptive Chunking
+
+Apply different chunking strategies depending on document type, including:
+
+- research papers
+- source code
+- legal documents
+- markdown
+- structured tables
+
+### Context Compression
+
+Compress retrieved context before generation to improve token efficiency and scalability for long documents.
+
+### Learned Retrieval Evaluation
+
+Experiment with learned evaluators and LLM-as-judge approaches for more advanced grounding and retrieval quality assessment.
+
+### Multi-Vector Retrieval
+
+Explore ColBERT-style token-level retrieval architectures for higher semantic retrieval precision.

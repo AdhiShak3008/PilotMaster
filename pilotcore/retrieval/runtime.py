@@ -75,6 +75,7 @@ def retrieve(
         trace.spans.append(span)
 
         from pilotcore.retrieval.embeddings import get_embedding
+        from pilotcore.retrieval.reranker import rerank_chunks
         from pilotcore.schemas.retrieval import RetrievalResult
 
         query = kwargs.pop("query")
@@ -169,8 +170,30 @@ def retrieve(
             reverse=True,
         )
 
-        # Final top-k
-        deduped = fused_chunks[:top_k]
+        # Cross-encoder reranking
+        # -----------------------------------------
+        # RRF builds a strong hybrid candidate pool.
+        # The reranker then evaluates:
+        #
+        #   (query, chunk)
+        #
+        # jointly to determine final relevance.
+        #
+        # This dramatically improves:
+        # - compare questions
+        # - explanatory questions
+        # - benchmark retrieval
+        # - semantic ranking quality
+
+        RERANK_POOL_SIZE = 20
+
+        rerank_candidates = fused_chunks[:RERANK_POOL_SIZE]
+
+        deduped = rerank_chunks(
+            query=query,
+            candidate_chunks=rerank_candidates,
+            top_k=top_k,
+        )
 
         print("\n===== HYBRID DEBUG =====")
 
