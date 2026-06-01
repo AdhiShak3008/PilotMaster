@@ -101,25 +101,76 @@ def retrieve(
             top_k=top_k,
         )
 
-        combined = vector_result.retrieved_chunks + lexical_result.retrieved_chunks
+        # Reciprocal Rank Fusion (RRF)
+        # -----------------------------------------
+        # Instead of naïvely concatenating vector and BM25 results,
+        # we fuse rankings from both retrievers.
+        #
+        # Why RRF?
+        # - robust across retrievers with different score scales
+        # - boosts chunks retrieved by BOTH systems
+        # - improves hybrid retrieval quality significantly
+        #
+        # Formula:
+        # score += 1 / (RRF_K + rank)
 
-        seen = set()
-        deduped = []
+        from pilotcore.schemas.retrieval import RetrievedChunk
 
-        for chunk in combined:
+        RRF_K = 60
+
+        rrf_scores = {}
+        chunk_map = {}
+
+        # Vector retrieval ranks
+        for rank, chunk in enumerate(vector_result.retrieved_chunks, start=1):
 
             chunk_key = (
                 chunk.chunk.document_id,
                 chunk.chunk.chunk_id,
             )
 
-            if chunk_key in seen:
-                continue
+            if chunk_key not in rrf_scores:
+                rrf_scores[chunk_key] = 0.0
+                chunk_map[chunk_key] = chunk
 
-            seen.add(chunk_key)
-            deduped.append(chunk)
+            rrf_scores[chunk_key] += 1.0 / (RRF_K + rank)
 
-        deduped = deduped[:top_k]
+        # BM25 retrieval ranks
+        for rank, chunk in enumerate(lexical_result.retrieved_chunks, start=1):
+
+            chunk_key = (
+                chunk.chunk.document_id,
+                chunk.chunk.chunk_id,
+            )
+
+            if chunk_key not in rrf_scores:
+                rrf_scores[chunk_key] = 0.0
+                chunk_map[chunk_key] = chunk
+
+            rrf_scores[chunk_key] += 1.0 / (RRF_K + rank)
+
+        # Build fused chunk list
+        fused_chunks = []
+
+        for chunk_key, fused_score in rrf_scores.items():
+
+            original_chunk = chunk_map[chunk_key]
+
+            fused_chunks.append(
+                RetrievedChunk(
+                    chunk=original_chunk.chunk,
+                    score=float(fused_score),
+                )
+            )
+
+        # Global ranking by fused RRF score
+        fused_chunks.sort(
+            key=lambda chunk: chunk.score,
+            reverse=True,
+        )
+
+        # Final top-k
+        deduped = fused_chunks[:top_k]
 
         print("\n===== HYBRID DEBUG =====")
 
@@ -136,7 +187,7 @@ def retrieve(
             query=query,
             retrieved_chunks=deduped,
             latency_ms=(vector_result.latency_ms + lexical_result.latency_ms),
-            retriever_version="hybrid_v1",
+            retriever_version="hybrid_rrf_v1",
         )
 
         end_span(span)
