@@ -54,7 +54,9 @@ def load_user_index(user_id: int):
 
         return faiss.read_index(index_path)
 
-    return faiss.IndexFlatL2(DIMENSION)
+    # Using normalized embeddings + IndexFlatIP approximates cosine similarity.
+    # Higher scores now mean better semantic similarity.
+    return faiss.IndexFlatIP(DIMENSION)
 
 
 def load_user_documents(user_id: int):
@@ -111,6 +113,11 @@ def add_vector(
 
     vector = np.array([embedding], dtype="float32")
 
+    # Defensive normalization at the FAISS boundary.
+    # Embeddings are already normalized upstream, but this guarantees
+    # unit-length vectors before insertion.
+    faiss.normalize_L2(vector)
+
     index.add(vector)
 
     print("FAISS INDEX SIZE:", index.ntotal)
@@ -154,11 +161,16 @@ def search_vectors(
 
     vector = np.array([query_embedding], dtype="float32")
 
-    distances, indices = index.search(vector, min(index.ntotal, 100))
+    # Normalize query vector before cosine similarity search.
+    faiss.normalize_L2(vector)
+
+    # With IndexFlatIP + normalized vectors:
+    # higher score = higher cosine similarity
+    similarities, indices = index.search(vector, min(index.ntotal, 100))
 
     retrieved_chunks = []
 
-    for distance, idx in zip(distances[0], indices[0]):
+    for similarity, idx in zip(similarities[0], indices[0]):
 
         if idx >= len(documents):
             continue
@@ -191,7 +203,7 @@ def search_vectors(
                     page_number=doc.get("page"),
                     metadata=doc.get("metadata", {}),
                 ),
-                score=float(distance),
+                score=float(similarity),
             )
         )
 
@@ -248,13 +260,15 @@ def rebuild_index_without_document(
 
     filtered_documents = [doc for doc in documents if doc["document_id"] != document_id]
 
-    new_index = faiss.IndexFlatL2(DIMENSION)
+    new_index = faiss.IndexFlatIP(DIMENSION)
 
     for doc in filtered_documents:
 
         embedding = get_embedding(doc["text"])
 
         vector = np.array([embedding], dtype="float32")
+
+        faiss.normalize_L2(vector)
 
         new_index.add(vector)
 
