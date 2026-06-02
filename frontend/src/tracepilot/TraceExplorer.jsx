@@ -269,15 +269,7 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
                                     <p style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>No chunks retrieved.</p>
                                 )}
                                 {selectedTrace.retrieved_chunks?.map((chunk, i) => (
-                                    <div className="text-wrap-safe" key={i} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "6px", padding: "0.75rem", marginBottom: "0.5rem" }}>
-                                        <div className="trace-chunk-tags" style={{ display: "flex", gap: "0.4rem", marginBottom: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
-                                            <Tag color="var(--text-muted)">rank {chunk.rank}</Tag>
-                                            <Tag color={chunk.score < 0.8 ? "#4caf50" : chunk.score < 1.2 ? "#ff9800" : "#f44336"}>
-                                                score {chunk.score?.toFixed(3)}
-                                            </Tag>
-                                        </div>
-                                        <p style={{ margin: 0, fontSize: "0.8rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{chunk.text}</p>
-                                    </div>
+                                    <ChunkCard key={i} chunk={chunk} index={i} />
                                 ))}
                             </Section>
 
@@ -313,6 +305,111 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
                     )}
                 </div>
             </div>
+        </div>
+    );
+}
+
+function ChunkCard({ chunk, index }) {
+    const [open, setOpen] = useState(false);
+    const displayScore = chunk.reranker_score ?? chunk.score;
+    const hasLineage = chunk.dense_score != null || chunk.bm25_score != null ||
+        chunk.rrf_score != null || chunk.reranker_score != null || chunk.retrieval_sources?.length > 0;
+
+    const primaryScoreColor = displayScore == null ? "var(--text-muted)"
+        : chunk.reranker_score != null
+            ? (displayScore > 5 ? "#4caf50" : displayScore > 1 ? "#ff9800" : "#f44336")
+            : (displayScore < 0.8 ? "#4caf50" : displayScore < 1.2 ? "#ff9800" : "#f44336");
+
+    return (
+        <div className="text-wrap-safe" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "6px", padding: "0.75rem", marginBottom: "0.5rem" }}>
+            <div className="trace-chunk-tags" style={{ display: "flex", gap: "0.4rem", marginBottom: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+                <Tag color="var(--text-muted)">#{(chunk.final_rank ?? chunk.rank ?? index + 1)}</Tag>
+                {displayScore != null && (
+                    <Tag color={primaryScoreColor}>
+                        {chunk.reranker_score != null ? "reranker" : "score"} {displayScore.toFixed(3)}
+                    </Tag>
+                )}
+                {chunk.retrieval_sources?.map(src => <SourceBadge key={src} source={src} />)}
+                {hasLineage && (
+                    <button onClick={() => setOpen(o => !o)} style={{
+                        marginLeft: "auto", background: "transparent", border: "1px solid var(--border)",
+                        color: "var(--text-muted)", borderRadius: "4px", padding: "0.1rem 0.45rem",
+                        fontSize: "0.65rem", cursor: "pointer",
+                    }}>{open ? "▲ diagnostics" : "▼ diagnostics"}</button>
+                )}
+            </div>
+            {open && hasLineage && <RetrievalDiagnostics chunk={chunk} />}
+            <p style={{ margin: 0, fontSize: "0.8rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{chunk.text}</p>
+        </div>
+    );
+}
+
+const SOURCE_COLORS = { dense: "#3b82f6", bm25: "#f59e0b" };
+
+function SourceBadge({ source }) {
+    const color = SOURCE_COLORS[source] || "#6b7280";
+    return (
+        <span style={{
+            background: color + "18", color, border: `1px solid ${color}40`,
+            borderRadius: "4px", padding: "0.15rem 0.5rem", fontSize: "0.65rem", fontWeight: "600",
+        }}>{source}</span>
+    );
+}
+
+function RetrievalDiagnostics({ chunk }) {
+    const fmt = v => v != null ? (typeof v === "number" ? v.toFixed(3) : v) : "-";
+    const fmtRank = v => v != null ? `#${v}` : "-";
+
+    const stages = [
+        { label: "Semantic", color: "#3b82f6", items: [
+            { k: "Dense Score", v: fmt(chunk.dense_score) },
+            { k: "Dense Rank",  v: fmtRank(chunk.dense_rank) },
+        ]},
+        { label: "Lexical", color: "#f59e0b", items: [
+            { k: "BM25 Score", v: fmt(chunk.bm25_score) },
+            { k: "BM25 Rank",  v: fmtRank(chunk.bm25_rank) },
+        ]},
+        { label: "Fusion", color: "#8b5cf6", items: [
+            { k: "RRF Score", v: fmt(chunk.rrf_score) },
+        ]},
+        { label: "Final Ranking", color: "#10b981", items: [
+            { k: "Reranker Score", v: fmt(chunk.reranker_score) },
+            { k: "Reranker Rank",  v: fmtRank(chunk.reranker_rank) },
+            { k: "Final Rank",     v: fmtRank(chunk.final_rank) },
+        ]},
+    ];
+
+    return (
+        <div style={{ margin: "0.5rem 0 0.6rem", padding: "0.65rem 0.75rem", background: "var(--bg-secondary)", borderRadius: "6px", border: "1px solid var(--border)" }}>
+            {/* Pipeline flow */}
+            <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "0.65rem", flexWrap: "wrap" }}>
+                {stages.map((s, i) => (
+                    <span key={s.label} style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                        <span style={{ fontSize: "0.65rem", fontWeight: "600", color: s.color, textTransform: "uppercase", letterSpacing: "0.06em" }}>{s.label}</span>
+                        {i < stages.length - 1 && <span style={{ color: "var(--text-muted)", fontSize: "0.7rem" }}>→</span>}
+                    </span>
+                ))}
+            </div>
+            {/* Stage groups */}
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                {stages.map(s => (
+                    <div key={s.label} style={{ border: `1px solid ${s.color}30`, borderRadius: "5px", padding: "0.4rem 0.6rem", minWidth: "110px" }}>
+                        <p style={{ margin: "0 0 0.3rem", fontSize: "0.6rem", color: s.color, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: "600" }}>{s.label}</p>
+                        {s.items.map(({ k, v }) => (
+                            <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
+                                <span style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>{k}</span>
+                                <span style={{ fontSize: "0.68rem", color: v === "-" ? "var(--text-muted)" : "var(--text-secondary)", fontWeight: "500" }}>{v}</span>
+                            </div>
+                        ))}
+                    </div>
+                ))}
+            </div>
+            {chunk.retrieval_sources?.length > 0 && (
+                <div style={{ marginTop: "0.5rem", display: "flex", gap: "0.35rem", alignItems: "center" }}>
+                    <span style={{ fontSize: "0.62rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>sources</span>
+                    {chunk.retrieval_sources.map(s => <SourceBadge key={s} source={s} />)}
+                </div>
+            )}
         </div>
     );
 }

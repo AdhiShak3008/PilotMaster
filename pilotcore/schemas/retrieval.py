@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 
 from pilotcore.schemas.chunk import Chunk
@@ -23,4 +23,16 @@ class RetrievedChunk(BaseModel):
     final_rank: Optional[int] = None
 
     # provenance
-    retrieval_sources: List[str] = []
+    retrieval_sources: List[str] = Field(default_factory=list)
+
+
+class RetrievalResult(BaseModel):
+    trace_id: str
+
+    query: str
+
+    retrieved_chunks: List[RetrievedChunk]
+
+    latency_ms: float
+
+    retriever_version: str
