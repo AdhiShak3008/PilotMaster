@@ -1,10 +1,11 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Optional
 
 from pilotcore.schemas.chunk import Chunk
 
 
 class RetrievedChunk(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
     chunk: Chunk
 
     # temporary compatibility field
