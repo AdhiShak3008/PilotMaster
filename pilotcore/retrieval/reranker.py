@@ -49,9 +49,19 @@ def rerank_chunks(
 
     reranked = []
 
-    for chunk, score in zip(candidate_chunks, scores):
+    for rank, (chunk, score) in enumerate(
+        zip(candidate_chunks, scores),
+        start=1,
+    ):
 
+        # legacy compatibility
         chunk.score = float(score)
+
+        # preserve reranker lineage
+        chunk.reranker_score = float(score)
+
+        # temporary ranking metadata
+        chunk.reranker_rank = rank
 
         reranked.append(chunk)
 
@@ -59,5 +69,9 @@ def rerank_chunks(
         key=lambda chunk: chunk.score,
         reverse=True,
     )
+
+    for final_rank, chunk in enumerate(reranked, start=1):
+
+        chunk.final_rank = final_rank
 
     return reranked[:top_k]

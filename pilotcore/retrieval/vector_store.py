@@ -170,7 +170,10 @@ def search_vectors(
 
     retrieved_chunks = []
 
-    for similarity, idx in zip(similarities[0], indices[0]):
+    for rank, (similarity, idx) in enumerate(
+        zip(similarities[0], indices[0]),
+        start=1,
+    ):
 
         if idx >= len(documents):
             continue
@@ -203,7 +206,13 @@ def search_vectors(
                     page_number=doc.get("page"),
                     metadata=doc.get("metadata", {}),
                 ),
+                # legacy compatibility
                 score=float(similarity),
+                # dense retrieval lineage
+                dense_score=float(similarity),
+                dense_rank=rank,
+                # provenance
+                retrieval_sources=["dense"],
             )
         )
 

@@ -75,7 +75,13 @@ def retrieve_chunks(user_id, query, trace_id, source=None, top_k=3, **_):
                 source=doc.get("source"),
                 page_number=doc.get("page"),
             ),
+            # legacy compatibility
             score=float(score),
+            # bm25 lineage
+            bm25_score=float(score),
+            bm25_rank=index + 1,
+            # provenance
+            retrieval_sources=["bm25"],
         )
         for index, (score, doc) in enumerate(matches[:top_k])
     ]

@@ -30,6 +30,7 @@ def load_bm25(path):
 
 
 def search_bm25(bm25, query, chunks, top_k=10):
+
     if bm25 is None:
         return []
 
@@ -43,4 +44,24 @@ def search_bm25(bm25, query, chunks, top_k=10):
         reverse=True,
     )
 
-    return ranked[:top_k]
+    results = []
+
+    for rank, (chunk, score) in enumerate(
+        ranked[:top_k],
+        start=1,
+    ):
+
+        results.append(
+            {
+                "chunk": chunk,
+                # legacy compatibility
+                "score": float(score),
+                # bm25 lineage
+                "bm25_score": float(score),
+                "bm25_rank": rank,
+                # provenance
+                "retrieval_sources": ["bm25"],
+            }
+        )
+
+    return results

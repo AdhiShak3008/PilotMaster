@@ -131,8 +131,33 @@ def retrieve(
             )
 
             if chunk_key not in rrf_scores:
+
                 rrf_scores[chunk_key] = 0.0
+
                 chunk_map[chunk_key] = chunk
+
+            else:
+
+                existing = chunk_map[chunk_key]
+
+                # Preserve dense lineage if newly available
+                if chunk.dense_score is not None:
+                    existing.dense_score = chunk.dense_score
+
+                if chunk.dense_rank is not None:
+                    existing.dense_rank = chunk.dense_rank
+
+                # Preserve BM25 lineage if newly available
+                if chunk.bm25_score is not None:
+                    existing.bm25_score = chunk.bm25_score
+
+                if chunk.bm25_rank is not None:
+                    existing.bm25_rank = chunk.bm25_rank
+
+                # Merge provenance safely
+                existing.retrieval_sources = list(
+                    set(existing.retrieval_sources + chunk.retrieval_sources)
+                )
 
             rrf_scores[chunk_key] += 1.0 / (RRF_K + rank)
 
@@ -145,8 +170,33 @@ def retrieve(
             )
 
             if chunk_key not in rrf_scores:
+
                 rrf_scores[chunk_key] = 0.0
+
                 chunk_map[chunk_key] = chunk
+
+            else:
+
+                existing = chunk_map[chunk_key]
+
+                # Preserve dense lineage if newly available
+                if chunk.dense_score is not None:
+                    existing.dense_score = chunk.dense_score
+
+                if chunk.dense_rank is not None:
+                    existing.dense_rank = chunk.dense_rank
+
+                # Preserve BM25 lineage if newly available
+                if chunk.bm25_score is not None:
+                    existing.bm25_score = chunk.bm25_score
+
+                if chunk.bm25_rank is not None:
+                    existing.bm25_rank = chunk.bm25_rank
+
+                # Merge provenance safely
+                existing.retrieval_sources = list(
+                    set(existing.retrieval_sources + chunk.retrieval_sources)
+                )
 
             rrf_scores[chunk_key] += 1.0 / (RRF_K + rank)
 
@@ -160,7 +210,17 @@ def retrieve(
             fused_chunks.append(
                 RetrievedChunk(
                     chunk=original_chunk.chunk,
+                    # temporary compatibility
                     score=float(fused_score),
+                    # RRF lineage
+                    rrf_score=float(fused_score),
+                    # preserve upstream lineage
+                    dense_score=original_chunk.dense_score,
+                    dense_rank=original_chunk.dense_rank,
+                    bm25_score=original_chunk.bm25_score,
+                    bm25_rank=original_chunk.bm25_rank,
+                    # provenance
+                    retrieval_sources=original_chunk.retrieval_sources,
                 )
             )
 
