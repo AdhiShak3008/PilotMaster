@@ -54,6 +54,15 @@ class IngestChunk(BaseModel):
     text: str
     score: float
     rank: int
+    dense_score: Optional[float] = None
+    dense_rank: Optional[int] = None
+    bm25_score: Optional[float] = None
+    bm25_rank: Optional[int] = None
+    rrf_score: Optional[float] = None
+    reranker_score: Optional[float] = None
+    reranker_rank: Optional[int] = None
+    final_rank: Optional[int] = None
+    retrieval_sources: list = []
 
 
 class IngestRequest(BaseModel):

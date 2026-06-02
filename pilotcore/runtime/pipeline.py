@@ -94,6 +94,15 @@ def _emit_trace(trace, latency_ms: float, evaluation: dict, user_id=None, source
                 "text": c.chunk.text,
                 "score": c.score,
                 "rank": i,
+                "dense_score": c.dense_score,
+                "dense_rank": c.dense_rank,
+                "bm25_score": c.bm25_score,
+                "bm25_rank": c.bm25_rank,
+                "rrf_score": c.rrf_score,
+                "reranker_score": c.reranker_score,
+                "reranker_rank": c.reranker_rank,
+                "final_rank": c.final_rank,
+                "retrieval_sources": c.retrieval_sources,
             }
             for i, c in enumerate(chunks)
         ],

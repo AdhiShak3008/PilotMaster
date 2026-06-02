@@ -9,6 +9,15 @@ class RetrievedChunk(BaseModel):
     text: str
     score: float
     rank: int
+    dense_score: float | None = None
+    dense_rank: int | None = None
+    bm25_score: float | None = None
+    bm25_rank: int | None = None
+    rrf_score: float | None = None
+    reranker_score: float | None = None
+    reranker_rank: int | None = None
+    final_rank: int | None = None
+    retrieval_sources: list = []
 
 
 class Trace(BaseModel):
