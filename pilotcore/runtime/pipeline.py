@@ -53,6 +53,12 @@ def run_pipeline(
             print(f"\nRANK {i + 1}")
             print(chunk_text[:500])
             print("SCORE:", score)
+            print("dense_score:", c.dense_score, "| dense_rank:", c.dense_rank)
+            print("bm25_score:", c.bm25_score, "| bm25_rank:", c.bm25_rank)
+            print("rrf_score:", c.rrf_score)
+            print("reranker_score:", c.reranker_score, "| reranker_rank:", c.reranker_rank)
+            print("final_rank:", c.final_rank)
+            print("retrieval_sources:", c.retrieval_sources)
     else:
         print("(no retrieved chunks)")
 
