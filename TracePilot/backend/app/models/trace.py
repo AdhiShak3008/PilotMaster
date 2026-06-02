@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import List
+from pydantic import BaseModel, Field
+from typing import List, Optional
 from uuid import uuid4
 from datetime import datetime
 
@@ -9,15 +9,15 @@ class RetrievedChunk(BaseModel):
     text: str
     score: float
     rank: int
-    dense_score: float | None = None
-    dense_rank: int | None = None
-    bm25_score: float | None = None
-    bm25_rank: int | None = None
-    rrf_score: float | None = None
-    reranker_score: float | None = None
-    reranker_rank: int | None = None
-    final_rank: int | None = None
-    retrieval_sources: list = []
+    dense_score: Optional[float] = None
+    dense_rank: Optional[int] = None
+    bm25_score: Optional[float] = None
+    bm25_rank: Optional[int] = None
+    rrf_score: Optional[float] = None
+    reranker_score: Optional[float] = None
+    reranker_rank: Optional[int] = None
+    final_rank: Optional[int] = None
+    retrieval_sources: List[str] = Field(default_factory=list)
 
 
 class Trace(BaseModel):
@@ -37,8 +37,8 @@ class Trace(BaseModel):
     grounded: bool
     top_retrieval_score: float = 0.0
     prompt_mode: str = "strict"
-    spans: list = []
-    failure_types: list = []
+    spans: list = Field(default_factory=list)
+    failure_types: list = Field(default_factory=list)
     evaluation: dict = {}
     user_id: str | None = None
     source: str | None = None

@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
 
@@ -62,7 +62,7 @@ class IngestChunk(BaseModel):
     reranker_score: Optional[float] = None
     reranker_rank: Optional[int] = None
     final_rank: Optional[int] = None
-    retrieval_sources: list = []
+    retrieval_sources: List[str] = Field(default_factory=list)
 
 
 class IngestRequest(BaseModel):
