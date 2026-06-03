@@ -1,5 +1,4 @@
 import re
-import math
 
 STOPWORDS = {
     "the",
@@ -79,16 +78,6 @@ BROAD_QUERY_VERBS = {
     "overview",
 }
 
-FACTUAL_QUERY_WORDS = {
-    "what",
-    "which",
-    "who",
-    "when",
-    "where",
-    "how many",
-    "how much",
-}
-
 
 def _chunk_texts(chunks: list) -> list[str]:
 
@@ -106,18 +95,13 @@ def _meaningful_words(text: str) -> set:
 
 
 def _classify_query(query: str) -> str:
-    """
-    Classify query intent to inform answerability evaluation.
-    """
 
     q = query.lower().strip()
+
     words = set(q.split())
 
     if any(v in words for v in BROAD_QUERY_VERBS):
         return "broad_query"
-
-    if q.startswith("who is") or (q.startswith("what is") and len(words) <= 5):
-        return "direct_fact"
 
     return "direct_fact"
 
@@ -168,90 +152,214 @@ def evaluate_retrieval_relevance(
             "retrieval_relevance": "none",
             "retrieval_score_avg": 0.0,
             "top_retrieval_score": 0.0,
+            "reranker_confidence_avg": 0.0,
+            "reranker_margin": 0.0,
+            "retrieval_consensus": "none",
         }
 
-    relevance = evaluate_query_relevance(query, chunks)
+    overlap_relevance = evaluate_query_relevance(
+        query,
+        chunks,
+    )
 
-    # Normalize raw scores (logits or BM25) into [0,1] confidences using sigmoid
-    normalized_scores = []
-    for s in scores or []:
-        try:
-            conf = 1.0 / (1.0 + math.exp(-float(s)))
-        except OverflowError:
-            conf = 0.0 if s < 0 else 1.0
-        normalized_scores.append(conf)
+    reranker_confidences = []
 
-    avg_score = (
-        round(sum(normalized_scores) / len(normalized_scores), 4)
-        if normalized_scores
+    reranker_raw_scores = []
+
+    for c in chunks:
+
+        if isinstance(c, dict):
+
+            confidence = c.get("reranker_confidence")
+
+            raw_score = c.get("reranker_score")
+
+            sources = (
+                c.get(
+                    "retrieval_sources",
+                    [],
+                )
+                or []
+            )
+
+        else:
+
+            confidence = getattr(
+                c,
+                "reranker_confidence",
+                None,
+            )
+
+            raw_score = getattr(
+                c,
+                "reranker_score",
+                None,
+            )
+
+            sources = (
+                getattr(
+                    c,
+                    "retrieval_sources",
+                    [],
+                )
+                or []
+            )
+
+        if confidence is not None:
+            reranker_confidences.append(float(confidence))
+
+        if raw_score is not None:
+            reranker_raw_scores.append(float(raw_score))
+
+    reranker_confidence_avg = round(
+        sum(reranker_confidences) / max(len(reranker_confidences), 1),
+        4,
+    )
+
+    top_retrieval_score = (
+        round(
+            max(reranker_confidences),
+            4,
+        )
+        if reranker_confidences
         else 0.0
     )
 
-    top_score = round(max(normalized_scores), 4) if normalized_scores else 0.0
+    retrieval_score_avg = reranker_confidence_avg
 
-    # Reranker-specific metrics (preserve raw logits for debugging)
-    reranker_raw_scores = []
-    for c in chunks:
-        if isinstance(c, dict):
-            val = c.get("reranker_score")
-        else:
-            val = getattr(c, "reranker_score", None)
-        if val is not None:
-            reranker_raw_scores.append(val)
-    if reranker_raw_scores:
-        # normalized reranker confidence average
-        reranker_confidences = []
-        for r in reranker_raw_scores:
-            try:
-                reranker_confidences.append(1.0 / (1.0 + math.exp(-float(r))))
-            except OverflowError:
-                reranker_confidences.append(0.0 if r < 0 else 1.0)
-        reranker_confidence_avg = round(
-            sum(reranker_confidences) / len(reranker_confidences), 4
+    # ===== Margin =====
+
+    if len(reranker_raw_scores) >= 2:
+
+        sorted_raw = sorted(
+            reranker_raw_scores,
+            reverse=True,
         )
-        # margin between top two reranker logits
-        if len(reranker_raw_scores) >= 2:
-            sorted_raw = sorted(reranker_raw_scores, reverse=True)
-            reranker_margin = round(float(sorted_raw[0] - sorted_raw[1]), 4)
-        else:
-            reranker_margin = 0.0
+
+        reranker_margin = round(
+            sorted_raw[0] - sorted_raw[1],
+            4,
+        )
+
     else:
-        reranker_confidence_avg = 0.0
+
         reranker_margin = 0.0
 
-    # Retrieval consensus across chunks: consensus if chunk retrieved by both dense and bm25
+    # ===== Retrieval Agreement =====
+
     consensus_counts = {
-        "consensus": 0,
-        "semantic-only": 0,
-        "lexical-only": 0,
+        "strong": 0,
+        "semantic": 0,
+        "lexical": 0,
         "none": 0,
     }
+
     for c in chunks:
+
         if isinstance(c, dict):
-            sources = c.get("retrieval_sources", []) or []
+
+            sources = (
+                c.get(
+                    "retrieval_sources",
+                    [],
+                )
+                or []
+            )
+
         else:
-            sources = getattr(c, "retrieval_sources", []) or []
+
+            sources = (
+                getattr(
+                    c,
+                    "retrieval_sources",
+                    [],
+                )
+                or []
+            )
+
         has_dense = "dense" in sources
+
         has_bm25 = "bm25" in sources
+
         if has_dense and has_bm25:
-            consensus_counts["consensus"] += 1
+
+            consensus_counts["strong"] += 1
+
         elif has_dense:
-            consensus_counts["semantic-only"] += 1
+
+            consensus_counts["semantic"] += 1
+
         elif has_bm25:
-            consensus_counts["lexical-only"] += 1
+
+            consensus_counts["lexical"] += 1
+
         else:
+
             consensus_counts["none"] += 1
 
-    # pick the most common consensus type
-    retrieval_consensus = max(consensus_counts.items(), key=lambda x: x[1])[0]
+    retrieval_consensus = max(
+        consensus_counts.items(),
+        key=lambda x: x[1],
+    )[0]
+
+    # ===== Composite Retrieval Quality =====
+
+    quality_score = 0.0
+
+    # confidence dominates
+    quality_score += reranker_confidence_avg * 0.7
+
+    # agreement boost
+    if retrieval_consensus == "strong":
+
+        quality_score += 0.2
+
+    elif retrieval_consensus in (
+        "semantic",
+        "lexical",
+    ):
+
+        quality_score += 0.1
+
+    # certainty boost
+    if reranker_margin > 1.5:
+
+        quality_score += 0.1
+
+    elif reranker_margin > 0.5:
+
+        quality_score += 0.05
+
+    # overlap fallback
+    if overlap_relevance == "high":
+
+        quality_score += 0.05
+
+    quality_score = round(
+        min(quality_score, 1.0),
+        4,
+    )
+
+    if quality_score >= 0.65:
+
+        retrieval_relevance = "high"
+
+    elif quality_score >= 0.35:
+
+        retrieval_relevance = "medium"
+
+    else:
+
+        retrieval_relevance = "low"
 
     return {
-        "retrieval_relevance": relevance,
-        "retrieval_score_avg": avg_score,
-        "top_retrieval_score": top_score,
+        "retrieval_relevance": retrieval_relevance,
+        "retrieval_score_avg": retrieval_score_avg,
+        "top_retrieval_score": top_retrieval_score,
         "reranker_confidence_avg": reranker_confidence_avg,
         "reranker_margin": reranker_margin,
         "retrieval_consensus": retrieval_consensus,
+        "retrieval_quality_score": quality_score,
     }
 
 
@@ -259,13 +367,11 @@ def evaluate_grounding(
     response: str,
     chunks: list,
 ) -> dict:
-    """
-    Did the model answer USING retrieved evidence?
-    """
 
     abstained = any(phrase in response.lower() for phrase in ABSTENTION_PHRASES)
 
     if abstained:
+
         return {
             "grounded": True,
             "grounding_confidence": "high",
@@ -283,6 +389,7 @@ def evaluate_grounding(
         all_chunk_words.update(_meaningful_words(text))
 
     if not response_words:
+
         return {
             "grounded": False,
             "grounding_confidence": "none",
@@ -298,16 +405,6 @@ def evaluate_grounding(
         2,
     )
 
-    length_penalty = min(
-        1.0,
-        len(response_words) / 150,
-    )
-
-    adjusted_hallucination = round(
-        (1.0 - faithfulness) * (0.7 + 0.3 * length_penalty),
-        2,
-    )
-
     grounded = len(overlap) >= 3
 
     grounding_confidence = (
@@ -315,9 +412,7 @@ def evaluate_grounding(
     )
 
     hallucination_risk = (
-        "low"
-        if adjusted_hallucination < 0.35
-        else "medium" if adjusted_hallucination < 0.6 else "high"
+        "low" if faithfulness > 0.6 else "medium" if faithfulness > 0.3 else "high"
     )
 
     return {
@@ -334,12 +429,9 @@ def evaluate_answerability(
     chunks: list,
     scores: list[float] = None,
 ) -> dict:
-    """
-    Did retrieved context contain enough
-    information to answer?
-    """
 
     if not chunks:
+
         return {
             "answerability": "none",
             "context_sufficiency": "insufficient",
@@ -351,15 +443,14 @@ def evaluate_answerability(
 
     query_words = _meaningful_words(query)
 
-    relevant_chunks = chunks
-
     all_chunk_words = set()
 
-    for text in _chunk_texts(relevant_chunks):
+    for text in _chunk_texts(chunks):
 
         all_chunk_words.update(_meaningful_words(text))
 
     if not query_words:
+
         return {
             "answerability": "partial",
             "context_sufficiency": "partial",
@@ -374,29 +465,23 @@ def evaluate_answerability(
         2,
     )
 
-    if query_type == "broad_query":
+    if coverage >= 0.5:
 
-        if coverage >= 0.4:
-            answerability = "partial"
-            sufficiency = "partial"
+        answerability = "high"
 
-        else:
-            answerability = "none"
-            sufficiency = "insufficient"
+        sufficiency = "sufficient"
+
+    elif coverage >= 0.2:
+
+        answerability = "partial"
+
+        sufficiency = "partial"
 
     else:
 
-        if coverage >= 0.5:
-            answerability = "high"
-            sufficiency = "sufficient"
+        answerability = "none"
 
-        elif coverage >= 0.2:
-            answerability = "partial"
-            sufficiency = "partial"
-
-        else:
-            answerability = "none"
-            sufficiency = "insufficient"
+        sufficiency = "insufficient"
 
     return {
         "answerability": answerability,
@@ -412,9 +497,6 @@ def run_evaluation(
     chunks: list,
     scores: list[float],
 ) -> dict:
-    """
-    Full multi-dimensional evaluation contract.
-    """
 
     retrieval = evaluate_retrieval_relevance(
         query,

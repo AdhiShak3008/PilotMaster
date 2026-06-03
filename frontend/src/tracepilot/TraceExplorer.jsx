@@ -14,7 +14,7 @@ const relevanceColor = {
   unknown: "#6b7280",
 };
 const confColor = { high: "#16a34a", medium: "#eab308", moderate: "#eab308", low: "#ef4444", none: "#6b7280", unknown: "#6b7280" };
-const consensusColor = { "consensus": "#16a34a", "semantic-only": "#3b82f6", "lexical-only": "#f59e0b", "none": "#6b7280" };
+const consensusColor = { strong: "#16a34a", semantic: "#3b82f6", lexical: "#f59e0b", none: "#6b7280" };
 const riskColor = { low: "#16a34a", medium: "#eab308", moderate: "#eab308", high: "#ef4444", none: "#6b7280", unknown: "#6b7280" };
 const ansColor = { high: "#16a34a", medium: "#eab308", moderate: "#eab308", partial: "#eab308", low: "#ef4444", none: "#ef4444", unknown: "#6b7280", abstained: "#7c4dff" };
 
@@ -244,9 +244,9 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
                                 {(() => {
                                     const ev = selectedTrace.evaluation || {};
                                     return (<>
-                                        <Tag color={relevanceColor[ev.retrieval_relevance] || "var(--text-muted)"}>retrieval: {ev.retrieval_relevance || "—"}</Tag>
+                                        <Tag color={relevanceColor[ev.retrieval_relevance] || "var(--text-muted)"}>retrieval quality: {ev.retrieval_relevance || "—"}</Tag>
                                         <Tag color={confColor[ev.grounding_confidence] || "var(--text-muted)"}>grounding: {ev.grounding_confidence || "—"}</Tag>
-                                        <Tag color={consensusColor[ev.retrieval_consensus] || "#6b7280"}>consensus: {ev.retrieval_consensus || "—"}</Tag>
+                                        <Tag color={consensusColor[ev.retrieval_consensus] || "#6b7280"}>retrieval agreement: {ev.retrieval_consensus || "—"}</Tag>
                                         <Tag color={ansColor[ev.answerability] || "var(--text-muted)"}>answerability: {ev.answerability || "—"}</Tag>
                                         <Tag color={riskColor[ev.hallucination_risk] || "var(--text-muted)"}>hallucination risk: {ev.hallucination_risk || "—"}</Tag>
                                         {ev.abstained && <Tag color="#7c4dff">abstained ✓</Tag>}
@@ -278,7 +278,8 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
                             {/* METRICS */}
                             <Section title="Metrics">
                                 <div className="trace-metrics-row" style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                                    <MetricBox label="Retrieval Avg" value={selectedTrace.retrieval_score_avg?.toFixed(3)} />
+                                    <MetricBox label="Avg Retrieval Confidence" value={selectedTrace.evaluation?.reranker_confidence_avg?.toFixed(3) ?? "—"} />
+                                    <MetricBox label="Retrieval Quality Score" value={selectedTrace.evaluation?.retrieval_quality_score?.toFixed(3) ?? "—"} />
                                     <MetricBox label="Chunk Count" value={selectedTrace.chunk_count} />
                                     <MetricBox label="Response Length" value={`${selectedTrace.response_length} chars`} />
                                     <MetricBox label="Faithfulness" value={selectedTrace.evaluation?.faithfulness_score?.toFixed(2) ?? "—"} />
@@ -317,10 +318,9 @@ function ChunkCard({ chunk, index }) {
     const hasLineage = chunk.dense_score != null || chunk.bm25_score != null ||
         chunk.rrf_score != null || chunk.reranker_score != null || chunk.retrieval_sources?.length > 0;
 
-    const primaryScoreColor = displayScore == null ? "var(--text-muted)"
-        : chunk.reranker_score != null
-            ? (displayScore > 5 ? "#4caf50" : displayScore > 1 ? "#ff9800" : "#f44336")
-            : (displayScore < 0.8 ? "#4caf50" : displayScore < 1.2 ? "#ff9800" : "#f44336");
+    const primaryScoreColor = chunk.reranker_confidence != null
+        ? (chunk.reranker_confidence > 0.7 ? "#16a34a" : chunk.reranker_confidence > 0.4 ? "#eab308" : "#ef4444")
+        : "var(--text-muted)";
 
     return (
         <div className="text-wrap-safe" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "6px", padding: "0.75rem", marginBottom: "0.5rem" }}>
@@ -332,11 +332,11 @@ function ChunkCard({ chunk, index }) {
             <div className="trace-chunk-tags" style={{ display: "flex", gap: "0.4rem", marginBottom: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
                 {displayScore != null && (
                     <Tag color={primaryScoreColor}>
-                        {chunk.reranker_score != null ? "reranker" : "score"} {displayScore.toFixed(3)}
+                        {chunk.reranker_score != null ? "reranker logit" : "score"} {displayScore.toFixed(3)}
                     </Tag>
                 )}
                 {chunk.reranker_confidence != null && (
-                    <Tag color={chunk.reranker_confidence > 0.7 ? "#16a34a" : chunk.reranker_confidence > 0.4 ? "#eab308" : "#ef4444"}>conf {chunk.reranker_confidence.toFixed(2)}</Tag>
+                    <Tag color={chunk.reranker_confidence > 0.7 ? "#16a34a" : chunk.reranker_confidence > 0.4 ? "#eab308" : "#ef4444"}>confidence {chunk.reranker_confidence.toFixed(2)}</Tag>
                 )}
                 {chunk.retrieval_sources?.map(src => <SourceBadge key={src} source={src} />)}
                 {hasLineage && (
