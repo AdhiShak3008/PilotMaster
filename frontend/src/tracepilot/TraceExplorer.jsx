@@ -14,7 +14,7 @@ const relevanceColor = {
   unknown: "#6b7280",
 };
 const confColor = { high: "#16a34a", medium: "#eab308", moderate: "#eab308", low: "#ef4444", none: "#6b7280", unknown: "#6b7280" };
-const consensusColor = { strong: "#16a34a", semantic: "#3b82f6", lexical: "#f59e0b", none: "#6b7280" };
+const consensusColor = { strong: "#16a34a", semantic: "#3b82f6", lexical: "#f59e0b", none: "#6b7280", consensus: "#16a34a", "semantic-only": "#3b82f6", "lexical-only": "#f59e0b" };
 const riskColor = { low: "#16a34a", medium: "#eab308", moderate: "#eab308", high: "#ef4444", none: "#6b7280", unknown: "#6b7280" };
 const ansColor = { high: "#16a34a", medium: "#eab308", moderate: "#eab308", partial: "#eab308", low: "#ef4444", none: "#ef4444", unknown: "#6b7280", abstained: "#7c4dff" };
 
