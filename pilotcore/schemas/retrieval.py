@@ -16,6 +16,8 @@ class RetrievedChunk(BaseModel):
     bm25_score: Optional[float] = None
     rrf_score: Optional[float] = None
     reranker_score: Optional[float] = None
+    reranker_confidence: Optional[float] = None
+    reranker_margin: Optional[float] = None
 
     # ranking metadata
     dense_rank: Optional[int] = None

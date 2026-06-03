@@ -15,6 +15,7 @@ class RetrievedChunk(BaseModel):
     bm25_rank: Optional[int] = None
     rrf_score: Optional[float] = None
     reranker_score: Optional[float] = None
+    reranker_confidence: Optional[float] = None
     reranker_rank: Optional[int] = None
     final_rank: Optional[int] = None
     retrieval_sources: List[str] = Field(default_factory=list)
@@ -45,6 +46,7 @@ class Trace(BaseModel):
     evaluator_version: str = "1.0"
     prompt_version: str = "1.0"
     retriever_version: str = "vector_v1"
+    retrieval_consensus: str | None = None
 
     @staticmethod
     def create_id():

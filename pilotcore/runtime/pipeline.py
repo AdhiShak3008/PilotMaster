@@ -56,7 +56,9 @@ def run_pipeline(
             print("dense_score:", c.dense_score, "| dense_rank:", c.dense_rank)
             print("bm25_score:", c.bm25_score, "| bm25_rank:", c.bm25_rank)
             print("rrf_score:", c.rrf_score)
-            print("reranker_score:", c.reranker_score, "| reranker_rank:", c.reranker_rank)
+            print(
+                "reranker_score:", c.reranker_score, "| reranker_rank:", c.reranker_rank
+            )
             print("final_rank:", c.final_rank)
             print("retrieval_sources:", c.retrieval_sources)
     else:
@@ -106,12 +108,15 @@ def _emit_trace(trace, latency_ms: float, evaluation: dict, user_id=None, source
                 "bm25_rank": c.bm25_rank,
                 "rrf_score": c.rrf_score,
                 "reranker_score": c.reranker_score,
+                "reranker_confidence": getattr(c, "reranker_confidence", None),
                 "reranker_rank": c.reranker_rank,
                 "final_rank": c.final_rank,
+                "reranker_margin": getattr(c, "reranker_margin", None),
                 "retrieval_sources": c.retrieval_sources,
             }
             for i, c in enumerate(chunks)
         ],
+        "retrieval_consensus": evaluation.get("retrieval_consensus"),
         "retrieval_score_avg": evaluation.get("retrieval_score_avg", 0.0),
         "top_retrieval_score": evaluation.get("top_retrieval_score", 0.0),
         "chunk_count": len(chunks),

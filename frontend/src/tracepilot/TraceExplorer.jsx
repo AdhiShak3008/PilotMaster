@@ -245,6 +245,7 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
                                     return (<>
                                         <Tag color={relevanceColor[ev.retrieval_relevance] || "var(--text-muted)"}>retrieval: {ev.retrieval_relevance || "—"}</Tag>
                                         <Tag color={confColor[ev.grounding_confidence] || "var(--text-muted)"}>grounding: {ev.grounding_confidence || "—"}</Tag>
+                                        <Tag color={confColor[ev.retrieval_consensus] || "var(--text-muted)"}>consensus: {ev.retrieval_consensus || "—"}</Tag>
                                         <Tag color={ansColor[ev.answerability] || "var(--text-muted)"}>answerability: {ev.answerability || "—"}</Tag>
                                         <Tag color={riskColor[ev.hallucination_risk] || "var(--text-muted)"}>hallucination risk: {ev.hallucination_risk || "—"}</Tag>
                                         {ev.abstained && <Tag color="#7c4dff">abstained ✓</Tag>}
@@ -322,12 +323,19 @@ function ChunkCard({ chunk, index }) {
 
     return (
         <div className="text-wrap-safe" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "6px", padding: "0.75rem", marginBottom: "0.5rem" }}>
+            <div style={{ textAlign: "center", marginBottom: "0.6rem" }}>
+                <span style={{ fontSize: "0.78rem", fontWeight: "600", color: "var(--text-muted)", letterSpacing: "0.08em" }}>
+                    #{chunk.final_rank ?? chunk.rank ?? index + 1}
+                </span>
+            </div>
             <div className="trace-chunk-tags" style={{ display: "flex", gap: "0.4rem", marginBottom: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
-                <Tag color="var(--text-muted)">#{(chunk.final_rank ?? chunk.rank ?? index + 1)}</Tag>
                 {displayScore != null && (
                     <Tag color={primaryScoreColor}>
                         {chunk.reranker_score != null ? "reranker" : "score"} {displayScore.toFixed(3)}
                     </Tag>
+                )}
+                {chunk.reranker_confidence != null && (
+                    <Tag color={chunk.reranker_confidence > 0.7 ? "#16a34a" : chunk.reranker_confidence > 0.4 ? "#eab308" : "#ef4444"}>conf {chunk.reranker_confidence.toFixed(2)}</Tag>
                 )}
                 {chunk.retrieval_sources?.map(src => <SourceBadge key={src} source={src} />)}
                 {hasLineage && (
@@ -376,6 +384,8 @@ function RetrievalDiagnostics({ chunk }) {
             { k: "Reranker Score", v: fmt(chunk.reranker_score) },
             { k: "Reranker Rank",  v: fmtRank(chunk.reranker_rank) },
             { k: "Final Rank",     v: fmtRank(chunk.final_rank) },
+            { k: "Reranker Conf",  v: fmt(chunk.reranker_confidence) },
+            { k: "Reranker Margin", v: fmt(chunk.reranker_margin) },
         ]},
     ];
 

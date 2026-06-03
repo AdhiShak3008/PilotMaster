@@ -60,6 +60,7 @@ class IngestChunk(BaseModel):
     bm25_rank: Optional[int] = None
     rrf_score: Optional[float] = None
     reranker_score: Optional[float] = None
+    reranker_confidence: Optional[float] = None
     reranker_rank: Optional[int] = None
     final_rank: Optional[int] = None
     retrieval_sources: List[str] = Field(default_factory=list)
@@ -89,6 +90,7 @@ class IngestRequest(BaseModel):
     evaluator_version: Optional[str] = "1.0"
     prompt_version: Optional[str] = "1.0"
     retriever_version: Optional[str] = "vector_v1"
+    retrieval_consensus: Optional[str] = None
 
 
 class EventRequest(BaseModel):

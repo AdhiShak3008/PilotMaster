@@ -1,4 +1,5 @@
 import re
+import math
 
 STOPWORDS = {
     "the",
@@ -169,33 +170,88 @@ def evaluate_retrieval_relevance(
             "top_retrieval_score": 0.0,
         }
 
-    relevance = evaluate_query_relevance(
-        query,
-        chunks,
-    )
+    relevance = evaluate_query_relevance(query, chunks)
+
+    # Normalize raw scores (logits or BM25) into [0,1] confidences using sigmoid
+    normalized_scores = []
+    for s in scores or []:
+        try:
+            conf = 1.0 / (1.0 + math.exp(-float(s)))
+        except OverflowError:
+            conf = 0.0 if s < 0 else 1.0
+        normalized_scores.append(conf)
 
     avg_score = (
-        round(
-            sum(scores) / len(scores),
-            4,
-        )
-        if scores
+        round(sum(normalized_scores) / len(normalized_scores), 4)
+        if normalized_scores
         else 0.0
     )
 
-    top_score = (
-        round(
-            max(scores),
-            4,
+    top_score = round(max(normalized_scores), 4) if normalized_scores else 0.0
+
+    # Reranker-specific metrics (preserve raw logits for debugging)
+    reranker_raw_scores = []
+    for c in chunks:
+        if isinstance(c, dict):
+            val = c.get("reranker_score")
+        else:
+            val = getattr(c, "reranker_score", None)
+        if val is not None:
+            reranker_raw_scores.append(val)
+    if reranker_raw_scores:
+        # normalized reranker confidence average
+        reranker_confidences = []
+        for r in reranker_raw_scores:
+            try:
+                reranker_confidences.append(1.0 / (1.0 + math.exp(-float(r))))
+            except OverflowError:
+                reranker_confidences.append(0.0 if r < 0 else 1.0)
+        reranker_confidence_avg = round(
+            sum(reranker_confidences) / len(reranker_confidences), 4
         )
-        if scores
-        else 0.0
-    )
+        # margin between top two reranker logits
+        if len(reranker_raw_scores) >= 2:
+            sorted_raw = sorted(reranker_raw_scores, reverse=True)
+            reranker_margin = round(float(sorted_raw[0] - sorted_raw[1]), 4)
+        else:
+            reranker_margin = 0.0
+    else:
+        reranker_confidence_avg = 0.0
+        reranker_margin = 0.0
+
+    # Retrieval consensus across chunks: consensus if chunk retrieved by both dense and bm25
+    consensus_counts = {
+        "consensus": 0,
+        "semantic-only": 0,
+        "lexical-only": 0,
+        "none": 0,
+    }
+    for c in chunks:
+        if isinstance(c, dict):
+            sources = c.get("retrieval_sources", []) or []
+        else:
+            sources = getattr(c, "retrieval_sources", []) or []
+        has_dense = "dense" in sources
+        has_bm25 = "bm25" in sources
+        if has_dense and has_bm25:
+            consensus_counts["consensus"] += 1
+        elif has_dense:
+            consensus_counts["semantic-only"] += 1
+        elif has_bm25:
+            consensus_counts["lexical-only"] += 1
+        else:
+            consensus_counts["none"] += 1
+
+    # pick the most common consensus type
+    retrieval_consensus = max(consensus_counts.items(), key=lambda x: x[1])[0]
 
     return {
         "retrieval_relevance": relevance,
         "retrieval_score_avg": avg_score,
         "top_retrieval_score": top_score,
+        "reranker_confidence_avg": reranker_confidence_avg,
+        "reranker_margin": reranker_margin,
+        "retrieval_consensus": retrieval_consensus,
     }
 
 
