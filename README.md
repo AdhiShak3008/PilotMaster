@@ -1,27 +1,73 @@
-# PilotMaster
-
-PilotMaster is a retrieval engineering and AI observability platform built around one idea:
-
-> Every AI response should be inspectable, replayable, and measurable.
-
-The system combines:
-
-- Hybrid retrieval
-- Retrieval lineage tracing
-- Reranker-aware evaluation
-- Replayable execution traces
-- Retrieval observability tooling
-
-PilotMaster emerged after I combined two separate projects — DocPilot, a document intelligence RAG system, and TracePilot, an LLM observability platform — to study retrieval behavior, grounding, and AI execution in real time. The goal was to move beyond the “black box” nature of most GenAI systems by making every retrieval, ranking decision, evaluator signal, and execution trace inspectable and replayable.
+---
+title: PilotMaster
+emoji: 🚀
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
 
 ---
 
-# Core Architecture
+# PilotMaster
 
-## PilotCore
+PilotMaster is a retrieval engineering and AI observability platform built to make RAG systems inspectable instead of opaque.
 
-Shared execution kernel responsible for:
+The project started after I combined two separate systems:
 
+- **DocPilot** — a document intelligence and RAG platform
+- **TracePilot** — an LLM observability and replay system
+
+The idea was simple:
+
+> What if every retrieval decision, reranker score, evaluator signal, and execution trace could be inspected in real time instead of hidden behind a chatbot response?
+
+Most GenAI systems behave like black boxes. You upload a document, ask a question, and receive an answer with no visibility into:
+
+- what was retrieved
+- why chunks ranked the way they did
+- whether retrievers agreed
+- whether the answer stayed grounded
+- how confident the retrieval pipeline actually was
+
+PilotMaster was built to expose that entire retrieval journey.
+
+---
+
+# What PilotMaster Does
+
+PilotMaster combines:
+
+- hybrid retrieval
+- reranking
+- retrieval lineage tracing
+- grounded generation
+- replayable execution traces
+- retrieval observability
+- reranker-aware evaluation
+
+The system focuses heavily on:
+
+- retrieval debugging
+- ranking behavior
+- grounding analysis
+- hallucination inspection
+- retrieval quality diagnostics
+
+instead of only exposing the final answer.
+
+---
+
+# System Architecture
+
+PilotMaster is made up of three layers.
+
+## PilotCore — Execution Kernel
+
+PilotCore handles all runtime execution logic:
+
+- embeddings
 - retrieval
 - reranking
 - prompt construction
@@ -30,32 +76,67 @@ Shared execution kernel responsible for:
 - tracing
 - replay
 
-## DocPilot
+Both DocPilot and TracePilot delegate execution to PilotCore.
 
-User-facing document intelligence application:
+Important runtime files:
 
-- upload documents
-- ask questions
-- grounded QA
-- OCR ingestion
-- chat history
-
-## TracePilot
-
-Observability and retrieval diagnostics layer:
-
-- chunk inspection
-- retrieval lineage
-- reranker diagnostics
-- latency spans
-- replayable traces
-- evaluation metrics
+```text
+pilotcore/retrieval/runtime.py
+pilotcore/retrieval/vector_store.py
+pilotcore/retrieval/reranker.py
+pilotcore/runtime/pipeline.py
+```
 
 ---
 
-# Retrieval Stack
+## DocPilot — Document Intelligence Layer
 
-Current retrieval pipeline:
+DocPilot is the user-facing application.
+
+Features:
+
+- upload documents
+- OCR ingestion
+- ask questions
+- grounded QA
+- citation support
+- chat sessions
+
+Supported formats:
+
+- PDF
+- DOCX
+- TXT
+- CSV
+- XLSX
+- PNG
+- JPG
+- JPEG
+
+---
+
+## TracePilot — Observability Layer
+
+TracePilot exposes how retrieval and generation behaved internally.
+
+Every trace includes:
+
+- retrieved chunks
+- reranker diagnostics
+- retrieval lineage
+- latency spans
+- replay metadata
+- grounding metrics
+- hallucination analysis
+- retrieval agreement signals
+
+The goal is to make AI execution inspectable instead of guess-based.
+
+---
+
+# Retrieval Pipeline
+
+Current retrieval flow:
 
 ```text
 Query
@@ -67,46 +148,78 @@ Query
 → LLM Generation
 ```
 
-## Retrieval Components
+---
 
-### Dense Retrieval
+# Retrieval Stack
+
+## Dense Retrieval
+
+Semantic retrieval uses:
 
 - SentenceTransformers
 - `all-mpnet-base-v2`
 - FAISS `IndexFlatIP`
-- cosine similarity search
+- cosine similarity
 
-### Lexical Retrieval
+The project originally used L2 distance before migrating to cosine similarity for better semantic ranking behavior.
 
-- BM25 keyword retrieval
-- exact terminology matching
-- negation-sensitive retrieval support
+---
 
-### Hybrid Fusion
+## BM25 Retrieval
 
-- Reciprocal Rank Fusion (RRF)
-- replaced naive vector + BM25 concatenation
+BM25 handles:
 
-### Reranking
+- keyword-heavy queries
+- exact terminology
+- acronym matching
+- negation-sensitive retrieval
 
-Cross-encoder reranking using:
+This solved several weaknesses of vector-only retrieval.
+
+---
+
+## Reciprocal Rank Fusion (RRF)
+
+RRF combines:
+
+- dense retrieval rankings
+- BM25 rankings
+
+This replaced naive vector + BM25 concatenation and produced much more stable retrieval quality.
+
+---
+
+## Cross-Encoder Reranking
+
+Final retrieval ranking uses:
 
 ```text
 cross-encoder/ms-marco-MiniLM-L-6-v2
 ```
 
+The reranker:
+
+- evaluates `(query, chunk)` pairs jointly
+- rescoring fused candidates
+- promotes semantically relevant chunks
+- improves ranking precision significantly
+
 Reranking occurs:
 
-- after hybrid fusion
+- after RRF fusion
 - before prompt construction
 
 ---
 
 # Retrieval Observability
 
-TracePilot exposes full retrieval lineage:
+One of the main goals of PilotMaster is retrieval introspection.
+
+TracePilot exposes:
 
 ## Per-Chunk Diagnostics
+
+Every retrieved chunk can display:
 
 - dense score
 - dense rank
@@ -117,28 +230,33 @@ TracePilot exposes full retrieval lineage:
 - reranker confidence
 - reranker margin
 - final rank
-- retrieval source provenance
+- retrieval provenance
+
+---
 
 ## Retrieval Agreement
 
 TracePilot identifies whether retrieval was:
 
-- strong (dense + BM25 agreement)
-- semantic
-- lexical
+- **strong** → dense + BM25 agreement
+- **semantic** → dense-dominant retrieval
+- **lexical** → BM25-dominant retrieval
 
-## Execution Visibility
+This makes retrieval behavior much easier to debug.
 
-Every trace includes:
+---
 
-- retrieved chunks
-- prompt metadata
-- latency spans
-- replay lineage
-- evaluator outputs
-- retriever version
-- prompt version
-- evaluator version
+## Replayable Traces
+
+Every query execution is replayable.
+
+This allows:
+
+- retrieval debugging
+- evaluator comparisons
+- ranking inspection
+- pipeline experimentation
+- retrieval regression testing
 
 ---
 
@@ -153,16 +271,97 @@ Current evaluation dimensions:
 | Answerability        | Measures context sufficiency     |
 | Hallucination Risk   | Estimates unsupported generation |
 
-## Retrieval Quality Heuristics
+The evaluator evolved from simple lexical heuristics into a reranker-aware evaluation system.
 
-Retrieval evaluation now incorporates:
+Current retrieval evaluation considers:
 
 - reranker confidence
 - retrieval agreement
 - reranker margin
 - retrieval lineage signals
 
-instead of relying only on lexical overlap heuristics.
+instead of relying only on word overlap.
+
+---
+
+# Tech Stack
+
+| Layer         | Technology                   |
+| ------------- | ---------------------------- |
+| Frontend      | React + Vite                 |
+| Backend       | FastAPI                      |
+| Database      | Neon PostgreSQL              |
+| Vector Engine | FAISS                        |
+| Embeddings    | SentenceTransformers         |
+| Retrieval     | BM25 + Hybrid RRF            |
+| Reranker      | Cross-Encoder MiniLM         |
+| LLM           | Groq — llama-3.1-8b-instant  |
+| Deployment    | Hugging Face Spaces + Vercel |
+
+---
+
+# Local Setup
+
+## Backend
+
+```bash
+pip install -r requirements.txt
+pip install -e .
+
+uvicorn main:app --reload --port 8000
+```
+
+---
+
+## Frontend
+
+```bash
+cd frontend
+
+npm install
+npm run dev
+```
+
+---
+
+# Environment Variables
+
+Create a `.env` file:
+
+```env
+GROQ_API_KEY=
+DATABASE_URL=
+SECRET_KEY=
+TRACEPILOT_URL=
+DOCPILOT_URL=
+```
+
+---
+
+# Deployment
+
+## Frontend
+
+- Vercel
+- React + Vite
+
+## Backend
+
+- Hugging Face Spaces
+- Docker deployment
+- Unified FastAPI runtime
+
+## Database
+
+- Neon PostgreSQL
+
+---
+
+# Current Retrieval Version
+
+```text
+hybrid_rrf_v1
+```
 
 ---
 
@@ -180,116 +379,18 @@ instead of relying only on lexical overlap heuristics.
 ## Observability
 
 - Replayable traces
+- Retrieval diagnostics
 - Chunk ranking inspection
 - Latency tracking
 - Span visualization
-- Retrieval diagnostics
 - Confidence metrics
 
 ## Document Intelligence
 
-- PDF ingestion
-- OCR support
-- DOCX/TXT/CSV/XLSX support
-- image ingestion
+- OCR ingestion
 - grounded QA
-
----
-
-# Tech Stack
-
-| Layer         | Technology                   |
-| ------------- | ---------------------------- |
-| Frontend      | React + Vite                 |
-| Backend       | FastAPI                      |
-| Database      | Neon PostgreSQL              |
-| Vector Engine | FAISS                        |
-| Embeddings    | SentenceTransformers         |
-| LLM           | Groq — llama-3.1-8b-instant  |
-| Deployment    | Hugging Face Spaces + Vercel |
-
----
-
-# Local Setup
-
-## Backend
-
-```bash
-pip install -r requirements.txt
-pip install -e .
-
-uvicorn main:app --reload --port 8000
-```
-
-## Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
----
-
-# Environment Variables
-
-```env
-GROQ_API_KEY=
-DATABASE_URL=
-SECRET_KEY=
-TRACEPILOT_URL=
-DOCPILOT_URL=
-```
-
----
-
-# Project Structure
-
-```text
-PilotMaster/
-├── frontend/
-├── pilotcore/
-├── DocPilot/
-├── TracePilot/
-├── main.py
-└── README.md
-```
-
-## Important Runtime Files
-
-```text
-pilotcore/retrieval/runtime.py
-pilotcore/retrieval/vector_store.py
-pilotcore/retrieval/reranker.py
-pilotcore/runtime/pipeline.py
-frontend/src/components/TraceExplorer.jsx
-```
-
----
-
-# Deployment Architecture
-
-## Frontend
-
-- Vercel deployment
-- React + Vite
-
-## Backend
-
-- Hugging Face Spaces
-- Dockerized FastAPI runtime
-
-## Database
-
-- Neon PostgreSQL
-
----
-
-# Current Retrieval Version
-
-```text
-hybrid_rrf_v1
-```
+- multi-format support
+- citation-aware responses
 
 ---
 
@@ -306,36 +407,25 @@ hybrid_rrf_v1
 
 ## Evaluation
 
-- Retrieval benchmark mode
 - Semantic grounding evaluation
-- Learned retrieval evaluators
+- Retrieval benchmark mode
+- Learned evaluators
 - LLM-as-judge experimentation
 
 ## Observability
 
-- Trace filtering
 - Retrieval analytics dashboards
-- Retrieval benchmarking UI
 - Advanced replay comparison
-
----
-
-# Architectural Notes
-
-- cosine similarity replaced L2 distance
-- RRF replaced naive retrieval concatenation
-- reranking occurs after fusion
-- retrieval evaluation is reranker-aware
-- traces are replayable and lineage-aware
-- retrieval diagnostics are first-class observability signals
+- Trace filtering
+- Benchmark visualization
 
 ---
 
 # What Makes PilotMaster Different
 
-Most RAG systems expose only:
+Most RAG systems expose:
 
-- the final answer
+- only the final answer
 
 PilotMaster exposes:
 
