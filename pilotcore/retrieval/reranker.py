@@ -68,8 +68,12 @@ def rerank_chunks(
     reranked.sort(key=lambda chunk: chunk.score, reverse=True)
 
     # compute reranker margin (top - second) on raw logits for certainty
-    raw_scores = [getattr(c, "reranker_score", None) for c in reranked if getattr(c, "reranker_score", None) is not None]
-            scores = _reranker.predict(pairs)
+    raw_scores = [
+        getattr(c, "reranker_score", None)
+        for c in reranked
+        if getattr(c, "reranker_score", None) is not None
+    ]
+    if len(raw_scores) >= 2:
         sorted_raw = sorted(raw_scores, reverse=True)
         margin = float(sorted_raw[0] - sorted_raw[1])
     else:
