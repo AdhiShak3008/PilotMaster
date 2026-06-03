@@ -26,6 +26,12 @@ import math
 _reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
 
 
+def softmax(scores, temperature=1.0):
+    exp_scores = [math.exp(s / temperature) for s in scores]
+    total = sum(exp_scores)
+    return [s / total for s in exp_scores]
+
+
 def rerank_chunks(
     query,
     candidate_chunks,
@@ -42,24 +48,15 @@ def rerank_chunks(
 
     scores = _reranker.predict(pairs)
 
+    confidences = softmax(scores)
+
     reranked = []
 
-    # assign raw reranker logits, compute sigmoid-normalized confidence
-    for rank, (chunk, score) in enumerate(zip(candidate_chunks, scores), start=1):
+    for rank, (chunk, score, confidence) in enumerate(zip(candidate_chunks, scores, confidences), start=1):
 
-        # legacy compatibility
         chunk.score = float(score)
-
-        # preserve reranker lineage (raw logit)
         chunk.reranker_score = float(score)
-
-        # normalized confidence in [0,1]
-        try:
-            chunk.reranker_confidence = 1.0 / (1.0 + math.exp(-float(score)))
-        except OverflowError:
-            chunk.reranker_confidence = 0.0 if score < 0 else 1.0
-
-        # temporary ranking metadata
+        chunk.reranker_confidence = float(confidence)
         chunk.reranker_rank = rank
 
         reranked.append(chunk)

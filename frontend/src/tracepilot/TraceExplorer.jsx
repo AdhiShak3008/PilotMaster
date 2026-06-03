@@ -14,6 +14,7 @@ const relevanceColor = {
   unknown: "#6b7280",
 };
 const confColor = { high: "#16a34a", medium: "#eab308", moderate: "#eab308", low: "#ef4444", none: "#6b7280", unknown: "#6b7280" };
+const consensusColor = { "consensus": "#16a34a", "semantic-only": "#3b82f6", "lexical-only": "#f59e0b", "none": "#6b7280" };
 const riskColor = { low: "#16a34a", medium: "#eab308", moderate: "#eab308", high: "#ef4444", none: "#6b7280", unknown: "#6b7280" };
 const ansColor = { high: "#16a34a", medium: "#eab308", moderate: "#eab308", partial: "#eab308", low: "#ef4444", none: "#ef4444", unknown: "#6b7280", abstained: "#7c4dff" };
 
@@ -245,7 +246,7 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
                                     return (<>
                                         <Tag color={relevanceColor[ev.retrieval_relevance] || "var(--text-muted)"}>retrieval: {ev.retrieval_relevance || "—"}</Tag>
                                         <Tag color={confColor[ev.grounding_confidence] || "var(--text-muted)"}>grounding: {ev.grounding_confidence || "—"}</Tag>
-                                        <Tag color={confColor[ev.retrieval_consensus] || "var(--text-muted)"}>consensus: {ev.retrieval_consensus || "—"}</Tag>
+                                        <Tag color={consensusColor[ev.retrieval_consensus] || "#6b7280"}>consensus: {ev.retrieval_consensus || "—"}</Tag>
                                         <Tag color={ansColor[ev.answerability] || "var(--text-muted)"}>answerability: {ev.answerability || "—"}</Tag>
                                         <Tag color={riskColor[ev.hallucination_risk] || "var(--text-muted)"}>hallucination risk: {ev.hallucination_risk || "—"}</Tag>
                                         {ev.abstained && <Tag color="#7c4dff">abstained ✓</Tag>}
