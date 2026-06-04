@@ -150,11 +150,14 @@ def get_documents(
 @router.delete("/reset")
 def reset_documents(
     current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-
     reset_vector_store(current_user.id)
 
-    return {"message": "Vector store cleared."}
+    db.query(Document).filter(Document.owner_id == current_user.id).delete()
+    db.commit()
+
+    return {"message": "Vector store and documents cleared."}
 
 
 @router.delete("/{document_id}")

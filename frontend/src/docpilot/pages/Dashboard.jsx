@@ -16,7 +16,7 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [loadingSessionId, setLoadingSessionId] = useState(null);
   const [deletingSessionId, setDeletingSessionId] = useState(null);
-  const [resetting, setResetting] = useState(false);
+  const [deletingDoc, setDeletingDoc] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const messagesEndRef = useRef(null);
 
@@ -54,10 +54,9 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
     setLoadingSessionId(sessionId);
     try {
       const data = await apiRequest(`/history/${sessionId}`);
-      // Align keys directly with your backend metrics payload structure
-      setMessages(data.map(m => ({ 
-        role: m.role, 
-        content: m.content, 
+      setMessages(data.map(m => ({
+        role: m.role,
+        content: m.content,
         sources: m.sources,
         timestamp: m.timestamp || m.created_at || new Date().toISOString()
       })));
@@ -100,67 +99,64 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
     const q = question;
     setQuestion("");
     setMessages(prev => [
-      ...prev, 
-      { role: "user", content: q, timestamp: new Date().toISOString() }, 
+      ...prev,
+      { role: "user", content: q, timestamp: new Date().toISOString() },
       { role: "assistant", content: "Thinking...", loading: true, timestamp: new Date().toISOString() }
     ]);
     setAsking(true);
     try {
       const data = await apiRequest("/chat/ask", "POST", { question: q, source, session_id: currentSessionId });
       if (data.session_id) { setCurrentSessionId(data.session_id); fetchSessions(); }
-      setMessages(prev => { 
-        const u = [...prev]; 
-        u[u.length - 1] = { 
-          role: "assistant", 
-          content: data.answer, 
+      setMessages(prev => {
+        const u = [...prev];
+        u[u.length - 1] = {
+          role: "assistant",
+          content: data.answer,
           sources: data.sources,
           timestamp: new Date().toISOString()
-        }; 
-        return u; 
+        };
+        return u;
       });
     } catch {
-      setMessages(prev => { 
-        const u = [...prev]; 
-        u[u.length - 1] = { 
-          role: "assistant", 
+      setMessages(prev => {
+        const u = [...prev];
+        u[u.length - 1] = {
+          role: "assistant",
           content: "Something went wrong.",
           timestamp: new Date().toISOString()
-        }; 
-        return u; 
+        };
+        return u;
       });
     } finally {
       setAsking(false);
     }
   };
 
-  const resetMemory = async () => {
-    if (resetting) return;
-    setResetting(true);
+  const deleteActiveDocument = async () => {
+    if (deletingDoc) return;
+    if (!window.confirm("Delete all documents and clear the vector store?")) return;
+    setDeletingDoc(true);
     try {
       await apiRequest("/docs/reset", "DELETE");
-      setMessages([]); setQuestion(""); setSource(""); setFile(null); setCurrentSessionId(null);
+      setSource(""); setFile(null); setMessages([]); setCurrentSessionId(null);
       fetchSessions();
-    } finally {
-      setResetting(false);
-    }
+    } catch { alert("Failed to delete documents."); }
+    finally { setDeletingDoc(false); }
   };
 
   return (
     <div className="docpilot-root" style={{ display: "flex", width: "100%", height: "100%", background: "var(--bg-primary)", color: "var(--text-primary)", fontFamily: "Arial", overflow: "hidden" }}>
-      {(initialLoading || uploading || resetting) && (
-        <LoadingOverlay text={uploading ? "Uploading document..." : resetting ? "Resetting..." : "Loading dashboard..."} />
+      {(initialLoading || uploading) && (
+        <LoadingOverlay text={uploading ? "Uploading document..." : "Loading dashboard..."} />
       )}
       {sidebarOpen && <button className="mobile-drawer-backdrop" aria-label="Close conversations" onClick={() => setSidebarOpen(false)} />}
-
       {/* SIDEBAR */}
       <div className={`docpilot-sidebar ${sidebarOpen ? "is-open" : ""}`} style={{ width: "280px", flexShrink: 0, background: "var(--bg-secondary)", borderRight: "1px solid var(--border)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-
         {/* SIDEBAR HEADER */}
         <div style={{ padding: "24px 24px 16px", flexShrink: 0 }}>
           <h1 style={{ margin: 0, fontSize: "44px", fontFamily: "Georgia, serif", fontWeight: "600", letterSpacing: "-2px", color: "white", lineHeight: 1 }}>DocPilot</h1>
           <p style={{ margin: "8px 0 0", color: "#555", fontSize: "14px" }}>{username}</p>
         </div>
-
         {/* UPLOAD */}
         <div style={{ padding: "0 16px 16px", flexShrink: 0, borderBottom: "1px solid #1a1a1a" }}>
           <div {...getRootProps()} style={{
@@ -169,7 +165,7 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
             cursor: "pointer", color: "var(--text-secondary)", fontSize: "13px", marginBottom: "10px",
           }}>
             <input {...getInputProps()} />
-            {isDragActive ? <p style={{ margin: 0 }}>Drop here...</p> : <p style={{ margin: 0 }}>Drag & drop or click to upload</p>}
+            {isDragActive ? <p style={{ margin: 0 }}>Drop here...</p> : <p style={{ margin: 0 }}>Drag &amp; drop or click to upload</p>}
             {file && <p style={{ margin: "8px 0 0", color: "#888", fontSize: "12px" }}>{file.name}</p>}
           </div>
           <button onClick={uploadFile} disabled={uploading || !file} style={{
@@ -180,7 +176,6 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
             {uploading ? <ButtonContent text="Uploading..." /> : "Upload"}
           </button>
         </div>
-
         {/* NEW CHAT */}
         <div style={{ padding: "12px 16px", flexShrink: 0 }}>
           <button onClick={() => { setMessages([]); setCurrentSessionId(null); }} style={{
@@ -188,7 +183,6 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
             border: "1px solid var(--border)", borderRadius: "10px", cursor: "pointer", fontSize: "14px",
           }}>+ New Chat</button>
         </div>
-
         {/* SESSIONS */}
         <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 16px" }}>
           <p style={{ margin: "0 0 10px", fontSize: "11px", color: "#777", textTransform: "uppercase", letterSpacing: "0.08em" }}>Conversations</p>
@@ -227,21 +221,21 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
           ))}
         </div>
       </div>
-
       {/* MAIN */}
       <div className="docpilot-main" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "var(--bg-primary)" }}>
-
-        {/* THIN HEADER */}
+        {/* TOPBAR */}
         <div className="docpilot-topbar" style={{ padding: "12px 24px", borderBottom: `1px solid var(--border)`, flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <button className="mobile-menu-button" onClick={() => setSidebarOpen(true)} aria-label="Open conversations" style={{ color: "var(--text-primary)", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px", padding: "8px 12px", cursor: "pointer" }}>☰</button>
-          <p className="docpilot-active-document" style={{ margin: 0, fontSize: "13px", color: "#ccc" }}>
-            Active Document: <span style={{ color: source ? "#ddd" : "#888" }}>{source || "None"}</span>
-          </p>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <p className="docpilot-active-document" style={{ margin: 0, fontSize: "13px", color: "#ccc" }}>
+              Active Document: <span style={{ color: source ? "#ddd" : "#888" }}>{source || "None"}</span>
+            </p>
+          </div>
           <div className="docpilot-actions" style={{ display: "flex", gap: "8px" }}>
             {[
-              { label: "← Home", onClick: onHome, color: "#ddd" },
+                { label: "← Home", onClick: onHome, color: "#ddd" },
               { label: "TracePilot →", onClick: onTracePilot, color: "#ddd" },
-              { label: resetting ? <ButtonContent text="Resetting..." /> : "Reset", onClick: resetMemory, color: "#ddd", disabled: resetting },
+              { label: deletingDoc ? "Deleting..." : "✕ Delete Doc Data", onClick: deleteActiveDocument, color: "#ef4444", disabled: deletingDoc },
               { label: "Logout", onClick: onLogout, color: "#ddd" },
             ].map(btn => (
               <button key={String(btn.label)} onClick={btn.onClick} disabled={btn.disabled} style={{
@@ -251,45 +245,39 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
               }}>{btn.label}</button>
             ))}
           </div>
-        </div>{/* CHAT AREA */}
-<div className="docpilot-chat-area" style={{ flex: 1, overflowY: "auto", padding: "32px 60px", background: "var(--bg-primary)" }}>
-  {messages.length === 0 && (
-    <p style={{ color: "var(--text-muted)", fontSize: "16px" }}>Ask questions about your document...</p>
-  )}
-  {messages
-    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
-    .map((msg, i) => (
-      <div key={i} style={{ marginBottom: "28px", display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
-        {msg.role === "user" ? (
-          <div className="docpilot-message-user text-wrap-safe" style={{ background: "var(--surface)", padding: "14px 20px", borderRadius: "18px", maxWidth: "65%", fontSize: "16px", lineHeight: 1.6, color: "var(--text-primary)" }}>
-            {msg.content}
-          </div>
-        ) : (
-          <div className="docpilot-message-assistant text-wrap-safe" style={{ maxWidth: "80%", fontSize: "16px", lineHeight: 1.8, color: "var(--text-secondary)" }}>
-            
-            {/* REMOVED CONTAINER BUBBLE STYLE HERE — JUST RAW TEXT CONTENT */}
-            <div>
-              {msg.content}
-            </div>
-
-            {/* Sources section remains nicely padded right beneath the unbubbled text */}
-            {msg.sources && msg.sources.length > 0 && (
-              <div style={{ marginTop: "16px", paddingLeft: "4px", fontSize: "12px", color: "#aaa" }}>
-                <p style={{ margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "10px", color: "#ccc", fontWeight: "bold" }}>Sources</p>
-                {msg.sources.map((s, idx) => (
-                  <div key={idx} style={{ color: "#bbb", marginBottom: "2px" }}>
-                    📁 <span style={{ color: "#ddd" }}>{s.source || s.file_name}</span> · <span style={{ fontStyle: "italic" }}>Page {s.page || s.page_number}</span>
+        </div>
+        {/* CHAT AREA */}
+        <div className="docpilot-chat-area" style={{ flex: 1, overflowY: "auto", padding: "32px 60px", background: "var(--bg-primary)" }}>
+          {messages.length === 0 && (
+            <p style={{ color: "var(--text-muted)", fontSize: "16px" }}>Ask questions about your document...</p>
+          )}
+          {messages
+            .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+            .map((msg, i) => (
+              <div key={i} style={{ marginBottom: "28px", display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
+                {msg.role === "user" ? (
+                  <div className="docpilot-message-user text-wrap-safe" style={{ background: "var(--surface)", padding: "14px 20px", borderRadius: "18px", maxWidth: "65%", fontSize: "16px", lineHeight: 1.6, color: "var(--text-primary)" }}>
+                    {msg.content}
                   </div>
-                ))}
+                ) : (
+                  <div className="docpilot-message-assistant text-wrap-safe" style={{ maxWidth: "80%", fontSize: "16px", lineHeight: 1.8, color: "var(--text-secondary)" }}>
+                    <div>{msg.content}</div>
+                    {msg.sources && msg.sources.length > 0 && (
+                      <div style={{ marginTop: "16px", paddingLeft: "4px", fontSize: "12px", color: "#aaa" }}>
+                        <p style={{ margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "10px", color: "#ccc", fontWeight: "bold" }}>Sources</p>
+                        {msg.sources.map((s, idx) => (
+                          <div key={idx} style={{ color: "#bbb", marginBottom: "2px" }}>
+                            📁 <span style={{ color: "#ddd" }}>{s.source || s.file_name}</span> · <span style={{ fontStyle: "italic" }}>Page {s.page || s.page_number}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        )}
-      </div>
-    ))}
-  <div ref={messagesEndRef} />
-</div>
-
+            ))}
+          <div ref={messagesEndRef} />
+        </div>
         {/* INPUT */}
         <div className="docpilot-input-bar" style={{ padding: "16px 24px", borderTop: "1px solid var(--border)", flexShrink: 0, background: "var(--surface)" }}>
           <div className="docpilot-input-row" style={{ display: "flex", gap: "12px" }}>
