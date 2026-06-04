@@ -347,6 +347,13 @@ function ChunkCard({ chunk, index }) {
                     }}>{open ? "▲ diagnostics" : "▼ diagnostics"}</button>
                 )}
             </div>
+            {(chunk.source_file || chunk.page != null || chunk.section_title) && (
+                <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "0.5rem", fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                    {chunk.source_file && <span>{chunk.source_file}</span>}
+                    {chunk.page != null && <span>Page {chunk.page}</span>}
+                    {chunk.section_title && <span>Section: {chunk.section_title}</span>}
+                </div>
+            )}
             {open && hasLineage && <RetrievalDiagnostics chunk={chunk} />}
             <p style={{ margin: 0, fontSize: "0.8rem", color: "var(--text-muted)", lineHeight: 1.6 }}>{chunk.text}</p>
         </div>

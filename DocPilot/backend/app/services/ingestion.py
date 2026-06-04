@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from statistics import median
 import logging
 import mimetypes
 import os
@@ -36,6 +37,137 @@ class TextExtractionError(Exception):
 class TextSection:
     text: str
     metadata: dict = field(default_factory=dict)
+
+
+def detect_section_title(page_dict):
+    """
+    Return the highest-confidence heading detected on a page.
+    Returns None if no heading meets the threshold.
+    """
+
+    candidates = []
+    font_sizes = []
+
+    # collect font sizes
+    for block in page_dict.get("blocks", []):
+        if block.get("type") != 0:
+            continue
+
+        for line in block.get("lines", []):
+            for span in line.get("spans", []):
+                size = span.get("size")
+                if size:
+                    font_sizes.append(size)
+
+    if not font_sizes:
+        return None
+
+    median_size = median(font_sizes)
+    page_height = page_dict.get("height", 1)
+
+    for block in page_dict.get("blocks", []):
+        if block.get("type") != 0:
+            continue
+
+        lines = block.get("lines", [])
+        if not lines:
+            continue
+
+        text_parts = []
+        max_score = 0
+
+        for line in lines:
+            for span in line.get("spans", []):
+
+                text = (span.get("text") or "").strip()
+
+                if not text:
+                    continue
+
+                score = 0
+                size = span.get("size", 0)
+                flags = span.get("flags", 0)
+                font = span.get("font", "")
+
+                # font size
+                ratio = size / median_size if median_size else 1
+
+                if ratio >= 1.4:
+                    score += 4
+                elif ratio >= 1.1:
+                    score += 2
+
+                # bold flag
+                if flags & 16:
+                    score += 3
+
+                # bold font name
+                if any(token in font.lower() for token in ["bold", "medi"]):
+                    score += 2
+
+                # text length
+                if len(text) <= 60:
+                    score += 2
+                elif len(text) <= 120:
+                    score += 1
+                else:
+                    score -= 2
+
+                # ALL CAPS
+                if len(text) > 2 and text.isupper():
+                    score += 2
+
+                # Title Case
+                if len(text.split()) > 1 and text.istitle():
+                    score += 1
+
+                text_parts.append(text)
+                max_score = max(max_score, score)
+
+        candidate_text = " ".join(text_parts).strip()
+
+        if not candidate_text:
+            continue
+
+        if len(candidate_text.split()) > 12:
+            continue
+
+        # isolated block
+        if len(lines) == 1:
+            max_score += 1
+
+        # top of page
+        bbox = block.get("bbox", [0, 0, 0, 0])
+        y0 = bbox[1]
+
+        if y0 < page_height * 0.15:
+            max_score += 1
+
+        # reject lone numbers
+        if re.fullmatch(r"[\d.]+", candidate_text):
+            continue
+
+        candidates.append(
+            {
+                "text": candidate_text,
+                "score": max_score,
+            }
+        )
+
+    if not candidates:
+        return None
+
+    candidates.sort(key=lambda x: x["score"], reverse=True)
+
+    HEADING_WORD_LIMIT = 8
+    filtered = [c for c in candidates if len(c["text"].split()) <= HEADING_WORD_LIMIT]
+
+    best = filtered[0] if filtered else candidates[0]
+
+    if best["score"] < 8:
+        return None
+
+    return best["text"]
 
 
 def clean_text(text):
@@ -108,19 +240,33 @@ def extract_pdf_text_pymupdf(file_path):
 
     with fitz.open(file_path) as doc:
         for page_index, page in enumerate(doc, start=1):
+            page_dict = page.get_text("dict")
+
             text = clean_text(page.get_text("text"))
+
+            section_title = detect_section_title(page_dict)
+
+            metadata = {
+                "page": page_index,
+            }
+
+            if section_title:
+                metadata["section_title"] = section_title
+
             if text:
                 sections.append(
                     TextSection(
                         text=text,
-                        metadata={"page": page_index},
+                        metadata=metadata,
                     )
                 )
 
         page_count = doc.page_count
 
     logger.info("PDF digital extraction processed %s pages with PyMuPDF", page_count)
-    logger.info("PDF digital extraction produced %s chars", sum(len(s.text) for s in sections))
+    logger.info(
+        "PDF digital extraction produced %s chars", sum(len(s.text) for s in sections)
+    )
     return sections
 
 
@@ -138,8 +284,12 @@ def extract_pdf_text_pypdf(file_path):
                 )
             )
 
-    logger.info("PDF digital extraction processed %s pages with pypdf", len(reader.pages))
-    logger.info("PDF digital extraction produced %s chars", sum(len(s.text) for s in sections))
+    logger.info(
+        "PDF digital extraction processed %s pages with pypdf", len(reader.pages)
+    )
+    logger.info(
+        "PDF digital extraction produced %s chars", sum(len(s.text) for s in sections)
+    )
     return sections
 
 
@@ -205,7 +355,9 @@ def extract_pptx_sections(file_path):
 
             if getattr(shape, "has_table", False):
                 for row in shape.table.rows:
-                    cells = [cell.text.strip() for cell in row.cells if cell.text.strip()]
+                    cells = [
+                        cell.text.strip() for cell in row.cells if cell.text.strip()
+                    ]
                     if cells:
                         parts.append(" | ".join(cells))
 
@@ -313,7 +465,9 @@ def extract_text_sections(file_path, mime_type=None):
     extractor = extractors.get(extension)
 
     if not extractor:
-        raise TextExtractionError(f"Unsupported file type: {extension or detected_mime}")
+        raise TextExtractionError(
+            f"Unsupported file type: {extension or detected_mime}"
+        )
 
     logger.info(
         "Extractor selected: %s extension=%s mime=%s",
@@ -349,7 +503,9 @@ def extract_text_sections(file_path, mime_type=None):
 
 
 def extract_text(file_path, mime_type=None):
-    return "\n\n".join(section.text for section in extract_text_sections(file_path, mime_type))
+    return "\n\n".join(
+        section.text for section in extract_text_sections(file_path, mime_type)
+    )
 
 
 def process_document(

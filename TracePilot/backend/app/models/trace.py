@@ -18,7 +18,11 @@ class RetrievedChunk(BaseModel):
     reranker_confidence: Optional[float] = None
     reranker_rank: Optional[int] = None
     final_rank: Optional[int] = None
+    reranker_margin: Optional[float] = None
     retrieval_sources: List[str] = Field(default_factory=list)
+    source_file: Optional[str] = None
+    page: Optional[int] = None
+    section_title: Optional[str] = None
 
 
 class Trace(BaseModel):

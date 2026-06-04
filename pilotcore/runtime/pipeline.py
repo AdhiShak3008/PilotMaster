@@ -61,6 +61,7 @@ def run_pipeline(
             )
             print("final_rank:", c.final_rank)
             print("retrieval_sources:", c.retrieval_sources)
+            print("METADATA:", c.chunk.metadata)
     else:
         print("(no retrieved chunks)")
 
@@ -113,6 +114,9 @@ def _emit_trace(trace, latency_ms: float, evaluation: dict, user_id=None, source
                 "final_rank": c.final_rank,
                 "reranker_margin": getattr(c, "reranker_margin", None),
                 "retrieval_sources": c.retrieval_sources,
+                "source_file": getattr(c.chunk, "metadata", {}).get("source_file"),
+                "page": getattr(c.chunk, "metadata", {}).get("page"),
+                "section_title": getattr(c.chunk, "metadata", {}).get("section_title"),
             }
             for i, c in enumerate(chunks)
         ],
