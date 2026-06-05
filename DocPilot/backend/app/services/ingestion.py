@@ -31,10 +31,20 @@ from pilotcore.config import TRACEPILOT_URL
 logger = logging.getLogger(__name__)
 doc_converter = DocumentConverter()
 
-ocr_engine = PaddleOCR(
-    use_angle_cls=True,
-    lang="en",
-)
+ocr_engine = None
+
+
+def get_ocr_engine():
+    global ocr_engine
+
+    if ocr_engine is None:
+        from paddleocr import PaddleOCR
+
+        ocr_engine = PaddleOCR(
+            lang="en",
+        )
+
+    return ocr_engine
 
 
 class TextExtractionError(Exception):
