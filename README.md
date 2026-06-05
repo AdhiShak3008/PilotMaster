@@ -243,49 +243,21 @@ Reranking occurs after retrieval and before prompt construction.
 
 # Current Retrieval Configuration
 
-Embedding Model:
-
-sentence-transformers/all-mpnet-base-v2
-
-Vector Database:
-
-FAISS IndexFlatIP
-
-Embedding Dimension:
-
-768
-
-Chunk Size:
-
-500 characters
-
-Chunk Overlap:
-
-80 characters
-
-Dense Retrieval Top-K:
-
-7
-
-BM25 Top-K:
-
-7
-
-Fusion:
-
-Reciprocal Rank Fusion (RRF)
-
-Reranker Candidate Pool:
-
-Up to 20 chunks
-
-Final Context:
-
-Top 7 reranked chunks
-
-Current Retrieval Version:
-
-hybrid_rrf_v1
+| Component               | Configuration                             |
+| ----------------------- | ----------------------------------------- |
+| Embedding Model         | `sentence-transformers/all-mpnet-base-v2` |
+| Embedding Dimension     | 768                                       |
+| Vector Store            | FAISS (`IndexFlatIP`)                     |
+| Similarity Metric       | Cosine Similarity                         |
+| Chunk Size              | 500 characters                            |
+| Chunk Overlap           | 80 characters                             |
+| Dense Retrieval Depth   | Top 7                                     |
+| BM25 Retrieval Depth    | Top 7                                     |
+| Fusion Strategy         | Reciprocal Rank Fusion (RRF)              |
+| Reranker                | `cross-encoder/ms-marco-MiniLM-L-6-v2`    |
+| Reranker Candidate Pool | Up to 20 chunks                           |
+| Final Context Window    | Top 7 reranked chunks                     |
+| Retrieval Version       | `hybrid_rrf_v1`                           |
 
 ---
 
