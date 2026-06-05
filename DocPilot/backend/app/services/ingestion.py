@@ -13,7 +13,7 @@ from pdf2image import convert_from_path
 from PIL import Image
 from pypdf import PdfReader
 import numpy as np
-from paddleocr import PaddleOCR
+
 from docling.document_converter import DocumentConverter
 
 try:
@@ -369,23 +369,25 @@ def extract_pdf_ocr(file_path):
         logger.info("OCR pages processed: %s", len(images))
 
         sections = []
+        ocr_engine = get_ocr_engine()
+
         for page_number, image in enumerate(images, start=1):
             result = ocr_engine.ocr(
                 np.array(image),
                 cls=True,
             )
-        lines = []
-        if result and result[0]:
-            for block in result[0]:
-                lines.append(block[1][0])
-        text = clean_text("\n".join(lines))
-        if text:
-            sections.append(
-                TextSection(
-                    text=text,
-                    metadata={"page": page_number, "ocr": True},
+            lines = []
+            if result and result[0]:
+                for block in result[0]:
+                    lines.append(block[1][0])
+            text = clean_text("\n".join(lines))
+            if text:
+                sections.append(
+                    TextSection(
+                        text=text,
+                        metadata={"page": page_number, "ocr": True},
+                    )
                 )
-            )
 
         logger.info("OCR extracted %s chars", sum(len(s.text) for s in sections))
         return sections
@@ -514,6 +516,7 @@ def dataframe_to_sections(df):
 def extract_image_sections(file_path):
     try:
         image = Image.open(file_path)
+        ocr_engine = get_ocr_engine()
         result = ocr_engine.ocr(
             np.array(image),
             cls=True,
