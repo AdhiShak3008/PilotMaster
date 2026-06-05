@@ -67,6 +67,7 @@ def ask(
             question=query.question,
             user_id=current_user.id,
             source=query.source,
+            model_name=query.model_name,
         )
     except AuthenticationError as exc:
         raise HTTPException(

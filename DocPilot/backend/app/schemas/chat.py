@@ -8,3 +8,5 @@ class ChatRequest(BaseModel):
     source: str | None = None
 
     session_id: int | None = None
+
+    model_name: str | None = None

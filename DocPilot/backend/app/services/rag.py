@@ -18,11 +18,17 @@ def add_chunks(chunks, user_id):
         )
 
 
-def ask_question(question, user_id, source=None):
+def ask_question(
+    question,
+    user_id,
+    source=None,
+    model_name=None,
+):
     trace = run_pipeline(
         query=question,
         user_id=user_id,
         source=source,
+        model_name=model_name,
     )
 
     retrieved = trace.retrieval_result.retrieved_chunks
@@ -36,7 +42,9 @@ def ask_question(question, user_id, source=None):
         key = (item.chunk.source, item.chunk.page_number)
         if key not in seen:
             seen.add(key)
-            sources.append({"source": item.chunk.source, "page": item.chunk.page_number})
+            sources.append(
+                {"source": item.chunk.source, "page": item.chunk.page_number}
+            )
 
     return {
         "answer": trace.final_response,

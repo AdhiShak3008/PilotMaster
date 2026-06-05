@@ -19,6 +19,7 @@ def run_pipeline(
     query: str,
     user_id=None,
     source=None,
+    model_name=None,
 ):
 
     trace_id = generate_trace_id()
@@ -67,7 +68,10 @@ def run_pipeline(
 
     print("===========================\n")
 
-    response = generate_response(trace)
+    response = generate_response(
+        trace,
+        model_name=model_name,
+    )
     trace.final_response = response
 
     latency_ms = (time.perf_counter() - start_time) * 1000
@@ -82,12 +86,26 @@ def run_pipeline(
         scores=scores,
     )
 
-    _emit_trace(trace, latency_ms, evaluation, user_id, source)
+    _emit_trace(
+        trace,
+        latency_ms,
+        evaluation,
+        user_id,
+        source,
+        model_name=model_name,
+    )
 
     return trace
 
 
-def _emit_trace(trace, latency_ms: float, evaluation: dict, user_id=None, source=None):
+def _emit_trace(
+    trace,
+    latency_ms: float,
+    evaluation: dict,
+    user_id=None,
+    source=None,
+    model_name=None,
+):
     chunks = trace.retrieval_result.retrieved_chunks if trace.retrieval_result else []
 
     payload = {
@@ -96,7 +114,7 @@ def _emit_trace(trace, latency_ms: float, evaluation: dict, user_id=None, source
         "response": trace.final_response or "",
         "prompt": build_prompt(trace),
         "latency": round(latency_ms, 2),
-        "model_name": GROQ_MODEL,
+        "model_name": model_name or GROQ_MODEL,
         "retrieved_chunks": [
             {
                 "chunk_id": str(c.chunk.chunk_id),
