@@ -71,6 +71,24 @@ async def upload_document(
         ".jpg",
         ".jpeg",
         ".webp",
+        # treated as plain-text/code-like content
+        ".py",
+        ".js",
+        ".jsx",
+        ".ts",
+        ".tsx",
+        ".java",
+        ".cpp",
+        ".c",
+        ".h",
+        ".go",
+        ".rs",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".sql",
+        ".css",
+        ".html",
     ]
 
     file_ext = os.path.splitext(file.filename)[1].lower()
