@@ -1,4 +1,8 @@
 import re
+import numpy as np
+from pilotcore.retrieval.embeddings import (
+    get_embedding_model,
+)
 
 STOPWORDS = {
     "the",
@@ -77,6 +81,9 @@ BROAD_QUERY_VERBS = {
     "summarize",
     "overview",
 }
+
+# Shared embedding model used by retrieval and evaluation
+SEMANTIC_MODEL = get_embedding_model()
 
 
 def _chunk_texts(chunks: list) -> list[str]:
@@ -491,6 +498,70 @@ def evaluate_answerability(
     }
 
 
+def evaluate_semantic_query_coverage(
+    query: str,
+    chunks: list,
+) -> float:
+
+    if not chunks:
+        return 0.0
+
+    context = "\n".join(_chunk_texts(chunks))
+
+    query_emb = SEMANTIC_MODEL.encode(
+        [query],
+        convert_to_numpy=True,
+        normalize_embeddings=True,
+    )
+
+    context_emb = SEMANTIC_MODEL.encode(
+        [context],
+        convert_to_numpy=True,
+        normalize_embeddings=True,
+    )
+
+    similarity = float(
+        np.dot(
+            query_emb[0],
+            context_emb[0],
+        )
+    )
+
+    return round(float(similarity), 4)
+
+
+def evaluate_semantic_grounding(
+    response: str,
+    chunks: list,
+) -> float:
+
+    if not chunks:
+        return 0.0
+
+    context = "\n".join(_chunk_texts(chunks))
+
+    response_emb = SEMANTIC_MODEL.encode(
+        [response],
+        convert_to_numpy=True,
+        normalize_embeddings=True,
+    )
+
+    context_emb = SEMANTIC_MODEL.encode(
+        [context],
+        convert_to_numpy=True,
+        normalize_embeddings=True,
+    )
+
+    similarity = float(
+        np.dot(
+            response_emb[0],
+            context_emb[0],
+        )
+    )
+
+    return round(float(similarity), 4)
+
+
 def run_evaluation(
     query: str,
     response: str,
@@ -515,8 +586,30 @@ def run_evaluation(
         scores,
     )
 
+    semantic_query_coverage = evaluate_semantic_query_coverage(
+        query,
+        chunks,
+    )
+
+    semantic_grounding = evaluate_semantic_grounding(
+        response,
+        chunks,
+    )
+
+    print(
+        "semantic_query_coverage=",
+        semantic_query_coverage,
+    )
+
+    print(
+        "semantic_grounding=",
+        semantic_grounding,
+    )
+
     return {
         **retrieval,
         **grounding,
         **answerability,
+        "semantic_query_coverage": semantic_query_coverage,
+        "semantic_grounding": semantic_grounding,
     }

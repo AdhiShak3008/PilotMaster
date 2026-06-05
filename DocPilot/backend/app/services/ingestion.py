@@ -7,12 +7,14 @@ import re
 import time
 
 import pandas as pd
-import pytesseract
 import requests
 from docx import Document
 from pdf2image import convert_from_path
 from PIL import Image
 from pypdf import PdfReader
+import numpy as np
+from paddleocr import PaddleOCR
+from docling.document_converter import DocumentConverter
 
 try:
     from pptx import Presentation
@@ -27,6 +29,12 @@ except ImportError:
 from pilotcore.config import TRACEPILOT_URL
 
 logger = logging.getLogger(__name__)
+doc_converter = DocumentConverter()
+
+ocr_engine = PaddleOCR(
+    use_angle_cls=True,
+    lang="en",
+)
 
 
 class TextExtractionError(Exception):
@@ -222,6 +230,50 @@ def chunk_text(
     return chunks
 
 
+def extract_pdf_text_docling(file_path):
+    sections = []
+
+    try:
+        result = doc_converter.convert(file_path)
+        doc = result.document
+
+        for element, _level in doc.iterate_to_ordered_text_items():
+
+            text = clean_text(element.text)
+
+            if not text:
+                continue
+
+            page_number = 1
+
+            if getattr(element, "prov", None):
+                if len(element.prov) > 0:
+                    page_number = element.prov[0].page_no
+
+            sections.append(
+                TextSection(
+                    text=text,
+                    metadata={
+                        "page": page_number,
+                    },
+                )
+            )
+
+        logger.info(
+            "Docling extracted %s chars",
+            sum(len(s.text) for s in sections),
+        )
+
+        return sections
+
+    except Exception as e:
+        logger.exception(
+            "Docling extraction failed: %s",
+            e,
+        )
+        return []
+
+
 def detect_type(file_path, mime_type=None):
     extension = os.path.splitext(file_path)[1].lower()
     detected_mime = mime_type or mimetypes.guess_type(file_path)[0] or ""
@@ -229,6 +281,14 @@ def detect_type(file_path, mime_type=None):
 
 
 def extract_pdf_text(file_path):
+
+    sections = extract_pdf_text_docling(file_path)
+
+    if sections:
+        return sections
+
+    logger.info("Docling failed, falling back to legacy extraction")
+
     if fitz is not None:
         return extract_pdf_text_pymupdf(file_path)
 
@@ -300,14 +360,22 @@ def extract_pdf_ocr(file_path):
 
         sections = []
         for page_number, image in enumerate(images, start=1):
-            text = clean_text(pytesseract.image_to_string(image))
-            if text:
-                sections.append(
-                    TextSection(
-                        text=text,
-                        metadata={"page": page_number, "ocr": True},
-                    )
+            result = ocr_engine.ocr(
+                np.array(image),
+                cls=True,
+            )
+        lines = []
+        if result and result[0]:
+            for block in result[0]:
+                lines.append(block[1][0])
+        text = clean_text("\n".join(lines))
+        if text:
+            sections.append(
+                TextSection(
+                    text=text,
+                    metadata={"page": page_number, "ocr": True},
                 )
+            )
 
         logger.info("OCR extracted %s chars", sum(len(s.text) for s in sections))
         return sections
@@ -436,7 +504,15 @@ def dataframe_to_sections(df):
 def extract_image_sections(file_path):
     try:
         image = Image.open(file_path)
-        text = clean_text(pytesseract.image_to_string(image))
+        result = ocr_engine.ocr(
+            np.array(image),
+            cls=True,
+        )
+        lines = []
+        if result and result[0]:
+            for block in result[0]:
+                lines.append(block[1][0])
+        text = clean_text("\n".join(lines))
         logger.info("Image OCR extracted %s chars", len(text))
         return [TextSection(text=text, metadata={"ocr": True})]
 
