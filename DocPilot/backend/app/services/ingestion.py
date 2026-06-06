@@ -382,6 +382,14 @@ def extract_pdf_ocr(file_path):
             result = ocr_engine.predict(
                 np.array(image),
             )
+            print("\n================ OCR RAW RESULT ================")
+            print(result)
+            print("TYPE:", type(result))
+
+            if result:
+                print("FIRST ITEM TYPE:", type(result[0]))
+                print("FIRST ITEM:", result[0])
+
             lines = []
             if result and result[0]:
                 for block in result[0]:
@@ -526,10 +534,26 @@ def extract_image_sections(file_path):
         result = ocr_engine.predict(
             np.array(image),
         )
+        print("\n================ OCR RAW RESULT ================")
+        print(result)
+        print("TYPE:", type(result))
+
+        if result:
+            print("FIRST ITEM TYPE:", type(result[0]))
+            print("FIRST ITEM:", result[0])
+
         lines = []
         if result and result[0]:
             for block in result[0]:
                 lines.append(block[1][0])
+
+        print("\n================ LINES ================")
+        print(lines)
+
+        text = clean_text("\n".join(lines))
+
+        print("\n================ FINAL TEXT ================")
+        print(text)
         text = clean_text("\n".join(lines))
         logger.info("Image OCR extracted %s chars", len(text))
         return [TextSection(text=text, metadata={"ocr": True})]
