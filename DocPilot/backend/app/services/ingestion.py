@@ -374,7 +374,6 @@ def extract_pdf_ocr(file_path):
         for page_number, image in enumerate(images, start=1):
             result = ocr_engine.ocr(
                 np.array(image),
-                cls=True,
             )
             lines = []
             if result and result[0]:
@@ -519,7 +518,6 @@ def extract_image_sections(file_path):
         ocr_engine = get_ocr_engine()
         result = ocr_engine.ocr(
             np.array(image),
-            cls=True,
         )
         lines = []
         if result and result[0]:
