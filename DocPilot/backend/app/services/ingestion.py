@@ -372,6 +372,8 @@ def extract_pdf_ocr(file_path):
         ocr_engine = get_ocr_engine()
 
         for page_number, image in enumerate(images, start=1):
+            image = image.convert("RGB")
+
             result = ocr_engine.ocr(
                 np.array(image),
             )
@@ -514,7 +516,7 @@ def dataframe_to_sections(df):
 
 def extract_image_sections(file_path):
     try:
-        image = Image.open(file_path)
+        image = Image.open(file_path).convert("RGB")
         ocr_engine = get_ocr_engine()
         result = ocr_engine.ocr(
             np.array(image),
