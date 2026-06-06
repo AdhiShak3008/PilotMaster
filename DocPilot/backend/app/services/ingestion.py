@@ -1,8 +1,3 @@
-import os
-
-os.environ["FLAGS_use_mkldnn"] = "0"
-os.environ["OMP_NUM_THREADS"] = "1"
-
 from dataclasses import dataclass, field
 from statistics import median
 import logging
@@ -10,16 +5,14 @@ import mimetypes
 import os
 import re
 import time
-
+from docling.document_converter import DocumentConverter
 import pandas as pd
+import pytesseract
 import requests
 from docx import Document
 from pdf2image import convert_from_path
 from PIL import Image
 from pypdf import PdfReader
-import numpy as np
-
-from docling.document_converter import DocumentConverter
 
 try:
     from pptx import Presentation
@@ -34,22 +27,6 @@ except ImportError:
 from pilotcore.config import TRACEPILOT_URL
 
 logger = logging.getLogger(__name__)
-doc_converter = DocumentConverter()
-
-ocr_engine = None
-
-
-def get_ocr_engine():
-    global ocr_engine
-
-    if ocr_engine is None:
-        from paddleocr import PaddleOCR
-
-        ocr_engine = PaddleOCR(
-            lang="en",
-        )
-
-    return ocr_engine
 
 
 class TextExtractionError(Exception):
@@ -245,50 +222,6 @@ def chunk_text(
     return chunks
 
 
-def extract_pdf_text_docling(file_path):
-    sections = []
-
-    try:
-        result = doc_converter.convert(file_path)
-        doc = result.document
-
-        for element, _level in doc.iterate_to_ordered_text_items():
-
-            text = clean_text(element.text)
-
-            if not text:
-                continue
-
-            page_number = 1
-
-            if getattr(element, "prov", None):
-                if len(element.prov) > 0:
-                    page_number = element.prov[0].page_no
-
-            sections.append(
-                TextSection(
-                    text=text,
-                    metadata={
-                        "page": page_number,
-                    },
-                )
-            )
-
-        logger.info(
-            "Docling extracted %s chars",
-            sum(len(s.text) for s in sections),
-        )
-
-        return sections
-
-    except Exception as e:
-        logger.exception(
-            "Docling extraction failed: %s",
-            e,
-        )
-        return []
-
-
 def detect_type(file_path, mime_type=None):
     extension = os.path.splitext(file_path)[1].lower()
     detected_mime = mime_type or mimetypes.guess_type(file_path)[0] or ""
@@ -296,14 +229,6 @@ def detect_type(file_path, mime_type=None):
 
 
 def extract_pdf_text(file_path):
-
-    sections = extract_pdf_text_docling(file_path)
-
-    if sections:
-        return sections
-
-    logger.info("Docling failed, falling back to legacy extraction")
-
     if fitz is not None:
         return extract_pdf_text_pymupdf(file_path)
 
@@ -368,32 +293,40 @@ def extract_pdf_text_pypdf(file_path):
     return sections
 
 
+def extract_pdf_docling(file_path):
+    try:
+        converter = DocumentConverter()
+
+        result = converter.convert(file_path)
+
+        text = clean_text(result.document.export_to_markdown())
+
+        if not text:
+            return []
+
+        return [
+            TextSection(
+                text=text,
+                metadata={"extractor": "docling"},
+            )
+        ]
+
+    except Exception as e:
+        logger.exception(
+            "Docling extraction failed: %s",
+            e,
+        )
+        return []
+
+
 def extract_pdf_ocr(file_path):
     try:
         images = convert_from_path(file_path)
         logger.info("OCR pages processed: %s", len(images))
 
         sections = []
-        ocr_engine = get_ocr_engine()
-
         for page_number, image in enumerate(images, start=1):
-            image = image.convert("RGB")
-
-            result = ocr_engine.predict(
-                np.array(image),
-            )
-            print("\n================ OCR RAW RESULT ================")
-            print(result)
-            print("TYPE:", type(result))
-
-            if result:
-                print("FIRST ITEM TYPE:", type(result[0]))
-                print("FIRST ITEM:", result[0])
-
-            lines = []
-            if result and len(result) > 0:
-                lines = result[0]["rec_texts"]
-            text = clean_text("\n".join(lines))
+            text = clean_text(pytesseract.image_to_string(image))
             if text:
                 sections.append(
                     TextSection(
@@ -411,12 +344,30 @@ def extract_pdf_ocr(file_path):
 
 
 def extract_pdf_sections(file_path):
+
     sections = extract_pdf_text(file_path)
 
-    if sections:
+    total_chars = sum(len(section.text) for section in sections)
+
+    logger.info(
+        "Digital PDF extraction produced %s chars",
+        total_chars,
+    )
+
+    if total_chars > 500:
         return sections
 
-    logger.info("OCR triggered")
+    logger.info("PyMuPDF extraction weak, trying Docling")
+
+    sections = extract_pdf_docling(file_path)
+
+    docling_chars = sum(len(section.text) for section in sections)
+
+    if docling_chars > 500:
+        return sections
+
+    logger.info("Docling failed, OCR triggered")
+
     return extract_pdf_ocr(file_path)
 
 
@@ -528,31 +479,8 @@ def dataframe_to_sections(df):
 
 def extract_image_sections(file_path):
     try:
-        image = Image.open(file_path).convert("RGB")
-        ocr_engine = get_ocr_engine()
-        result = ocr_engine.predict(
-            np.array(image),
-        )
-        print("\n================ OCR RAW RESULT ================")
-        print(result)
-        print("TYPE:", type(result))
-
-        if result:
-            print("FIRST ITEM TYPE:", type(result[0]))
-            print("FIRST ITEM:", result[0])
-
-        lines = []
-        if result and len(result) > 0:
-            lines = result[0]["rec_texts"]
-
-        print("\n================ LINES ================")
-        print(lines)
-
-        text = clean_text("\n".join(lines))
-
-        print("\n================ FINAL TEXT ================")
-        print(text)
-        text = clean_text("\n".join(lines))
+        image = Image.open(file_path)
+        text = clean_text(pytesseract.image_to_string(image))
         logger.info("Image OCR extracted %s chars", len(text))
         return [TextSection(text=text, metadata={"ocr": True})]
 
@@ -570,24 +498,6 @@ def extract_text_sections(file_path, mime_type=None):
         ".pptx": extract_pptx_sections,
         ".txt": extract_txt_sections,
         ".md": extract_txt_sections,
-        # treated as plain-text/code-like content
-        ".py": extract_txt_sections,
-        ".js": extract_txt_sections,
-        ".jsx": extract_txt_sections,
-        ".ts": extract_txt_sections,
-        ".tsx": extract_txt_sections,
-        ".java": extract_txt_sections,
-        ".cpp": extract_txt_sections,
-        ".c": extract_txt_sections,
-        ".h": extract_txt_sections,
-        ".go": extract_txt_sections,
-        ".rs": extract_txt_sections,
-        ".json": extract_txt_sections,
-        ".yaml": extract_txt_sections,
-        ".yml": extract_txt_sections,
-        ".sql": extract_txt_sections,
-        ".css": extract_txt_sections,
-        ".html": extract_txt_sections,
         ".csv": extract_csv_sections,
         ".xlsx": extract_xlsx_sections,
         ".png": extract_image_sections,
