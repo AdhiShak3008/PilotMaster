@@ -1,6 +1,8 @@
 import os
 
 os.environ["FLAGS_use_mkldnn"] = "0"
+os.environ["OMP_NUM_THREADS"] = "1"
+
 from dataclasses import dataclass, field
 from statistics import median
 import logging
@@ -377,7 +379,7 @@ def extract_pdf_ocr(file_path):
         for page_number, image in enumerate(images, start=1):
             image = image.convert("RGB")
 
-            result = ocr_engine.ocr(
+            result = ocr_engine.predict(
                 np.array(image),
             )
             lines = []
@@ -521,7 +523,7 @@ def extract_image_sections(file_path):
     try:
         image = Image.open(file_path).convert("RGB")
         ocr_engine = get_ocr_engine()
-        result = ocr_engine.ocr(
+        result = ocr_engine.predict(
             np.array(image),
         )
         lines = []
