@@ -353,7 +353,6 @@ def extract_pdf_sections(file_path):
         "Digital PDF extraction produced %s chars",
         total_chars,
     )
-
     if total_chars > 500:
         return sections
 
