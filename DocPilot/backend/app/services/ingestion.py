@@ -1,3 +1,6 @@
+import os
+
+os.environ["FLAGS_use_mkldnn"] = "0"
 from dataclasses import dataclass, field
 from statistics import median
 import logging
