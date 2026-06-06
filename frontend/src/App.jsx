@@ -157,7 +157,7 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
                     <ProductCard
                         name="TracePilot"
                         description="Observe every execution. Inspect traces, chunks, evaluation scores and spans."
-                        tags={["Traces", "Evaluation", "Observability", "Replay"]}
+                        tags={["Traces", "Evaluation", "Observability", "Re-Run Traces"]}
                         onClick={() => onOpen("tracepilot")}
                         accent="#cccccc"
                     />

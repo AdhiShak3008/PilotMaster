@@ -235,7 +235,7 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
                                         opacity: replaying ? 0.7 : 1,
                                         transition: "opacity 0.15s",
                                     }}>
-                                    {replaying ? <ButtonContent text="Replaying..." /> : "↺ Replay"}
+                                    {replaying ? <ButtonContent text="Replaying..." /> : "↺ Re-Run"}
                                 </button>
                             </div>
 

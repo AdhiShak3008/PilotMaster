@@ -13,6 +13,7 @@ from pilotcore.retrieval.runtime import retrieve
 from pilotcore.generation.generator import generate_response
 from pilotcore.generation.prompt_builder import build_prompt
 from pilotcore.evaluation.evaluator import run_evaluation
+from pilotcore.retrieval.query_rewriter import rewrite_query
 
 
 def run_pipeline(
@@ -29,10 +30,16 @@ def run_pipeline(
         trace_id=trace_id,
         user_query=query,
     )
+    retrieval_query = rewrite_query(query)
+
+    print("\n===== QUERY REWRITE =====")
+    print("ORIGINAL :", query)
+    print("REWRITTEN:", retrieval_query)
+    print("=========================\n")
 
     retrieval_result = retrieve(
         strategy="hybrid",
-        query=query,
+        query=retrieval_query,
         user_id=user_id,
         source=source,
         trace_id=trace.trace_id,
