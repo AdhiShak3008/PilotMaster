@@ -28,6 +28,27 @@ from pilotcore.config import TRACEPILOT_URL
 
 logger = logging.getLogger(__name__)
 
+SECTION_TYPES = {
+    "abstract": "abstract",
+    "introduction": "introduction",
+    "background": "background",
+    "related work": "related_work",
+    "literature review": "related_work",
+    "methods": "methods",
+    "methodology": "methods",
+    "experimental setup": "methods",
+    "experiments": "experiments",
+    "evaluation": "evaluation",
+    "results": "results",
+    "discussion": "discussion",
+    "conclusion": "conclusion",
+    "future work": "future_work",
+    "limitations": "limitations",
+    "references": "references",
+    "bibliography": "references",
+    "appendix": "appendix",
+}
+
 
 class TextExtractionError(Exception):
     pass
@@ -172,9 +193,21 @@ def detect_section_title(page_dict):
 
 def clean_text(text):
     text = (text or "").replace("\x00", "")
+
     text = text.replace("\r\n", "\n").replace("\r", "\n")
+
+    # Fix PDF hyphenation
+    text = re.sub(r"(\w+)-\s*\n\s*(\w+)", r"\1\2", text)
+
+    # OCR garbage
+    text = re.sub(r"[|]{3,}", "", text)
+
+    # collapse spaces
     text = re.sub(r"[ \t]+", " ", text)
+
+    # collapse excessive newlines
     text = re.sub(r"\n{3,}", "\n\n", text)
+
     return text.strip()
 
 
@@ -252,8 +285,13 @@ def extract_pdf_text_pymupdf(file_path):
 
             if section_title:
                 metadata["section_title"] = section_title
-
+                lower = section_title.lower()
+                for key, value in SECTION_TYPES.items():
+                    if key in lower:
+                        metadata["section_type"] = value
+                        break
             if text:
+                metadata = {"element_type": "paragraph", **metadata}
                 sections.append(
                     TextSection(
                         text=text,
@@ -280,7 +318,10 @@ def extract_pdf_text_pypdf(file_path):
             sections.append(
                 TextSection(
                     text=text,
-                    metadata={"page": page_number},
+                    metadata={
+                        "page": page_number,
+                        "element_type": "paragraph",
+                    },
                 )
             )
 
@@ -307,7 +348,7 @@ def extract_pdf_docling(file_path):
         return [
             TextSection(
                 text=text,
-                metadata={"extractor": "docling"},
+                metadata={"extractor": "docling", "element_type": "document"},
             )
         ]
 
@@ -331,7 +372,11 @@ def extract_pdf_ocr(file_path):
                 sections.append(
                     TextSection(
                         text=text,
-                        metadata={"page": page_number, "ocr": True},
+                        metadata={
+                            "page": page_number,
+                            "ocr": True,
+                            "element_type": "ocr",
+                        },
                     )
                 )
 
@@ -377,7 +422,7 @@ def extract_docx_sections(file_path):
     return [
         TextSection(
             text=clean_text(text),
-            metadata={},
+            metadata={"element_type": "paragraph"},
         )
     ]
 
@@ -416,7 +461,10 @@ def extract_pptx_sections(file_path):
             sections.append(
                 TextSection(
                     text=text,
-                    metadata={"slide": slide_number},
+                    metadata={
+                        "slide": slide_number,
+                        "element_type": "slide",
+                    },
                 )
             )
 
@@ -431,7 +479,12 @@ def extract_txt_sections(file_path):
         encoding="utf-8",
         errors="ignore",
     ) as f:
-        return [TextSection(text=clean_text(f.read()), metadata={})]
+        return [
+            TextSection(
+                text=clean_text(f.read()),
+                metadata={"element_type": "paragraph"},
+            )
+        ]
 
 
 def extract_csv_sections(file_path):
@@ -469,7 +522,10 @@ def dataframe_to_sections(df):
             sections.append(
                 TextSection(
                     text=text,
-                    metadata={"row": int(row_number) + 1},
+                    metadata={
+                        "row": int(row_number) + 1,
+                        "element_type": "table_row",
+                    },
                 )
             )
 
@@ -481,11 +537,68 @@ def extract_image_sections(file_path):
         image = Image.open(file_path)
         text = clean_text(pytesseract.image_to_string(image))
         logger.info("Image OCR extracted %s chars", len(text))
-        return [TextSection(text=text, metadata={"ocr": True})]
+        return [
+            TextSection(
+                text=text,
+                metadata={
+                    "ocr": True,
+                    "element_type": "image",
+                },
+            )
+        ]
 
     except Exception as e:
         logger.exception("Image OCR failed: %s", e)
         return []
+
+
+def extract_code_sections(file_path):
+    with open(
+        file_path,
+        "r",
+        encoding="utf-8",
+        errors="ignore",
+    ) as f:
+
+        text = clean_text(f.read())
+
+    if not text:
+        return []
+
+    language_map = {
+        ".py": "python",
+        ".js": "javascript",
+        ".jsx": "javascript",
+        ".ts": "typescript",
+        ".tsx": "typescript",
+        ".java": "java",
+        ".cpp": "cpp",
+        ".c": "c",
+        ".h": "c_header",
+        ".go": "go",
+        ".rs": "rust",
+        ".json": "json",
+        ".yaml": "yaml",
+        ".yml": "yaml",
+        ".sql": "sql",
+        ".css": "css",
+        ".html": "html",
+    }
+
+    extension = os.path.splitext(file_path)[1].lower()
+
+    return [
+        TextSection(
+            text=text,
+            metadata={
+                "element_type": "code",
+                "language": language_map.get(
+                    extension,
+                    extension.lstrip("."),
+                ),
+            },
+        )
+    ]
 
 
 def extract_text_sections(file_path, mime_type=None):
@@ -499,6 +612,23 @@ def extract_text_sections(file_path, mime_type=None):
         ".md": extract_txt_sections,
         ".csv": extract_csv_sections,
         ".xlsx": extract_xlsx_sections,
+        ".py": extract_code_sections,
+        ".js": extract_code_sections,
+        ".jsx": extract_code_sections,
+        ".ts": extract_code_sections,
+        ".tsx": extract_code_sections,
+        ".java": extract_code_sections,
+        ".cpp": extract_code_sections,
+        ".c": extract_code_sections,
+        ".h": extract_code_sections,
+        ".go": extract_code_sections,
+        ".rs": extract_code_sections,
+        ".json": extract_code_sections,
+        ".yaml": extract_code_sections,
+        ".yml": extract_code_sections,
+        ".sql": extract_code_sections,
+        ".css": extract_code_sections,
+        ".html": extract_code_sections,
         ".png": extract_image_sections,
         ".jpg": extract_image_sections,
         ".jpeg": extract_image_sections,
