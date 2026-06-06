@@ -391,9 +391,8 @@ def extract_pdf_ocr(file_path):
                 print("FIRST ITEM:", result[0])
 
             lines = []
-            if result and result[0]:
-                for block in result[0]:
-                    lines.append(block[1][0])
+            if result and len(result) > 0:
+                lines = result[0]["rec_texts"]
             text = clean_text("\n".join(lines))
             if text:
                 sections.append(
@@ -543,9 +542,8 @@ def extract_image_sections(file_path):
             print("FIRST ITEM:", result[0])
 
         lines = []
-        if result and result[0]:
-            for block in result[0]:
-                lines.append(block[1][0])
+        if result and len(result) > 0:
+            lines = result[0]["rec_texts"]
 
         print("\n================ LINES ================")
         print(lines)
