@@ -11,6 +11,8 @@ class Trace(BaseModel):
 
     user_query: str
 
+    rewritten_query: Optional[str] = None
+
     retrieval_result: Optional[RetrievalResult] = None
 
     final_response: Optional[str] = None

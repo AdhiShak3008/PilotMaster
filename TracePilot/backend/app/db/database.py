@@ -20,6 +20,7 @@ def init_db():
     CREATE TABLE IF NOT EXISTS traces (
         trace_id TEXT PRIMARY KEY,
         query TEXT,
+        rewritten_query TEXT,
         retrieved_chunks TEXT,
         prompt TEXT,
         response TEXT,

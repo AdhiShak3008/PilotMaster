@@ -31,6 +31,7 @@ def run_pipeline(
         user_query=query,
     )
     retrieval_query = rewrite_query(query)
+    trace.rewritten_query = retrieval_query
 
     print("\n===== QUERY REWRITE =====")
     print("ORIGINAL :", query)
@@ -118,6 +119,7 @@ def _emit_trace(
     payload = {
         "trace_id": trace.trace_id,
         "query": trace.user_query,
+        "rewritten_query": getattr(trace, "rewritten_query", None),
         "response": trace.final_response or "",
         "prompt": build_prompt(trace),
         "latency": round(latency_ms, 2),

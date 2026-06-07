@@ -1,0 +1,17 @@
+[
+  {
+    "query": "What does BERT stand for?"
+  },
+  {
+    "query": "Why did bidirectional context improve performance?"
+  },
+  {
+    "query": "How did BERT differ from GPT?"
+  },
+  {
+    "query": "Why was masked language modeling necessary?"
+  },
+  {
+    "query": "What limitation of left-to-right models was BERT trying to solve?"
+  }
+]

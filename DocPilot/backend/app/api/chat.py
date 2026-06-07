@@ -89,4 +89,5 @@ def ask(
         "session_id": session_id,
         "answer": rag_response["answer"],
         "sources": rag_response["sources"],
+        "trace_id": rag_response.get("trace_id"),
     }

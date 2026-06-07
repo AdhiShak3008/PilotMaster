@@ -96,6 +96,7 @@ class IngestRequest(BaseModel):
     prompt_version: Optional[str] = "1.0"
     retriever_version: Optional[str] = "vector_v1"
     retrieval_consensus: Optional[str] = None
+    rewritten_query: Optional[str] = None
 
 
 class EventRequest(BaseModel):
@@ -176,6 +177,7 @@ def ingest_trace(request: IngestRequest):
     trace = Trace(
         trace_id=request.trace_id,
         query=request.query,
+        rewritten_query=request.rewritten_query,
         retrieved_chunks=[RetrievedChunk(**c.dict()) for c in request.retrieved_chunks],
         prompt=request.prompt,
         response=request.response,

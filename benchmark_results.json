@@ -1,0 +1,129 @@
+[
+  {
+    "query": "What does BERT stand for?",
+    "ok": true,
+    "status_code": 200,
+    "answer": "I don't have enough information to determine what BERT stands for. The context only discusses the architecture and features of BERT but does not explicitly mention its acronym's expansion.",
+    "sources": [
+      {
+        "source": "bert.pdf",
+        "page": 3
+      },
+      {
+        "source": "bert.pdf",
+        "page": 7
+      }
+    ],
+    "trace_id": "231a0c3f-2c88-4fb0-a9d4-e6da42ca7244",
+    "error": null,
+    "retrieval_quality": "medium",
+    "grounded": true,
+    "retrieval_score_avg": 0.3333,
+    "latency": 3712.31,
+    "chunk_count": 3
+  },
+  {
+    "query": "Why did bidirectional context improve performance?",
+    "ok": true,
+    "status_code": 200,
+    "answer": "I don't have enough information to determine why bidirectional context improved performance. The context mentions that bidirectional architectures enable low-resource tasks to benefit from deep architectures, but it does not explicitly explain why this is the case.",
+    "sources": [
+      {
+        "source": "bert.pdf",
+        "page": 9
+      },
+      {
+        "source": "bert.pdf",
+        "page": 11
+      }
+    ],
+    "trace_id": "81c3cdb7-384c-4cca-af5a-3c547a0cf221",
+    "error": null,
+    "retrieval_quality": "medium",
+    "grounded": true,
+    "retrieval_score_avg": 0.3333,
+    "latency": 854.69,
+    "chunk_count": 3
+  },
+  {
+    "query": "How did BERT differ from GPT?",
+    "ok": true,
+    "status_code": 200,
+    "answer": "According to the retrieved context, BERT differed from GPT in the following ways:\n\n1. Training data: BERT was trained on both BooksCorpus (800M words) and Wikipedia (2,500M words), while GPT was trained on only BooksCorpus (800M words).\n2. Learning of special tokens: GPT learns special tokens, such as [SEP] and [CLS], during fine-tuning, whereas BERT learns these tokens during pre-training.\n3. Additional sentence A/B embeddings: BERT also learns sentence A/B embeddings during pre-training, which is not mentioned as a pre-training feature in GPT. \n\nThese differences account for some of the variations between how BERT and GPT were trained.",
+    "sources": [
+      {
+        "source": "bert.pdf",
+        "page": 14
+      },
+      {
+        "source": "resume.pdf",
+        "page": 2
+      }
+    ],
+    "trace_id": "22d70931-f366-4fde-b344-5ab081eef8a1",
+    "error": null,
+    "retrieval_quality": "medium",
+    "grounded": true,
+    "retrieval_score_avg": 0.3333,
+    "latency": 812.59,
+    "chunk_count": 3
+  },
+  {
+    "query": "Why was masked language modeling necessary?",
+    "ok": true,
+    "status_code": 200,
+    "answer": "According to the retrieved context, masked language modeling was necessary because it alleviated the previously mentioned \"unidirectionality constraint\". This implies that the BERT authors identified a limitation with the model's previous architecture, and they addressed it by introducing the masked language model (MLM) pre-training objective.",
+    "sources": [
+      {
+        "source": "bert.pdf",
+        "page": 1
+      },
+      {
+        "source": "bert.pdf",
+        "page": 16
+      }
+    ],
+    "trace_id": "3fb2f9e5-b7b6-4ce9-b186-bd53a8096e86",
+    "error": null,
+    "retrieval_quality": "medium",
+    "grounded": true,
+    "retrieval_score_avg": 0.3333,
+    "latency": 738.31,
+    "chunk_count": 3
+  },
+  {
+    "query": "What limitation of left-to-right models was BERT trying to solve?",
+    "ok": true,
+    "status_code": 200,
+    "answer": "BERT was trying to solve the limitation of standard conditional language models that can only be trained left-to-right, i.e., they can only predict the next word in a sentence given the context from left to right, without considering the context from right to left.",
+    "sources": [
+      {
+        "source": "bert.pdf",
+        "page": 4
+      },
+      {
+        "source": "bert.pdf",
+        "page": 8
+      },
+      {
+        "source": "polyglot.pdf",
+        "page": 2
+      },
+      {
+        "source": "polyglot.pdf",
+        "page": 5
+      },
+      {
+        "source": "polyglot.pdf",
+        "page": 1
+      }
+    ],
+    "trace_id": "08c56a3d-f367-4b55-aedf-c73504cc37c3",
+    "error": null,
+    "retrieval_quality": "low",
+    "grounded": true,
+    "retrieval_score_avg": 0.1667,
+    "latency": 763.28,
+    "chunk_count": 6
+  }
+]

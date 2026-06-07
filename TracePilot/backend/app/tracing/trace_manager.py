@@ -12,17 +12,18 @@ def save_trace(trace: Trace):
     cursor.execute(
         """
     INSERT INTO traces (
-        trace_id, query, retrieved_chunks, prompt, response, latency,
+        trace_id, query,rewritten_query, retrieved_chunks, prompt, response, latency,
         timestamp, model_name, retrieval_score_avg, response_length,
         chunk_count, parent_trace_id, retrieval_quality, grounded,
         top_retrieval_score, spans, failure_types, prompt_mode, evaluation,
         user_id, source, evaluator_version, prompt_version, retriever_version
     )
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """,
         (
             trace.trace_id,
             trace.query,
+            trace.rewritten_query,
             json.dumps([chunk.dict() for chunk in trace.retrieved_chunks]),
             trace.prompt,
             trace.response,
@@ -56,6 +57,7 @@ def _row_to_trace(row) -> Trace:
     return Trace(
         trace_id=row["trace_id"],
         query=row["query"],
+        rewritten_query=row["rewritten_query"],
         retrieved_chunks=[
             RetrievedChunk(**chunk) for chunk in json.loads(row["retrieved_chunks"])
         ],
@@ -140,6 +142,7 @@ def get_trace(trace_id: str) -> dict | None:
     return {
         "trace_id": row["trace_id"],
         "query": row["query"],
+        "rewritten_query": row["rewritten_query"],
         "retrieved_chunks": json.loads(row["retrieved_chunks"]),
         "prompt": row["prompt"],
         "response": row["response"],

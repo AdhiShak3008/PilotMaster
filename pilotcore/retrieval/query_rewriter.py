@@ -6,13 +6,27 @@ client = Groq(api_key=GROQ_API_KEY)
 
 ENABLE_QUERY_REWRITE = True
 
+# Skip rewriting for very short queries
+MIN_WORDS_FOR_REWRITE = 5
+
+# Safety limits
+MAX_REWRITE_LENGTH = 200
+
 
 def rewrite_query(query: str) -> str:
 
     if not ENABLE_QUERY_REWRITE:
         return query
 
+    if not query:
+        return query
+
+    # Don't waste LLM calls on tiny queries
+    if len(query.split()) < MIN_WORDS_FOR_REWRITE:
+        return query
+
     try:
+
         completion = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             temperature=0,
@@ -22,54 +36,81 @@ def rewrite_query(query: str) -> str:
                     "content": """
 You are a retrieval query rewriter for a RAG system.
 
-Your goal is NOT to answer questions.
+Your task is to improve document retrieval.
 
-Your goal is to transform vague user questions into retrieval-friendly search queries.
+You are NOT answering questions.
+
+You are ONLY rewriting queries into retrieval-friendly search queries.
 
 Rules:
 
-- Return exactly ONE query.
+- Return exactly one query.
+- Output only the rewritten query.
 - Do not answer.
 - Do not explain.
 - Do not use bullet points.
 - Do not use quotation marks.
 - Preserve named entities exactly.
 - Preserve technical terms exactly.
-- Expand vague references into likely document terminology.
-- Prefer terminology commonly used in research papers.
+- Preserve file names exactly.
+- Preserve product names exactly.
+- Preserve people, companies, datasets, and model names exactly.
+- Expand vague wording into terminology likely to appear in documents.
+- Prefer terminology found in research papers, reports, technical documentation, resumes, source code, and manuals.
+- Do not invent facts.
+- Do not assume document topics.
+- Do not introduce entities not present in the user query.
 - If the query is already specific, return it unchanged.
 
 Examples:
 
 User:
-Why did bidirectional context improve performance?
+Why did it perform better?
 
 Rewrite:
-Why did bidirectional context improve performance in BERT
+Reasons for improved performance compared to previous approaches
 
 User:
 How did they train the model?
 
 Rewrite:
-How was BERT pretrained and fine tuned
+Model training methodology and training procedure
 
 User:
 What was wrong with older language models?
 
 Rewrite:
-What limitations of left to right language models did BERT address
+Limitations of previous language models
 
 User:
-Why did this approach work better?
+Why can it see both sides of a sentence?
 
 Rewrite:
-Why did BERT outperform previous NLP models
+Bidirectional context processing in language models
 
 User:
-What made BERT different?
+How is the document ingested?
 
 Rewrite:
-What architectural and training differences made BERT different from previous language models
+Document ingestion pipeline and ingestion process
+
+User:
+What does the code do?
+
+Rewrite:
+Code functionality and implementation behavior
+
+User:
+Give the candidate's work experience
+
+Rewrite:
+Candidate work experience and employment history
+
+User:
+What skills does the candidate have?
+
+Rewrite:
+Candidate skills qualifications and technical competencies
 """,
                 },
                 {
@@ -81,21 +122,34 @@ What architectural and training differences made BERT different from previous la
 
         rewritten = completion.choices[0].message.content.strip()
 
-        # fallback protections
+        # ---------- Guards ----------
 
         if not rewritten:
             return query
 
-        if len(rewritten) > 200:
+        if len(rewritten) > MAX_REWRITE_LENGTH:
             return query
 
-        if rewritten.count("\n") > 0:
+        if "\n" in rewritten:
+            return query
+
+        if len(rewritten.split()) < 2:
             return query
 
         if rewritten.lower().startswith("answer"):
             return query
 
-        if rewritten.lower().startswith("bert is"):
+        if rewritten.lower().startswith("the answer"):
+            return query
+
+        if rewritten.lower().startswith("based on"):
+            return query
+
+        if rewritten.lower().startswith("according to"):
+            return query
+
+        # No meaningful change
+        if rewritten.lower().strip() == query.lower().strip():
             return query
 
         print("\n===== QUERY REWRITE =====")

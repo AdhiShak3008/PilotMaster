@@ -12,6 +12,27 @@ from pilotcore.tracing.spans import (
 )
 
 
+def deduplicate_chunks(chunks):
+
+    seen = set()
+    unique = []
+
+    for chunk in chunks:
+
+        text = chunk.chunk.text.strip()
+
+        # crude but effective near-duplicate filter
+        key = text[:250].lower()
+
+        if key in seen:
+            continue
+
+        seen.add(key)
+        unique.append(chunk)
+
+    return unique
+
+
 def retrieve(
     strategy: str,
     **kwargs,
@@ -229,7 +250,13 @@ def retrieve(
             key=lambda chunk: chunk.score,
             reverse=True,
         )
+        before = len(fused_chunks)
 
+        fused_chunks = deduplicate_chunks(fused_chunks)
+
+        after = len(fused_chunks)
+
+        print(f"[DEDUP] {before} -> {after}")
         # Cross-encoder reranking
         # -----------------------------------------
         # RRF builds a strong hybrid candidate pool.
@@ -244,7 +271,14 @@ def retrieve(
         # - explanatory questions
         # - benchmark retrieval
         # - semantic ranking quality
+        print("\n===== DEDUP DEBUG =====")
 
+        for i, c in enumerate(fused_chunks, start=1):
+            print(f"\nRANK {i}")
+            print("CHUNK ID:", c.chunk.chunk_id)
+            print(c.chunk.text[:120])
+
+        print("========================\n")
         RERANK_POOL_SIZE = 20
 
         rerank_candidates = fused_chunks[:RERANK_POOL_SIZE]

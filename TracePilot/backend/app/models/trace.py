@@ -51,6 +51,7 @@ class Trace(BaseModel):
     prompt_version: str = "1.0"
     retriever_version: str = "vector_v1"
     retrieval_consensus: str | None = None
+    rewritten_query: Optional[str] = None
 
     @staticmethod
     def create_id():

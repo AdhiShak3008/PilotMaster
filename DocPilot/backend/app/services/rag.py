@@ -49,4 +49,5 @@ def ask_question(
     return {
         "answer": trace.final_response,
         "sources": sources,
+        "trace_id": trace.trace_id,
     }
