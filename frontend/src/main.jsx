@@ -1,27 +1,45 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
+import { ThemeProvider } from "./ThemeContext.jsx";
 
 const style = document.createElement("style");
 style.textContent = `
   :root {
-    --bg-primary: #0a0c12;
-    --bg-secondary: #101522;
+  --bg-primary: #212121;
+  --bg-secondary: #171717;
 
-    --surface: #171c28;
-    --surface-hover: #21283a;
-    --surface-strong: #141927;
+  --surface: #2a2a2a;
+  --surface-hover: #323232;
+  --surface-strong: #383838;
 
-    --border: #3f4a63;
+  --border: #4a4a4a;
 
-    --text-primary: #f3f4f6;
-    --text-secondary: #d7dce5;
-    --text-muted: #a5afc2;
+  --text-primary: #ececec;
+  --text-secondary: #c7c7c7;
+  --text-muted: #9b9b9b;
 
-    --success: #65d46e;
-    --purple: #8b5cf6;
-    --danger: #ef4444;
-  }
+  --success: #22c55e;
+  --danger: #ef4444;
+  --purple: #8b5cf6;
+}
+
+  .experimental-mode {
+--bg-primary: #070b1f;
+--bg-secondary: #0d1433;
+
+--surface: #121c45;
+--surface-hover: #1a2861;
+--surface-strong: #24378c;
+
+--border: #4f67d8;
+
+--text-primary: #f5f7ff;
+--text-secondary: #cfd8ff;
+--text-muted: #8ea1ff;
+
+--purple: #8b5cf6;
+}
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body, #root { width: 100%; height: 100%; overflow: hidden; background: var(--bg-primary); color: var(--text-primary); }
@@ -320,4 +338,8 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+ReactDOM.createRoot(document.getElementById("root")).render(
+    <ThemeProvider>
+        <App />
+    </ThemeProvider>
+);

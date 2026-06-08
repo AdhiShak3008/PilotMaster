@@ -14,6 +14,7 @@ from pilotcore.generation.generator import generate_response
 from pilotcore.generation.prompt_builder import build_prompt
 from pilotcore.evaluation.evaluator import run_evaluation
 from pilotcore.retrieval.query_rewriter import rewrite_query
+from pilotcore.runtime.experiment_config import ExperimentConfig
 
 
 def run_pipeline(
@@ -21,8 +22,10 @@ def run_pipeline(
     user_id=None,
     source=None,
     model_name=None,
+    experiment_config=None,
 ):
-
+    if experiment_config is None:
+        experiment_config = ExperimentConfig()
     trace_id = generate_trace_id()
     start_time = time.perf_counter()
 
@@ -30,21 +33,26 @@ def run_pipeline(
         trace_id=trace_id,
         user_query=query,
     )
-    retrieval_query = rewrite_query(query)
+    retrieval_query = query
+
+    if experiment_config.query_rewrite:
+        retrieval_query = rewrite_query(query)
+
     trace.rewritten_query = retrieval_query
 
     print("\n===== QUERY REWRITE =====")
     print("ORIGINAL :", query)
     print("REWRITTEN:", retrieval_query)
     print("=========================\n")
-
+    print("STRATEGY:", experiment_config.retrieval_method)
     retrieval_result = retrieve(
-        strategy="hybrid",
+        strategy=experiment_config.retrieval_method,
         query=retrieval_query,
         user_id=user_id,
         source=source,
         trace_id=trace.trace_id,
         trace=trace,
+        experiment_config=experiment_config,
     )
 
     trace.retrieval_result = retrieval_result

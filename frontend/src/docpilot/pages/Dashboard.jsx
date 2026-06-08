@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { apiRequest } from "../api";
 import { useDropzone } from "react-dropzone";
 
-function Dashboard({ onLogout, onHome, onTracePilot }) {
+function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
   const [file, setFile] = useState(null);
   const [question, setQuestion] = useState("");
   const [source, setSource] = useState("");
@@ -25,31 +25,53 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
   const messagesEndRef = useRef(null);
   const modelSelectorRef = useRef(null);
 
+  // UI-only experiment toggles
+  const [retrievalStrategy, setRetrievalStrategy] = useState("Hybrid");
+  const [enhancementMode, setEnhancementMode] = useState("Default");
+
+  const retrievalStrategies = [
+    "FAISS",
+    "FAISS + Reranker",
+    "BM25",
+    "BM25 + Reranker",
+    "Hybrid",
+    "Hybrid + Reranker",
+    "Hybrid + RRF",
+    "Hybrid + RRF + Reranker",
+  ];
+
+  const enhancements = [
+    "Default",
+    "Query Rewriting",
+    "Multi Query",
+    "Parent Child",
+    "All Enhancements",
+  ];
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (modelSelectorRef.current && !modelSelectorRef.current.contains(event.target)) {
-        setShowModels(false);
-      }
+      // Close if click is not inside the whole selector area.
+      if (!modelSelectorRef.current) return;
+      if (!modelSelectorRef.current.contains(event.target)) setShowModels(false);
     };
 
     const handleEsc = (event) => {
-      if (event.key === "Escape") {
-        setShowModels(false);
-      }
+      if (event.key === "Escape") setShowModels(false);
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    // Use "pointerdown" so it also closes for touch/stylus and earlier in the event cycle.
+    document.addEventListener("pointerdown", handleClickOutside);
     document.addEventListener("keydown", handleEsc);
-
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("pointerdown", handleClickOutside);
       document.removeEventListener("keydown", handleEsc);
     };
   }, []);
+
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -67,6 +89,7 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
         setInitialLoading(false);
       }
     };
+
     loadDashboard();
   }, []);
 
@@ -74,12 +97,10 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
     apiRequest("/models/")
       .then((data) => {
         setModels(data);
-
-        if (data.length > 0 && !selectedModel) {
-          setSelectedModel(data[0].id);
-        }
+        if (data.length > 0 && !selectedModel) setSelectedModel(data[0].id);
       })
       .catch(console.error);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchSessions = async () => {
@@ -117,43 +138,45 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: (files) => files.length > 0 && setFile(files[0]),
     accept: {
-  "application/pdf": [".pdf"],
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation": [".pptx"],
-  "text/plain": [
-    ".txt",
-    ".md",
-    ".py",
-    ".js",
-    ".jsx",
-    ".ts",
-    ".tsx",
-    ".java",
-    ".cpp",
-    ".c",
-    ".h",
-    ".go",
-    ".rs",
-    ".json",
-    ".yaml",
-    ".yml",
-    ".sql",
-    ".css",
-    ".html",
-  ],
-  "text/csv": [".csv"],
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
-  "image/png": [".png"],
-  "image/jpeg": [".jpg", ".jpeg"],
-  "image/webp": [".webp"],
-},
+      "application/pdf": [".pdf"],
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation": [".pptx"],
+      "text/plain": [
+        ".txt",
+        ".md",
+        ".py",
+        ".js",
+        ".jsx",
+        ".ts",
+        ".tsx",
+        ".java",
+        ".cpp",
+        ".c",
+        ".h",
+        ".go",
+        ".rs",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".sql",
+        ".css",
+        ".html",
+      ],
+      "text/csv": [".csv"],
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+      "image/png": [".png"],
+      "image/jpeg": [".jpg", ".jpeg"],
+      "image/webp": [".webp"],
+    },
   });
 
   const uploadFile = async () => {
     if (!file || uploading) return;
     setUploading(true);
+
     const formData = new FormData();
     formData.append("file", file);
+
     try {
       const data = await apiRequest("/docs/upload", "POST", formData);
       if (data.detail) {
@@ -171,6 +194,7 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
 
   const askQuestion = async () => {
     if (!question || asking) return;
+
     const q = question;
     setQuestion("");
 
@@ -182,12 +206,20 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
 
     setAsking(true);
     try {
-      const data = await apiRequest("/chat/ask", "POST", {
+      const payload = {
         question: q,
         source,
         session_id: currentSessionId,
         model_name: selectedModel,
-      });
+      };
+
+      // Only pass these if backend supports them.
+      if (experimentMode) {
+        payload.retrieval_strategy = retrievalStrategy;
+        payload.enhancement_mode = enhancementMode;
+      }
+
+      const data = await apiRequest("/chat/ask", "POST", payload);
 
       if (data.session_id) {
         setCurrentSessionId(data.session_id);
@@ -222,6 +254,7 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
   const deleteActiveDocument = async () => {
     if (deletingDoc) return;
     if (!window.confirm("Delete all documents and clear the vector store?")) return;
+
     setDeletingDoc(true);
     try {
       await apiRequest("/docs/reset", "DELETE");
@@ -237,9 +270,8 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
     }
   };
 
-  const activeModelLabel = models.length === 0
-    ? "Loading models..."
-    : models.find((m) => m.id === selectedModel)?.label || selectedModel;
+  const activeModelLabel =
+    models.length === 0 ? "Loading models..." : models.find((m) => m.id === selectedModel)?.label || selectedModel;
 
   return (
     <div
@@ -254,9 +286,7 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
         overflow: "hidden",
       }}
     >
-      {(initialLoading || uploading) && (
-        <LoadingOverlay text={uploading ? "Uploading document..." : "Loading dashboard..."} />
-      )}
+      {(initialLoading || uploading) && <LoadingOverlay text={uploading ? "Uploading document..." : "Loading dashboard..."} />}
 
       {sidebarOpen && (
         <button
@@ -398,7 +428,15 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
                 transition: "opacity 0.15s",
               }}
             >
-              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, color: "var(--text-primary)" }}>
+              <span
+                style={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  flex: 1,
+                  color: "var(--text-primary)",
+                }}
+              >
                 {session.title || `Chat #${session.id}`}
               </span>
 
@@ -494,6 +532,7 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
           {messages.length === 0 && <p style={{ color: "var(--text-muted)", fontSize: "16px" }}>Ask questions about your document...</p>}
 
           {messages
+            .slice()
             .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
             .map((msg, i) => (
               <div key={i} style={{ marginBottom: "28px", display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
@@ -523,16 +562,7 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
         </div>
 
         {/* INPUT */}
-        <div
-          className="docpilot-input-bar"
-          style={{
-            padding: "16px 24px",
-            borderTop: "1px solid var(--border)",
-            flexShrink: 0,
-            background: "var(--surface)",
-          }}
-        >
-          {/* composer */}
+        <div className="docpilot-input-bar" style={{ padding: "16px 24px", borderTop: "1px solid var(--border)", flexShrink: 0, background: "var(--surface)" }}>
           <div
             className="composer"
             style={{
@@ -563,99 +593,119 @@ function Dashboard({ onLogout, onHome, onTracePilot }) {
               />
             </div>
 
-            {/* composer-footer */}
-            <div
-              className="composer-footer"
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <div
-                style={{ position: "relative", display: "flex", flexDirection: "column" }}
-                ref={modelSelectorRef}
-              >
+            <div style={{ display: "flex", alignItems: "flex-end",justifyContent: "space-between", gap: "12px"}}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                <div style={{ position: "relative", display: "flex", flexDirection: "column" }} ref={modelSelectorRef}>
+                  <button
+                    onClick={() => setShowModels((v) => !v)}
+                    style={{ background: "transparent", border: "none", color: "var(--text-primary)", cursor: "pointer", padding: 0, fontSize: "14px" }}
+                  >
+                    {activeModelLabel} ▼
+                  </button>
+
+                  {showModels && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: "100%",
+                        left: 0,
+                        marginBottom: "10px",
+                        width: "320px",
+                        zIndex: 9999,
+                        borderRadius: "18px",
+                        border: "1px solid var(--border)",
+                        background: "var(--surface)",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {models.length > 0 &&
+                        models.map((model) => (
+                          <div
+                            key={model.id}
+                            onClick={() => {
+                              setSelectedModel(model.id);
+                              setShowModels(false);
+                            }}
+                            style={{
+                              padding: "8px",
+                              cursor: "pointer",
+                              background: selectedModel === model.id ? "var(--surface-hover)" : "transparent",
+                            }}
+                          >
+                            <div>
+                              {selectedModel === model.id ? "✓ " : ""}
+                              {model.label}
+                            </div>
+                            <div style={{ fontSize: "12px", color: "#888", marginTop: "4px" }}>{model.subtitle}</div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+
+                  <span style={{ fontSize: "11px", color: "#777", marginTop: "4px" }}>Active model</span>
+                </div>
+
+                {experimentMode && (
+                  <>
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <select
+                        value={retrievalStrategy}
+                        onChange={(e) => setRetrievalStrategy(e.target.value)}
+                        style={{ background: "var(--surface)", color: "var(--text-primary)", border: "1px solid var(--border)", borderRadius: "8px", padding: "6px 10px" }}
+                      >
+                        {retrievalStrategies.map((strategy) => (
+                          <option key={strategy} value={strategy}>
+                            {strategy}
+                          </option>
+                        ))}
+                      </select>
+                      <span style={{ fontSize: "11px", color: "#777", marginTop: "4px" }}>Retrieval Strategy</span>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <select
+                        value={enhancementMode}
+                        onChange={(e) => setEnhancementMode(e.target.value)}
+                        style={{ background: "var(--surface)", color: "var(--text-primary)", border: "1px solid var(--border)", borderRadius: "8px", padding: "6px 10px" }}
+                      >
+                        {enhancements.map((mode) => (
+                          <option key={mode} value={mode}>
+                            {mode}
+                          </option>
+                        ))}
+                      </select>
+                      <span style={{ fontSize: "11px", color: "#777", marginTop: "4px" }}>Enhancements</span>
+                    </div>
+                  </>
+                )}
+</div>
+
                 <button
-                  onClick={() => setShowModels((v) => !v)}
+                  onClick={askQuestion}
+                  disabled={asking}
                   style={{
-                    background: "transparent",
-                    border: "none",
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "999px",
+                    border: "1px solid var(--border)",
+                    background: "var(--surface)",
                     color: "var(--text-primary)",
-                    cursor: "pointer",
-                    padding: 0,
-                    fontSize: "14px",
+                    cursor: asking ? "not-allowed" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "18px",
+                    flexShrink: 0,
                   }}
                 >
-                  {activeModelLabel} ▼
+                  {asking ? "⏳" : "➤"}
                 </button>
-
-                {showModels && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      bottom: "100%",
-                      left: 0,
-                      marginBottom: "10px",
-                      width: "320px",
-                      zIndex: 9999,
-                      borderRadius: "18px",
-                      border: "1px solid var(--border)",
-                      background: "var(--surface)",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {models.length > 0 && models.map((model) => (
-                      <div
-                        key={model.id}
-                        onClick={() => {
-                          setSelectedModel(model.id);
-                          setShowModels(false); // close after selection
-                        }}
-                        style={{
-                          padding: "8px",
-                          cursor: "pointer",
-                          background: selectedModel === model.id ? "var(--surface-hover)" : "transparent",
-                        }}
-                      >
-                        <div>
-                          {selectedModel === model.id ? "✓ " : ""}
-                          {model.label}
-                        </div>
-                        <div style={{ fontSize: "12px", color: "#888", marginTop: "4px" }}>{model.subtitle}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <span style={{ fontSize: "11px", color: "#777", marginTop: "4px" }}>Active model</span>
               </div>
-
-              <button
-                onClick={askQuestion}
-                disabled={asking}
-                style={{
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: "999px",
-                  border: "1px solid var(--border)",
-                  background: "var(--surface)",
-                  color: "var(--text-primary)",
-                  cursor: asking ? "not-allowed" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "18px",
-                  flexShrink: 0,
-                }}
-              >
-                {asking ? "⏳" : "➤"}
-              </button>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    
   );
 }
 

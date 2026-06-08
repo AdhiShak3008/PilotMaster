@@ -33,10 +33,26 @@ def deduplicate_chunks(chunks):
     return unique
 
 
+def run_dedup(chunks):
+    before = len(chunks)
+
+    chunks = deduplicate_chunks(chunks)
+
+    after = len(chunks)
+
+    print(f"[DEDUP] {before} -> {after}")
+
+    return chunks
+
+
 def retrieve(
     strategy: str,
     **kwargs,
 ):
+    experiment_config = kwargs.pop(
+        "experiment_config",
+        None,
+    )
 
     trace = kwargs.get("trace")
 
@@ -250,13 +266,8 @@ def retrieve(
             key=lambda chunk: chunk.score,
             reverse=True,
         )
-        before = len(fused_chunks)
-
-        fused_chunks = deduplicate_chunks(fused_chunks)
-
-        after = len(fused_chunks)
-
-        print(f"[DEDUP] {before} -> {after}")
+        if experiment_config is None or experiment_config.deduplication:
+            fused_chunks = run_dedup(fused_chunks)
         # Cross-encoder reranking
         # -----------------------------------------
         # RRF builds a strong hybrid candidate pool.

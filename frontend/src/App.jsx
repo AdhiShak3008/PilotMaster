@@ -2,23 +2,62 @@ import { useEffect, useState } from "react";
 import { apiRequest, loginRequest } from "./docpilot/api.js";
 import DocPilotDashboard from "./docpilot/pages/Dashboard.jsx";
 import TraceExplorer from "./tracepilot/TraceExplorer.jsx";
+import { useTheme } from "./ThemeContext.jsx";
 
-const theme = {
-    bgPrimary: "var(--bg-primary)",
-    bgSecondary: "var(--bg-secondary)",
-    surface: "var(--surface)",
-    surfaceHover: "var(--surface-hover)",
-    surfaceStrong: "var(--surface-strong)",
-    border: "var(--border)",
-    textPrimary: "var(--text-primary)",
-    textSecondary: "var(--text-secondary)",
-    textMuted: "var(--text-muted)",
-    success: "var(--success)",
-    purple: "var(--purple)",
-    danger: "var(--danger)",
+// ─── THEME HELPER ─────────────────────────────────────────────────────────────
+// Must be called INSIDE components so it re-evaluates on every render
+function getTheme() {
+    return {
+        bgPrimary: "var(--bg-primary)",
+        bgSecondary: "var(--bg-secondary)",
+        surface: "var(--surface)",
+        surfaceHover: "var(--surface-hover)",
+        surfaceStrong: "var(--surface-strong)",
+        border: "var(--border)",
+        textPrimary: "var(--text-primary)",
+        textSecondary: "var(--text-secondary)",
+        textMuted: "var(--text-muted)",
+        success: "var(--success)",
+        purple: "var(--purple)",
+        danger: "var(--danger)",
+    };
+}
+
+// Style factories — take theme as arg so they're always fresh
+const getInputStyle = (theme) => ({
+    width: "100%", padding: "20px 22px", marginBottom: "16px", borderRadius: "14px",
+    border: `1px solid ${theme.border}`, background: theme.surface, color: theme.textPrimary,
+    fontSize: "17px", outline: "none", boxSizing: "border-box",
+});
+
+const getPrimaryBtnStyle = (theme) => ({
+    width: "100%", padding: "20px", borderRadius: "14px", border: `1px solid ${theme.border}`,
+    background: theme.surfaceHover, color: theme.textPrimary, fontSize: "17px", cursor: "pointer",
+    fontWeight: "600", marginBottom: "8px", boxSizing: "border-box",
+});
+
+const getBtnStyle = (theme) => ({
+    padding: "10px 20px", background: theme.surface, color: theme.textSecondary,
+    border: `1px solid ${theme.border}`, borderRadius: "10px", cursor: "pointer", fontSize: "13px",
+});
+
+const getLinkStyle = (theme) => ({
+    margin: "14px 0 0", color: theme.textSecondary, textAlign: "center", cursor: "pointer", fontSize: "15px",
+});
+
+const authTitleStyle = {
+    margin: "0 0 8px", fontSize: "64px", fontFamily: "Georgia, serif",
+    fontWeight: "600", letterSpacing: "-3px", color: "white", textAlign: "center", lineHeight: 1,
 };
 
+function disabledStyle(disabled) {
+    return disabled ? { cursor: "not-allowed", opacity: 0.7, transition: "opacity 0.15s" } : { transition: "opacity 0.15s" };
+}
+
+// ─── APP ──────────────────────────────────────────────────────────────────────
+
 export default function App() {
+    const { experimentMode } = useTheme();
     const [auth, setAuth] = useState(false);
     const [loading, setLoading] = useState(true);
     const [screen, setScreen] = useState("login");
@@ -45,10 +84,12 @@ export default function App() {
             setLoading(false);
         };
         validate();
-    }, []); // runs once only on mount
+    }, []);
 
     const logout = () => {
         localStorage.removeItem("token");
+        localStorage.removeItem("pilotmaster_mode");           
+        document.documentElement.classList.remove("experimental-mode");
         setAuth(false);
         setScreen("login");
         setUsername("");
@@ -72,6 +113,7 @@ export default function App() {
 
     if (screen === "docpilot") return (
         <DocPilotDashboard
+            experimentMode={experimentMode}
             onLogout={logout}
             onHome={() => setScreen("home")}
             onTracePilot={() => setScreen("tracepilot")}
@@ -80,6 +122,7 @@ export default function App() {
 
     if (screen === "tracepilot") return (
         <TraceExplorer
+            experimentMode={experimentMode}
             onHome={() => setScreen("home")}
             onDocPilot={() => setScreen("docpilot")}
         />
@@ -88,9 +131,12 @@ export default function App() {
     return <PilotMasterHome username={username} plan={plan} onOpen={setScreen} onLogout={logout} />;
 }
 
-// ─── HOME ────────────────────────────────────────────────────────────────────
+// ─── HOME ─────────────────────────────────────────────────────────────────────
 
 function PilotMasterHome({ username, plan, onOpen, onLogout }) {
+    const { experimentMode, toggleMode } = useTheme();
+    const theme = getTheme();
+    const btnStyle = getBtnStyle(theme);
     const [currentPlan, setCurrentPlan] = useState(plan);
     const [planLoading, setPlanLoading] = useState(false);
 
@@ -113,12 +159,22 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
         } catch { alert("Downgrade failed"); }
         finally { setPlanLoading(false); }
     };
+
     return (
-        <div className="pilot-home" style={{
-            background: theme.bgPrimary, color: theme.textPrimary, fontFamily: "Arial",
-            width: "100vw", height: "100vh", boxSizing: "border-box",
-            display: "grid", gridTemplateRows: "auto 1fr auto", overflow: "hidden",
-        }}>
+        <div
+            key={experimentMode ? "exp" : "prod"}
+            style={{
+                background: theme.bgPrimary,
+                color: theme.textPrimary,
+                fontFamily: "Arial",
+                width: "100vw",
+                height: "100vh",
+                boxSizing: "border-box",
+                display: "grid",
+                gridTemplateRows: "auto 1fr auto",
+                overflow: "hidden",
+            }}
+        >
             {/* TOP BAR */}
             <div className="pilot-home-topbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "22px 48px", borderBottom: `1px solid ${theme.border}` }}>
                 <div>
@@ -145,7 +201,26 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
 
             {/* CENTER */}
             <div className="pilot-home-center" style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: "28px" }}>
-                <p style={{ margin: 0, fontSize: "11px", color: theme.textMuted, letterSpacing: "0.12em", textTransform: "uppercase" }}>select a workspace</p>
+                <button
+                    onClick={toggleMode}
+                    style={{
+                        padding: "12px 24px",
+                        borderRadius: "10px",
+                        border: experimentMode ? "1px solid #ff7b72" : "1px solid #7c3aed",
+                        background: theme.surface,
+                        color: experimentMode ? "#ff7b72" : "#a78bfa",
+                        cursor: "pointer",
+                        fontSize: "13px",
+                        fontWeight: "600",
+                    }}
+                >
+                    {experimentMode ? "← Return to Production Mode" : "🧪 Enter Experimentation Mode"}
+                </button>
+
+                <p style={{ margin: 0, fontSize: "11px", color: theme.textMuted, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                    {experimentMode ? "experimental workspace" : "select a workspace"}
+                </p>
+
                 <div className="pilot-home-grid" style={{ display: "flex", gap: "20px" }}>
                     <ProductCard
                         name="DocPilot"
@@ -173,8 +248,12 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
     );
 }
 
+// ─── PRODUCT CARD ─────────────────────────────────────────────────────────────
+
 function ProductCard({ name, description, tags, onClick, accent }) {
+    const theme = getTheme(); // re-evaluates when parent re-renders after theme toggle
     const [hovered, setHovered] = useState(false);
+
     return (
         <div
             className="pilot-product-card"
@@ -208,9 +287,14 @@ function ProductCard({ name, description, tags, onClick, accent }) {
     );
 }
 
-// ─── AUTH ────────────────────────────────────────────────────────────────────
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
 
 function Login({ onLogin, goToSignup, goToForgot }) {
+    const theme = getTheme();
+    const inputStyle = getInputStyle(theme);
+    const primaryBtnStyle = getPrimaryBtnStyle(theme);
+    const linkStyle = getLinkStyle(theme);
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
@@ -244,6 +328,11 @@ function Login({ onLogin, goToSignup, goToForgot }) {
 }
 
 function Signup({ goToLogin }) {
+    const theme = getTheme();
+    const inputStyle = getInputStyle(theme);
+    const primaryBtnStyle = getPrimaryBtnStyle(theme);
+    const linkStyle = getLinkStyle(theme);
+
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -276,6 +365,11 @@ function Signup({ goToLogin }) {
 }
 
 function ForgotPassword({ goBack }) {
+    const theme = getTheme();
+    const inputStyle = getInputStyle(theme);
+    const primaryBtnStyle = getPrimaryBtnStyle(theme);
+    const linkStyle = getLinkStyle(theme);
+
     const [email, setEmail] = useState("");
     const [token, setToken] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -286,16 +380,21 @@ function ForgotPassword({ goBack }) {
     const generateResetToken = async () => {
         if (tokenLoading) return;
         setTokenLoading(true);
-        try { const d = await apiRequest("/auth/forgot-password", "POST", { email }); setGeneratedToken(d.reset_token); }
-        catch { alert("Email not found"); }
+        try {
+            const d = await apiRequest("/auth/forgot-password", "POST", { email });
+            setGeneratedToken(d.reset_token);
+        } catch { alert("Email not found"); }
         finally { setTokenLoading(false); }
     };
 
     const resetPassword = async () => {
         if (resetLoading) return;
         setResetLoading(true);
-        try { await apiRequest("/auth/reset-password", "POST", { token, new_password: newPassword }); alert("Password reset"); goBack(); }
-        catch { alert("Invalid token"); }
+        try {
+            await apiRequest("/auth/reset-password", "POST", { token, new_password: newPassword });
+            alert("Password reset");
+            goBack();
+        } catch { alert("Invalid token"); }
         finally { setResetLoading(false); }
     };
 
@@ -322,6 +421,7 @@ function ForgotPassword({ goBack }) {
 }
 
 function AuthShell({ children }) {
+    const theme = getTheme();
     return (
         <div className="auth-shell" style={{ background: theme.bgPrimary, width: "100vw", height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", fontFamily: "Arial", boxSizing: "border-box", overflow: "hidden" }}>
             <div className="auth-panel" style={{ width: "500px", display: "flex", flexDirection: "column" }}>
@@ -331,7 +431,10 @@ function AuthShell({ children }) {
     );
 }
 
+// ─── UTILITY COMPONENTS ───────────────────────────────────────────────────────
+
 function Splash() {
+    const theme = getTheme();
     return (
         <div style={{ background: theme.bgPrimary, color: theme.textMuted, width: "100vw", height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", fontFamily: "Arial", fontSize: "14px", gap: "10px" }}>
             <Spinner /> Loading...
@@ -350,37 +453,9 @@ function Spinner({ size = 16 }) {
 }
 
 function ButtonContent({ text }) {
-    return <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px" }}><Spinner />{text}</span>;
+    return (
+        <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+            <Spinner />{text}
+        </span>
+    );
 }
-
-function disabledStyle(disabled) {
-    return disabled ? { cursor: "not-allowed", opacity: 0.7, transition: "opacity 0.15s" } : { transition: "opacity 0.15s" };
-}
-
-// ─── STYLES ──────────────────────────────────────────────────────────────────
-
-const inputStyle = {
-    width: "100%", padding: "20px 22px", marginBottom: "16px", borderRadius: "14px",
-    border: `1px solid ${theme.border}`, background: theme.surface, color: theme.textPrimary,
-    fontSize: "17px", outline: "none", boxSizing: "border-box",
-};
-
-const primaryBtnStyle = {
-    width: "100%", padding: "20px", borderRadius: "14px", border: `1px solid ${theme.border}`,
-    background: theme.surfaceHover, color: theme.textPrimary, fontSize: "17px", cursor: "pointer",
-    fontWeight: "600", marginBottom: "8px", boxSizing: "border-box",
-};
-
-const authTitleStyle = {
-    margin: "0 0 8px", fontSize: "64px", fontFamily: "Georgia, serif",
-    fontWeight: "600", letterSpacing: "-3px", color: "white", textAlign: "center", lineHeight: 1,
-};
-
-const linkStyle = {
-    margin: "14px 0 0", color: theme.textSecondary, textAlign: "center", cursor: "pointer", fontSize: "15px",
-};
-
-const btnStyle = {
-    padding: "10px 20px", background: theme.surface, color: theme.textSecondary,
-    border: `1px solid ${theme.border}`, borderRadius: "10px", cursor: "pointer", fontSize: "13px",
-};
