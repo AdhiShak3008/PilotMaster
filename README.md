@@ -50,6 +50,29 @@ PilotMaster was built to make those decisions observable.
 
 ---
 
+# Experimental Workspace
+
+PilotMaster includes an Experimental Workspace for retrieval engineering research and controlled pipeline experimentation.
+
+Unlike the production workspace, which uses the platform's recommended retrieval configuration, the Experimental Workspace allows developers to modify retrieval strategies and retrieval enhancements at runtime.
+
+Current experimentation capabilities include:
+
+- Dense-only retrieval
+- BM25-only retrieval
+- Hybrid retrieval
+- Hybrid + RRF
+- Hybrid + RRF + Reranker
+
+The Experimental Workspace is designed to answer questions such as:
+
+- Does reranking improve grounding?
+- When does BM25 outperform dense retrieval?
+- How much does RRF improve recall?
+- Which retrieval strategy performs best for a specific document collection?
+
+The long-term goal is transforming PilotMaster from a RAG application into a retrieval engineering platform.
+
 # What PilotMaster Does
 
 PilotMaster combines:
@@ -370,13 +393,15 @@ rather than relying exclusively on lexical overlap.
 
 PilotMaster supports comparative evaluation across multiple models using identical retrieval context.
 
-Recent experiments have shown:
+Developers can analyze differences in:
 
-- GPT OSS 120B excels at synthesis and reasoning
-- Llama 3.3 70B tends to be the most grounded
-- Qwen 3 32B often produces highly detailed responses
+- grounding
+- reasoning
+- latency
+- retrieval utilization
+- answer completeness
 
-Because retrieval context remains constant, differences can be attributed primarily to model behavior rather than retrieval variance.
+Because retrieval context remains constant, behavioral differences can be attributed primarily to the model rather than retrieval variance.
 
 ---
 
@@ -434,6 +459,38 @@ Recent experiments suggest that retrieval quality is becoming a larger bottlenec
 
 ---
 
+# Roadmap
+
+## Retrieval Engineering
+
+- Query rewriting
+- Query expansion
+- Multi-query retrieval
+- Parent-child retrieval
+- Contextual retrieval
+- Metadata-aware retrieval
+- Semantic chunking
+- Agentic retrieval
+
+## Evaluation
+
+- Comparative model evaluation
+- Judge ensembles
+- Grounding regression testing
+
+## Observability
+
+- Retrieval lineage visualization
+- Cross-run trace comparison
+- Advanced retrieval diagnostics
+
+## Experimental Workspace
+
+- Runtime retrieval controls
+- Runtime enhancement controls
+- Retrieval A/B testing
+- Side-by-side retrieval comparisons
+
 # Tech Stack
 
 | Layer         | Technology                   |
@@ -449,6 +506,20 @@ Recent experiments suggest that retrieval quality is becoming a larger bottlenec
 | Deployment    | Hugging Face Spaces + Vercel |
 
 ---
+
+# Screenshots
+
+## DocPilot
+
+_Add screenshot_
+
+## TracePilot
+
+_Add screenshot_
+
+## Experimental Workspace
+
+_Add screenshot_
 
 # Local Setup
 

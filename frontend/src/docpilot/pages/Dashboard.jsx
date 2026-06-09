@@ -2,6 +2,168 @@ import { useState, useEffect, useRef } from "react";
 import { apiRequest } from "../api";
 import { useDropzone } from "react-dropzone";
 
+// ─────────────────────────────────────────────
+// Shared custom popup selector
+// ─────────────────────────────────────────────
+function CustomSelector({ label, sublabel, items, open, onToggle, selectorRef, children }) {
+  return (
+    <div style={{ position: "relative", display: "flex", flexDirection: "column" }} ref={selectorRef}>
+      <button
+        onClick={onToggle}
+        style={{
+          background: "transparent",
+          border: "none",
+          color: "var(--text-primary)",
+          cursor: "pointer",
+          padding: 0,
+          fontSize: "14px",
+          textAlign: "left",
+        }}
+      >
+        {label} ▼
+      </button>
+
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: "100%",
+            left: 0,
+            marginBottom: "10px",
+            width: "320px",
+            zIndex: 9999,
+            borderRadius: "18px",
+            border: "1px solid var(--border)",
+            background: "var(--surface)",
+            overflow: "hidden",
+          }}
+        >
+          {children}
+        </div>
+      )}
+
+      <span style={{ fontSize: "11px", color: "#777", marginTop: "4px" }}>{sublabel}</span>
+    </div>
+  );
+}
+
+function SelectorItem({ label, subtitle, active, onClick, multiSelect }) {
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        padding: "8px",
+        cursor: "pointer",
+        background: active ? "var(--surface-hover)" : "transparent",
+        transition: "background 0.12s",
+      }}
+      onMouseEnter={(e) => {
+        if (!active) e.currentTarget.style.background = "var(--surface-hover)";
+      }}
+      onMouseLeave={(e) => {
+        if (!active) e.currentTarget.style.background = "transparent";
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+        {multiSelect ? (
+          <span
+            style={{
+              width: "14px",
+              height: "14px",
+              border: "1px solid var(--border)",
+              borderRadius: "3px",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "10px",
+              background: active ? "var(--surface-hover)" : "transparent",
+              flexShrink: 0,
+            }}
+          >
+            {active ? "✓" : ""}
+          </span>
+        ) : (
+          <span style={{ width: "16px", fontSize: "13px" }}>{active ? "✓" : ""}</span>
+        )}
+        <span>{label}</span>
+      </div>
+      {subtitle && (
+        <div style={{ fontSize: "12px", color: "#888", marginTop: "4px", paddingLeft: multiSelect ? "20px" : "16px" }}>
+          {subtitle}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Retrieval Strategy config
+// ─────────────────────────────────────────────
+const RETRIEVAL_STRATEGIES = [
+  { id: "FAISS",                   label: "FAISS",                   subtitle: "Dense vector retrieval" },
+  { id: "FAISS + Reranker",        label: "FAISS + Reranker",        subtitle: "Dense retrieval with reranking" },
+  { id: "BM25",                    label: "BM25",                    subtitle: "Sparse keyword retrieval" },
+  { id: "BM25 + Reranker",         label: "BM25 + Reranker",         subtitle: "Keyword retrieval with reranking" },
+  { id: "Hybrid",                  label: "Hybrid",                  subtitle: "Balanced dense + sparse retrieval" },
+  { id: "Hybrid + Reranker",       label: "Hybrid + Reranker",       subtitle: "Cross-encoder reranking" },
+  { id: "Hybrid + RRF",            label: "Hybrid + RRF",            subtitle: "Reciprocal Rank Fusion" },
+  { id: "Hybrid + RRF + Reranker", label: "Hybrid + RRF + Reranker", subtitle: "Maximum retrieval quality" },
+];
+
+// ─────────────────────────────────────────────
+// Enhancements config
+// ─────────────────────────────────────────────
+const ENHANCEMENT_OPTIONS = [
+  { id: "Default",             label: "Default",             subtitle: "Run the normal retrieval pipeline without any additional enhancement techniques." },
+  { id: "HyDE",                label: "HyDE",                subtitle: "Generate hypothetical answers before retrieval." },
+  { id: "Multi Query",         label: "Multi Query",         subtitle: "Generate multiple query variants." },
+  { id: "Context Compression", label: "Context Compression", subtitle: "Compress retrieved context before generation." },
+  { id: "Reranker",            label: "Reranker",            subtitle: "Re-rank retrieved chunks for relevance." },
+  { id: "All",                 label: "All",                 subtitle: "Enable every enhancement technique." },
+];
+
+const ALL_ENHANCEMENT_IDS = ["HyDE", "Multi Query", "Context Compression", "Reranker"];
+
+function buildEnhancementLabel(selected) {
+  if (selected.includes("Default") || selected.length === 0) return "Default";
+  if (
+    ALL_ENHANCEMENT_IDS.every((id) => selected.includes(id)) &&
+    selected.length === ALL_ENHANCEMENT_IDS.length
+  )
+    return "All";
+  return selected.join(" + ");
+}
+
+function toggleEnhancement(current, id) {
+  if (id === "Default") return ["Default"];
+
+  if (id === "All") {
+    // Select all individual enhancements
+    return [...ALL_ENHANCEMENT_IDS];
+  }
+
+  // Remove Default if present
+  let next = current.filter((e) => e !== "Default");
+
+  if (next.includes(id)) {
+    next = next.filter((e) => e !== id);
+  } else {
+    next = [...next, id];
+  }
+
+  if (next.length === 0) return ["Default"];
+  return next;
+}
+
+function isEnhancementActive(selected, id) {
+  if (id === "All")
+    return ALL_ENHANCEMENT_IDS.every((e) => selected.includes(e)) && selected.length === ALL_ENHANCEMENT_IDS.length;
+  return selected.includes(id);
+}
+
+// ─────────────────────────────────────────────
+// Main Dashboard
+// ─────────────────────────────────────────────
 function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
   const [file, setFile] = useState(null);
   const [question, setQuestion] = useState("");
@@ -24,46 +186,39 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
 
   const messagesEndRef = useRef(null);
   const modelSelectorRef = useRef(null);
+  const retrievalSelectorRef = useRef(null);
+  const enhancementSelectorRef = useRef(null);
 
-  // UI-only experiment toggles
+  // Experiment toggles
   const [retrievalStrategy, setRetrievalStrategy] = useState("Hybrid");
-  const [enhancementMode, setEnhancementMode] = useState("Default");
+  const [showRetrieval, setShowRetrieval] = useState(false);
 
-  const retrievalStrategies = [
-    "FAISS",
-    "FAISS + Reranker",
-    "BM25",
-    "BM25 + Reranker",
-    "Hybrid",
-    "Hybrid + Reranker",
-    "Hybrid + RRF",
-    "Hybrid + RRF + Reranker",
-  ];
-
-  const enhancements = [
-    "Default",
-    "Query Rewriting",
-    "Multi Query",
-    "Parent Child",
-    "All Enhancements",
-  ];
+  const [selectedEnhancements, setSelectedEnhancements] = useState(["Default"]);
+  const [showEnhancements, setShowEnhancements] = useState(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Close all popups on outside click / Escape
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Close if click is not inside the whole selector area.
-      if (!modelSelectorRef.current) return;
-      if (!modelSelectorRef.current.contains(event.target)) setShowModels(false);
+      if (modelSelectorRef.current && !modelSelectorRef.current.contains(event.target))
+        setShowModels(false);
+      if (retrievalSelectorRef.current && !retrievalSelectorRef.current.contains(event.target))
+        setShowRetrieval(false);
+      if (enhancementSelectorRef.current && !enhancementSelectorRef.current.contains(event.target))
+        setShowEnhancements(false);
     };
 
     const handleEsc = (event) => {
-      if (event.key === "Escape") setShowModels(false);
+      if (event.key === "Escape") {
+        setShowModels(false);
+        setShowRetrieval(false);
+        setShowEnhancements(false);
+      }
     };
 
-    // Use "pointerdown" so it also closes for touch/stylus and earlier in the event cycle.
     document.addEventListener("pointerdown", handleClickOutside);
     document.addEventListener("keydown", handleEsc);
     return () => {
@@ -71,7 +226,6 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
       document.removeEventListener("keydown", handleEsc);
     };
   }, []);
-
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -89,7 +243,6 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
         setInitialLoading(false);
       }
     };
-
     loadDashboard();
   }, []);
 
@@ -141,27 +294,7 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
       "application/pdf": [".pdf"],
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
       "application/vnd.openxmlformats-officedocument.presentationml.presentation": [".pptx"],
-      "text/plain": [
-        ".txt",
-        ".md",
-        ".py",
-        ".js",
-        ".jsx",
-        ".ts",
-        ".tsx",
-        ".java",
-        ".cpp",
-        ".c",
-        ".h",
-        ".go",
-        ".rs",
-        ".json",
-        ".yaml",
-        ".yml",
-        ".sql",
-        ".css",
-        ".html",
-      ],
+      "text/plain": [".txt", ".md", ".py", ".js", ".jsx", ".ts", ".tsx", ".java", ".cpp", ".c", ".h", ".go", ".rs", ".json", ".yaml", ".yml", ".sql", ".css", ".html"],
       "text/csv": [".csv"],
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
       "image/png": [".png"],
@@ -173,10 +306,8 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
   const uploadFile = async () => {
     if (!file || uploading) return;
     setUploading(true);
-
     const formData = new FormData();
     formData.append("file", file);
-
     try {
       const data = await apiRequest("/docs/upload", "POST", formData);
       if (data.detail) {
@@ -194,7 +325,6 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
 
   const askQuestion = async () => {
     if (!question || asking) return;
-
     const q = question;
     setQuestion("");
 
@@ -213,10 +343,9 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
         model_name: selectedModel,
       };
 
-      // Only pass these if backend supports them.
       if (experimentMode) {
         payload.retrieval_strategy = retrievalStrategy;
-        payload.enhancement_mode = enhancementMode;
+        payload.enhancement_mode = buildEnhancementLabel(selectedEnhancements);
       }
 
       const data = await apiRequest("/chat/ask", "POST", payload);
@@ -254,7 +383,6 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
   const deleteActiveDocument = async () => {
     if (deletingDoc) return;
     if (!window.confirm("Delete all documents and clear the vector store?")) return;
-
     setDeletingDoc(true);
     try {
       await apiRequest("/docs/reset", "DELETE");
@@ -273,6 +401,9 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
   const activeModelLabel =
     models.length === 0 ? "Loading models..." : models.find((m) => m.id === selectedModel)?.label || selectedModel;
 
+  const activeRetrievalLabel = retrievalStrategy;
+  const activeEnhancementLabel = buildEnhancementLabel(selectedEnhancements);
+
   return (
     <div
       className="docpilot-root"
@@ -286,7 +417,9 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
         overflow: "hidden",
       }}
     >
-      {(initialLoading || uploading) && <LoadingOverlay text={uploading ? "Uploading document..." : "Loading dashboard..."} />}
+      {(initialLoading || uploading) && (
+        <LoadingOverlay text={uploading ? "Uploading document..." : "Loading dashboard..."} />
+      )}
 
       {sidebarOpen && (
         <button
@@ -343,7 +476,11 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
             }}
           >
             <input {...getInputProps()} />
-            {isDragActive ? <p style={{ margin: 0 }}>Drop here...</p> : <p style={{ margin: 0 }}>Drag &amp; drop or click to upload</p>}
+            {isDragActive ? (
+              <p style={{ margin: 0 }}>Drop here...</p>
+            ) : (
+              <p style={{ margin: 0 }}>Drag &amp; drop or click to upload</p>
+            )}
             {file && <p style={{ margin: "8px 0 0", color: "#888", fontSize: "12px" }}>{file.name}</p>}
           </div>
 
@@ -480,14 +617,34 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
       </div>
 
       {/* MAIN */}
-      <div className="docpilot-main" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "var(--bg-primary)" }}>
+      <div
+        className="docpilot-main"
+        style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "var(--bg-primary)" }}
+      >
         {/* TOPBAR */}
-        <div className="docpilot-topbar" style={{ padding: "12px 24px", borderBottom: `1px solid var(--border)`, flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div
+          className="docpilot-topbar"
+          style={{
+            padding: "12px 24px",
+            borderBottom: `1px solid var(--border)`,
+            flexShrink: 0,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <button
             className="mobile-menu-button"
             onClick={() => setSidebarOpen(true)}
             aria-label="Open conversations"
-            style={{ color: "var(--text-primary)", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "10px", padding: "8px 12px", cursor: "pointer" }}
+            style={{
+              color: "var(--text-primary)",
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderRadius: "10px",
+              padding: "8px 12px",
+              cursor: "pointer",
+            }}
           >
             ☰
           </button>
@@ -528,27 +685,61 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
         </div>
 
         {/* CHAT AREA */}
-        <div className="docpilot-chat-area" style={{ flex: 1, overflowY: "auto", padding: "32px 60px", background: "var(--bg-primary)" }}>
-          {messages.length === 0 && <p style={{ color: "var(--text-muted)", fontSize: "16px" }}>Ask questions about your document...</p>}
+        <div
+          className="docpilot-chat-area"
+          style={{ flex: 1, overflowY: "auto", padding: "32px 60px", background: "var(--bg-primary)" }}
+        >
+          {messages.length === 0 && (
+            <p style={{ color: "var(--text-muted)", fontSize: "16px" }}>Ask questions about your document...</p>
+          )}
 
           {messages
             .slice()
             .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
             .map((msg, i) => (
-              <div key={i} style={{ marginBottom: "28px", display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
+              <div
+                key={i}
+                style={{ marginBottom: "28px", display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}
+              >
                 {msg.role === "user" ? (
-                  <div className="docpilot-message-user text-wrap-safe" style={{ background: "var(--surface)", padding: "14px 20px", borderRadius: "18px", maxWidth: "65%", fontSize: "16px", lineHeight: 1.6, color: "var(--text-primary)" }}>
+                  <div
+                    className="docpilot-message-user text-wrap-safe"
+                    style={{
+                      background: "var(--surface)",
+                      padding: "14px 20px",
+                      borderRadius: "18px",
+                      maxWidth: "65%",
+                      fontSize: "16px",
+                      lineHeight: 1.6,
+                      color: "var(--text-primary)",
+                    }}
+                  >
                     {msg.content}
                   </div>
                 ) : (
-                  <div className="docpilot-message-assistant text-wrap-safe" style={{ maxWidth: "80%", fontSize: "16px", lineHeight: 1.8, color: "var(--text-secondary)" }}>
+                  <div
+                    className="docpilot-message-assistant text-wrap-safe"
+                    style={{ maxWidth: "80%", fontSize: "16px", lineHeight: 1.8, color: "var(--text-secondary)" }}
+                  >
                     <div>{msg.content}</div>
                     {msg.sources && msg.sources.length > 0 && (
                       <div style={{ marginTop: "16px", paddingLeft: "4px", fontSize: "12px", color: "#aaa" }}>
-                        <p style={{ margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.06em", fontSize: "10px", color: "#ccc", fontWeight: "bold" }}>Sources</p>
+                        <p
+                          style={{
+                            margin: "0 0 6px",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.06em",
+                            fontSize: "10px",
+                            color: "#ccc",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          Sources
+                        </p>
                         {msg.sources.map((s, idx) => (
                           <div key={idx} style={{ color: "#bbb", marginBottom: "2px" }}>
-                            📁 <span style={{ color: "#ddd" }}>{s.source || s.file_name}</span> · <span style={{ fontStyle: "italic" }}>Page {s.page || s.page_number}</span>
+                            📁 <span style={{ color: "#ddd" }}>{s.source || s.file_name}</span> ·{" "}
+                            <span style={{ fontStyle: "italic" }}>Page {s.page || s.page_number}</span>
                           </div>
                         ))}
                       </div>
@@ -562,7 +753,15 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
         </div>
 
         {/* INPUT */}
-        <div className="docpilot-input-bar" style={{ padding: "16px 24px", borderTop: "1px solid var(--border)", flexShrink: 0, background: "var(--surface)" }}>
+        <div
+          className="docpilot-input-bar"
+          style={{
+            padding: "16px 24px",
+            borderTop: "1px solid var(--border)",
+            flexShrink: 0,
+            background: "var(--surface)",
+          }}
+        >
           <div
             className="composer"
             style={{
@@ -593,119 +792,106 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
               />
             </div>
 
-            <div style={{ display: "flex", alignItems: "flex-end",justifyContent: "space-between", gap: "12px"}}>
+            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: "12px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-                <div style={{ position: "relative", display: "flex", flexDirection: "column" }} ref={modelSelectorRef}>
-                  <button
-                    onClick={() => setShowModels((v) => !v)}
-                    style={{ background: "transparent", border: "none", color: "var(--text-primary)", cursor: "pointer", padding: 0, fontSize: "14px" }}
-                  >
-                    {activeModelLabel} ▼
-                  </button>
 
-                  {showModels && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        bottom: "100%",
-                        left: 0,
-                        marginBottom: "10px",
-                        width: "320px",
-                        zIndex: 9999,
-                        borderRadius: "18px",
-                        border: "1px solid var(--border)",
-                        background: "var(--surface)",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {models.length > 0 &&
-                        models.map((model) => (
-                          <div
-                            key={model.id}
-                            onClick={() => {
-                              setSelectedModel(model.id);
-                              setShowModels(false);
-                            }}
-                            style={{
-                              padding: "8px",
-                              cursor: "pointer",
-                              background: selectedModel === model.id ? "var(--surface-hover)" : "transparent",
-                            }}
-                          >
-                            <div>
-                              {selectedModel === model.id ? "✓ " : ""}
-                              {model.label}
-                            </div>
-                            <div style={{ fontSize: "12px", color: "#888", marginTop: "4px" }}>{model.subtitle}</div>
-                          </div>
-                        ))}
-                    </div>
-                  )}
-
-                  <span style={{ fontSize: "11px", color: "#777", marginTop: "4px" }}>Active model</span>
-                </div>
+                {/* MODEL SELECTOR */}
+                <CustomSelector
+                  label={activeModelLabel}
+                  sublabel="Active model"
+                  open={showModels}
+                  onToggle={() => setShowModels((v) => !v)}
+                  selectorRef={modelSelectorRef}
+                >
+                  {models.length > 0 &&
+                    models.map((model) => (
+                      <SelectorItem
+                        key={model.id}
+                        label={model.label}
+                        subtitle={model.subtitle}
+                        active={selectedModel === model.id}
+                        onClick={() => {
+                          setSelectedModel(model.id);
+                          setShowModels(false);
+                        }}
+                      />
+                    ))}
+                </CustomSelector>
 
                 {experimentMode && (
                   <>
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      <select
-                        value={retrievalStrategy}
-                        onChange={(e) => setRetrievalStrategy(e.target.value)}
-                        style={{ background: "var(--surface)", color: "var(--text-primary)", border: "1px solid var(--border)", borderRadius: "8px", padding: "6px 10px" }}
-                      >
-                        {retrievalStrategies.map((strategy) => (
-                          <option key={strategy} value={strategy}>
-                            {strategy}
-                          </option>
-                        ))}
-                      </select>
-                      <span style={{ fontSize: "11px", color: "#777", marginTop: "4px" }}>Retrieval Strategy</span>
-                    </div>
+                    {/* RETRIEVAL STRATEGY SELECTOR */}
+                    <CustomSelector
+                      label={activeRetrievalLabel}
+                      sublabel="Retrieval Strategy"
+                      open={showRetrieval}
+                      onToggle={() => setShowRetrieval((v) => !v)}
+                      selectorRef={retrievalSelectorRef}
+                    >
+                      {RETRIEVAL_STRATEGIES.map((strategy) => (
+                        <SelectorItem
+                          key={strategy.id}
+                          label={strategy.label}
+                          subtitle={strategy.subtitle}
+                          active={retrievalStrategy === strategy.id}
+                          onClick={() => {
+                            setRetrievalStrategy(strategy.id);
+                            setShowRetrieval(false);
+                          }}
+                        />
+                      ))}
+                    </CustomSelector>
 
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      <select
-                        value={enhancementMode}
-                        onChange={(e) => setEnhancementMode(e.target.value)}
-                        style={{ background: "var(--surface)", color: "var(--text-primary)", border: "1px solid var(--border)", borderRadius: "8px", padding: "6px 10px" }}
-                      >
-                        {enhancements.map((mode) => (
-                          <option key={mode} value={mode}>
-                            {mode}
-                          </option>
-                        ))}
-                      </select>
-                      <span style={{ fontSize: "11px", color: "#777", marginTop: "4px" }}>Enhancements</span>
-                    </div>
+                    {/* ENHANCEMENTS MULTI-SELECT */}
+                    <CustomSelector
+                      label={activeEnhancementLabel}
+                      sublabel="Enhancements"
+                      open={showEnhancements}
+                      onToggle={() => setShowEnhancements((v) => !v)}
+                      selectorRef={enhancementSelectorRef}
+                    >
+                      {ENHANCEMENT_OPTIONS.map((opt) => (
+                        <SelectorItem
+                          key={opt.id}
+                          label={opt.label}
+                          subtitle={opt.subtitle}
+                          active={isEnhancementActive(selectedEnhancements, opt.id)}
+                          multiSelect
+                          onClick={() => {
+                            setSelectedEnhancements((prev) => toggleEnhancement(prev, opt.id));
+                          }}
+                        />
+                      ))}
+                    </CustomSelector>
                   </>
                 )}
-</div>
-
-                <button
-                  onClick={askQuestion}
-                  disabled={asking}
-                  style={{
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "999px",
-                    border: "1px solid var(--border)",
-                    background: "var(--surface)",
-                    color: "var(--text-primary)",
-                    cursor: asking ? "not-allowed" : "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "18px",
-                    flexShrink: 0,
-                  }}
-                >
-                  {asking ? "⏳" : "➤"}
-                </button>
               </div>
+
+              <button
+                onClick={askQuestion}
+                disabled={asking}
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "999px",
+                  border: "1px solid var(--border)",
+                  background: "var(--surface)",
+                  color: "var(--text-primary)",
+                  cursor: asking ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "18px",
+                  flexShrink: 0,
+                }}
+              >
+                {asking ? "⏳" : "➤"}
+              </button>
             </div>
           </div>
         </div>
       </div>
-    
+    </div>
   );
 }
 
@@ -768,4 +954,3 @@ function LoadingOverlay({ text }) {
 }
 
 export default Dashboard;
-
