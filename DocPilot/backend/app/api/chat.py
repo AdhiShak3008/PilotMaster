@@ -68,6 +68,8 @@ def ask(
             user_id=current_user.id,
             source=query.source,
             model_name=query.model_name,
+            retrieval_strategy=query.retrieval_strategy,
+            enhancements=query.enhancements,
         )
     except AuthenticationError as exc:
         raise HTTPException(

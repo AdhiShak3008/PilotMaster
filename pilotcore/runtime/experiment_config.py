@@ -9,10 +9,13 @@ class ExperimentConfig(BaseModel):
         "hybrid",
     ] = "hybrid"
 
-    query_rewrite: bool = True
+    query_rewrite: bool = False
 
     rrf: bool = True
     reranker: bool = True
     deduplication: bool = True
-
+    # Experimental enhancements
+    hyde: bool = False
+    multi_query: bool = False
+    context_compression: bool = False
     experiment_name: str = "default"

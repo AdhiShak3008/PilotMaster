@@ -262,12 +262,29 @@ def retrieve(
             )
 
         # Global ranking by fused RRF score
+        # Global ranking by fused RRF score
         fused_chunks.sort(
             key=lambda chunk: chunk.score,
             reverse=True,
         )
+
         if experiment_config is None or experiment_config.deduplication:
             fused_chunks = run_dedup(fused_chunks)
+
+        # If reranker disabled, return fused results directly
+        if experiment_config and not experiment_config.reranker:
+
+            result = RetrievalResult(
+                trace_id=trace_id,
+                query=query,
+                retrieved_chunks=fused_chunks[:top_k],
+                latency_ms=(vector_result.latency_ms + lexical_result.latency_ms),
+                retriever_version="hybrid_rrf_only_v1",
+            )
+
+            end_span(span)
+
+            return result
         # Cross-encoder reranking
         # -----------------------------------------
         # RRF builds a strong hybrid candidate pool.

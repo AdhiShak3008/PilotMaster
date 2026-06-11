@@ -114,16 +114,45 @@ const RETRIEVAL_STRATEGIES = [
 // Enhancements config
 // ─────────────────────────────────────────────
 const ENHANCEMENT_OPTIONS = [
-  { id: "Default",             label: "Default",             subtitle: "Run the normal retrieval pipeline without any additional enhancement techniques." },
-  { id: "HyDE",                label: "HyDE",                subtitle: "Generate hypothetical answers before retrieval." },
-  { id: "Multi Query",         label: "Multi Query",         subtitle: "Generate multiple query variants." },
-  { id: "Context Compression", label: "Context Compression", subtitle: "Compress retrieved context before generation." },
-  { id: "Reranker",            label: "Reranker",            subtitle: "Re-rank retrieved chunks for relevance." },
-  { id: "All",                 label: "All",                 subtitle: "Enable every enhancement technique." },
+  {
+    id: "Default",
+    label: "Default",
+    subtitle:
+      "Run the normal retrieval pipeline without any additional enhancement techniques.",
+  },
+  {
+  id: "Query Rewrite",
+  label: "Query Rewrite",
+  subtitle: "Rewrite the user query before retrieval."
+  },
+  {
+    id: "HyDE",
+    label: "HyDE",
+    subtitle: "Generate hypothetical answers before retrieval.",
+  },
+  {
+    id: "Multi Query",
+    label: "Multi Query",
+    subtitle: "Generate multiple query variants.",
+  },
+  {
+    id: "Context Compression",
+    label: "Context Compression",
+    subtitle: "Compress retrieved context before generation.",
+  },
+  {
+    id: "All",
+    label: "All",
+    subtitle: "Enable every enhancement technique.",
+  },
 ];
 
-const ALL_ENHANCEMENT_IDS = ["HyDE", "Multi Query", "Context Compression", "Reranker"];
-
+const ALL_ENHANCEMENT_IDS = [
+  "Query Rewrite",
+  "HyDE",
+  "Multi Query",
+  "Context Compression",
+];
 function buildEnhancementLabel(selected) {
   if (selected.includes("Default") || selected.length === 0) return "Default";
   if (
@@ -344,9 +373,9 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
       };
 
       if (experimentMode) {
-        payload.retrieval_strategy = retrievalStrategy;
-        payload.enhancement_mode = buildEnhancementLabel(selectedEnhancements);
-      }
+  payload.retrieval_strategy = retrievalStrategy;
+  payload.enhancements = selectedEnhancements;
+}
 
       const data = await apiRequest("/chat/ask", "POST", payload);
 

@@ -10,3 +10,7 @@ class ChatRequest(BaseModel):
     session_id: int | None = None
 
     model_name: str | None = None
+
+    retrieval_strategy: str | None = None
+
+    enhancements: list[str] | None = None
