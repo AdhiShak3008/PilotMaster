@@ -69,6 +69,7 @@ def ask(
             source=query.source,
             model_name=query.model_name,
             retrieval_strategy=query.retrieval_strategy,
+            reranker=query.reranker,
             enhancements=query.enhancements,
         )
     except AuthenticationError as exc:

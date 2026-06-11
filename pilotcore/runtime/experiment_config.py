@@ -13,9 +13,11 @@ class ExperimentConfig(BaseModel):
 
     rrf: bool = True
     reranker: bool = True
+    reranker_model: str = "minilm"
     deduplication: bool = True
     # Experimental enhancements
     hyde: bool = False
     multi_query: bool = False
     context_compression: bool = False
     experiment_name: str = "default"
+    reranker_model: str = "minilm"

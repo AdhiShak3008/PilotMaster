@@ -100,16 +100,41 @@ function SelectorItem({ label, subtitle, active, onClick, multiSelect }) {
 // Retrieval Strategy config
 // ─────────────────────────────────────────────
 const RETRIEVAL_STRATEGIES = [
-  { id: "FAISS",                   label: "FAISS",                   subtitle: "Dense vector retrieval" },
-  { id: "FAISS + Reranker",        label: "FAISS + Reranker",        subtitle: "Dense retrieval with reranking" },
-  { id: "BM25",                    label: "BM25",                    subtitle: "Sparse keyword retrieval" },
-  { id: "BM25 + Reranker",         label: "BM25 + Reranker",         subtitle: "Keyword retrieval with reranking" },
-  { id: "Hybrid",                  label: "Hybrid",                  subtitle: "Balanced dense + sparse retrieval" },
-  { id: "Hybrid + Reranker",       label: "Hybrid + Reranker",       subtitle: "Cross-encoder reranking" },
-  { id: "Hybrid + RRF",            label: "Hybrid + RRF",            subtitle: "Reciprocal Rank Fusion" },
-  { id: "Hybrid + RRF + Reranker", label: "Hybrid + RRF + Reranker", subtitle: "Maximum retrieval quality" },
+  {
+    id: "FAISS",
+    label: "FAISS",
+    subtitle: "Dense vector retrieval",
+  },
+
+  {
+    id: "BM25",
+    label: "BM25",
+    subtitle: "Sparse keyword retrieval",
+  },
+
+  {
+    id: "Hybrid",
+    label: "Hybrid",
+    subtitle: "Dense + sparse retrieval",
+  },
 ];
 
+// ─────────────────────────────────────────────
+// Reranker model selections
+// ─────────────────────────────────────────────
+
+const RERANKER_OPTIONS = [
+  {
+    id: "none",
+    label: "None",
+    subtitle: "No reranking",
+  },
+  {
+    id: "minilm",
+    label: "MiniLM",
+    subtitle: "cross-encoder/ms-marco-MiniLM-L-6-v2",
+  },
+];
 // ─────────────────────────────────────────────
 // Enhancements config
 // ─────────────────────────────────────────────
@@ -216,12 +241,15 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
   const messagesEndRef = useRef(null);
   const modelSelectorRef = useRef(null);
   const retrievalSelectorRef = useRef(null);
+  const rerankerSelectorRef = useRef(null);
   const enhancementSelectorRef = useRef(null);
 
   // Experiment toggles
   const [retrievalStrategy, setRetrievalStrategy] = useState("Hybrid");
   const [showRetrieval, setShowRetrieval] = useState(false);
 
+  const [reranker, setReranker] = useState("minilm");
+  const [showReranker, setShowReranker] = useState(false);
   const [selectedEnhancements, setSelectedEnhancements] = useState(["Default"]);
   const [showEnhancements, setShowEnhancements] = useState(false);
 
@@ -238,12 +266,15 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
         setShowRetrieval(false);
       if (enhancementSelectorRef.current && !enhancementSelectorRef.current.contains(event.target))
         setShowEnhancements(false);
+      if (rerankerSelectorRef.current && !rerankerSelectorRef.current.contains(event.target))
+        setShowReranker(false);
     };
 
     const handleEsc = (event) => {
       if (event.key === "Escape") {
         setShowModels(false);
         setShowRetrieval(false);
+        setShowReranker(false);
         setShowEnhancements(false);
       }
     };
@@ -374,6 +405,7 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
 
       if (experimentMode) {
   payload.retrieval_strategy = retrievalStrategy;
+  payload.reranker = reranker;
   payload.enhancements = selectedEnhancements;
 }
 
@@ -431,6 +463,8 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
     models.length === 0 ? "Loading models..." : models.find((m) => m.id === selectedModel)?.label || selectedModel;
 
   const activeRetrievalLabel = retrievalStrategy;
+  const activeRerankerLabel =
+    RERANKER_OPTIONS.find((r) => r.id === reranker)?.label || "MiniLM";
   const activeEnhancementLabel = buildEnhancementLabel(selectedEnhancements);
 
   return (
@@ -870,7 +904,27 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
                         />
                       ))}
                     </CustomSelector>
-
+                      {/* RERANKER SELECTOR */}
+<CustomSelector
+  label={activeRerankerLabel}
+  sublabel="Reranker"
+  open={showReranker}
+  onToggle={() => setShowReranker((v) => !v)}
+  selectorRef={rerankerSelectorRef}
+>
+  {RERANKER_OPTIONS.map((option) => (
+    <SelectorItem
+      key={option.id}
+      label={option.label}
+      subtitle={option.subtitle}
+      active={reranker === option.id}
+      onClick={() => {
+        setReranker(option.id);
+        setShowReranker(false);
+      }}
+    />
+  ))}
+</CustomSelector>
                     {/* ENHANCEMENTS MULTI-SELECT */}
                     <CustomSelector
                       label={activeEnhancementLabel}

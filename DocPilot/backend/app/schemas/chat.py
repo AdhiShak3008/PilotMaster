@@ -14,3 +14,5 @@ class ChatRequest(BaseModel):
     retrieval_strategy: str | None = None
 
     enhancements: list[str] | None = None
+
+    reranker: str | None = None

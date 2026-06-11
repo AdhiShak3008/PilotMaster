@@ -25,6 +25,7 @@ def ask_question(
     source=None,
     model_name=None,
     retrieval_strategy=None,
+    reranker=None,
     enhancements=None,
 ):
     config = ExperimentConfig()
@@ -32,39 +33,20 @@ def ask_question(
     if retrieval_strategy:
 
         strategy_map = {
-            "FAISS": {
-                "retrieval_method": "vector",
-                "reranker": False,
-            },
-            "FAISS + Reranker": {
-                "retrieval_method": "vector",
-                "reranker": True,
-            },
-            "BM25": {
-                "retrieval_method": "lexical",
-                "reranker": False,
-            },
-            "BM25 + Reranker": {
-                "retrieval_method": "lexical",
-                "reranker": True,
-            },
-            "Hybrid": {
-                "retrieval_method": "hybrid",
-                "reranker": False,
-            },
-            "Hybrid + RRF": {
-                "retrieval_method": "hybrid",
-                "reranker": False,
-            },
-            "Hybrid + Reranker": {
-                "retrieval_method": "hybrid",
-                "reranker": True,
-            },
-            "Hybrid + RRF + Reranker": {
-                "retrieval_method": "hybrid",
-                "reranker": True,
-            },
+            "FAISS": "vector",
+            "BM25": "lexical",
+            "Hybrid": "hybrid",
         }
+
+        if reranker:
+
+            if reranker == "none":
+                config.reranker = False
+
+            else:
+                config.reranker = True
+                config.reranker_model = reranker
+
         if enhancements:
 
             config.query_rewrite = False
@@ -79,17 +61,15 @@ def ask_question(
 
             if "Context Compression" in enhancements:
                 config.context_compression = True
+    selected = strategy_map.get(retrieval_strategy)
 
-        selected = strategy_map.get(retrieval_strategy)
-
-        if selected:
-
-            config.retrieval_method = selected["retrieval_method"]
-            config.reranker = selected["reranker"]
+    if selected:
+        config.retrieval_method = selected
     print("\n===== EXPERIMENT CONFIG =====")
     print("retrieval_strategy =", retrieval_strategy)
     print("retrieval_method   =", config.retrieval_method)
     print("reranker           =", config.reranker)
+    print("reranker_model     =", config.reranker_model)
     print("hyde               =", config.hyde)
     print("multi_query        =", config.multi_query)
     print("compression        =", config.context_compression)
