@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Literal
 
 
 class ChatRequest(BaseModel):
@@ -16,3 +17,5 @@ class ChatRequest(BaseModel):
     enhancements: list[str] | None = None
 
     reranker: str | None = None
+
+    mode: Literal["production", "experimental"] = "production"

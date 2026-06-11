@@ -32,6 +32,12 @@ class ChatSession(Base):
         default="New Chat",
     )
 
+    mode = Column(
+        String,
+        nullable=False,
+        default="production",
+    )
+
     created_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),

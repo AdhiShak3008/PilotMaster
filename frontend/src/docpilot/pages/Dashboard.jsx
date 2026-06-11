@@ -285,14 +285,17 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
       document.removeEventListener("pointerdown", handleClickOutside);
       document.removeEventListener("keydown", handleEsc);
     };
-  }, []);
+  }, [experimentMode]);
 
   useEffect(() => {
     const loadDashboard = async () => {
       setInitialLoading(true);
       try {
         const [sessionData, billingData] = await Promise.all([
-          apiRequest("/history/sessions"),
+          apiRequest(
+         `/history/sessions?mode=${
+          experimentMode ? "experimental" : "production"
+          }`),
           apiRequest("/billing/me"),
         ]);
         setSessions(sessionData);
@@ -319,7 +322,11 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
   const fetchSessions = async () => {
     setLoadingSessions(true);
     try {
-      const data = await apiRequest("/history/sessions");
+      const data = await apiRequest(
+  `/history/sessions?mode=${
+    experimentMode ? "experimental" : "production"
+  }`
+);
       setSessions(data);
     } catch {
       // ignore
@@ -401,6 +408,7 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
         source,
         session_id: currentSessionId,
         model_name: selectedModel,
+        mode: experimentMode ? "experimental" : "production",
       };
 
       if (experimentMode) {

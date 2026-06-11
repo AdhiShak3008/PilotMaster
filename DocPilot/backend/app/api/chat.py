@@ -42,6 +42,7 @@ def ask(
         session = ChatSession(
             owner_id=current_user.id,
             title=query.question.strip()[:40],
+            mode=query.mode,
         )
 
         db.add(session)
@@ -71,6 +72,7 @@ def ask(
             retrieval_strategy=query.retrieval_strategy,
             reranker=query.reranker,
             enhancements=query.enhancements,
+            mode=query.mode,
         )
     except AuthenticationError as exc:
         raise HTTPException(

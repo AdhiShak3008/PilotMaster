@@ -97,6 +97,7 @@ class IngestRequest(BaseModel):
     retriever_version: Optional[str] = "vector_v1"
     retrieval_consensus: Optional[str] = None
     rewritten_query: Optional[str] = None
+    mode: str = "production"
 
 
 class EventRequest(BaseModel):

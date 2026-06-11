@@ -21,13 +21,17 @@ router = APIRouter()
 
 @router.get("/sessions")
 def get_sessions(
+    mode: str = "production",
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
 
     sessions = (
         db.query(ChatSession)
-        .filter(ChatSession.owner_id == current_user.id)
+        .filter(
+            ChatSession.owner_id == current_user.id,
+            ChatSession.mode == mode,
+        )
         .order_by(ChatSession.id.desc())
         .all()
     )

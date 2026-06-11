@@ -27,10 +27,19 @@ def ask_question(
     retrieval_strategy=None,
     reranker=None,
     enhancements=None,
+    mode="production",
 ):
     config = ExperimentConfig()
 
-    if retrieval_strategy:
+    # ----------------------------------
+    # Mode
+    # ----------------------------------
+    config.mode = mode
+
+    # ----------------------------------
+    # Experimental overrides only
+    # ----------------------------------
+    if mode == "experimental":
 
         strategy_map = {
             "FAISS": "vector",
@@ -38,18 +47,31 @@ def ask_question(
             "Hybrid": "hybrid",
         }
 
-        if reranker:
+        selected = strategy_map.get(retrieval_strategy)
 
-            if reranker == "none":
-                config.reranker = False
+        if selected:
+            config.retrieval_method = selected
 
-            else:
-                config.reranker = True
-                config.reranker_model = reranker
+        # ----------------------------------
+        # Reranker
+        # ----------------------------------
+        if reranker == "none":
+            config.reranker = False
+
+        elif reranker:
+            config.reranker = True
+            config.reranker_model = reranker
+
+        # ----------------------------------
+        # Enhancements
+        # ----------------------------------
+        config.query_rewrite = False
+        config.hyde = False
+        config.multi_query = False
+        config.context_compression = False
 
         if enhancements:
 
-            config.query_rewrite = False
             if "Query Rewrite" in enhancements:
                 config.query_rewrite = True
 
@@ -61,19 +83,22 @@ def ask_question(
 
             if "Context Compression" in enhancements:
                 config.context_compression = True
-    selected = strategy_map.get(retrieval_strategy)
 
-    if selected:
-        config.retrieval_method = selected
+    # ----------------------------------
+    # Debug
+    # ----------------------------------
     print("\n===== EXPERIMENT CONFIG =====")
+    print("mode               =", config.mode)
     print("retrieval_strategy =", retrieval_strategy)
     print("retrieval_method   =", config.retrieval_method)
     print("reranker           =", config.reranker)
-    print("reranker_model     =", config.reranker_model)
+    print("reranker_model     =", getattr(config, "reranker_model", None))
+    print("query_rewrite      =", config.query_rewrite)
     print("hyde               =", config.hyde)
     print("multi_query        =", config.multi_query)
     print("compression        =", config.context_compression)
     print("=============================\n")
+
     trace = run_pipeline(
         query=question,
         user_id=user_id,
@@ -85,16 +110,30 @@ def ask_question(
     retrieved = trace.retrieval_result.retrieved_chunks
 
     if not retrieved:
-        return {"answer": "No relevant context found.", "sources": []}
+        return {
+            "answer": "No relevant context found.",
+            "sources": [],
+        }
 
     sources = []
     seen = set()
+
     for item in retrieved:
-        key = (item.chunk.source, item.chunk.page_number)
+
+        key = (
+            item.chunk.source,
+            item.chunk.page_number,
+        )
+
         if key not in seen:
+
             seen.add(key)
+
             sources.append(
-                {"source": item.chunk.source, "page": item.chunk.page_number}
+                {
+                    "source": item.chunk.source,
+                    "page": item.chunk.page_number,
+                }
             )
 
     return {

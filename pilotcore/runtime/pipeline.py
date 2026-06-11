@@ -121,6 +121,7 @@ def _emit_trace(
     user_id=None,
     source=None,
     model_name=None,
+    experiment_config=None,
 ):
     chunks = trace.retrieval_result.retrieved_chunks if trace.retrieval_result else []
 
@@ -177,6 +178,7 @@ def _emit_trace(
             }
             for s in trace.spans
         ],
+        "mode": (experiment_config.mode if experiment_config else "production"),
     }
 
     try:

@@ -10,6 +10,7 @@ from pilotcore.tracing.spans import (
     start_span,
     end_span,
 )
+from pilotcore.retrieval.reranker import rerank_chunks
 
 
 def deduplicate_chunks(chunks):
@@ -45,6 +46,29 @@ def run_dedup(chunks):
     return chunks
 
 
+def apply_post_processing(
+    chunks,
+    query,
+    top_k,
+    experiment_config,
+):
+    if experiment_config is None:
+        return chunks
+
+    if experiment_config.deduplication:
+        chunks = run_dedup(chunks)
+
+    if experiment_config.reranker:
+
+        chunks = rerank_chunks(
+            query=query,
+            candidate_chunks=chunks,
+            top_k=top_k,
+        )
+
+    return chunks
+
+
 def retrieve(
     strategy: str,
     **kwargs,
@@ -66,8 +90,17 @@ def retrieve(
         )
 
         trace.spans.append(span)
+        query = kwargs.get("query")
+        top_k = kwargs.get("top_k", 7)
 
         result = retrieve_chunks(**kwargs)
+
+        result.retrieved_chunks = apply_post_processing(
+            chunks=result.retrieved_chunks,
+            query=query,
+            top_k=top_k,
+            experiment_config=experiment_config,
+        )
 
         end_span(span)
 
@@ -88,7 +121,7 @@ def retrieve(
         user_id = kwargs.pop("user_id", None)
         source = kwargs.pop("source", None)
         trace_id = kwargs.pop("trace_id")
-
+        top_k = kwargs.pop("top_k", 7)
         query_embedding = get_embedding(query)
 
         result = search_vectors(
@@ -96,8 +129,14 @@ def retrieve(
             query_embedding=query_embedding,
             source=source,
             trace_id=trace_id,
+            top_k=top_k,
         )
-
+        result.retrieved_chunks = apply_post_processing(
+            chunks=result.retrieved_chunks,
+            query=query,
+            top_k=top_k,
+            experiment_config=experiment_config,
+        )
         end_span(span)
 
         return result
@@ -112,7 +151,7 @@ def retrieve(
         trace.spans.append(span)
 
         from pilotcore.retrieval.embeddings import get_embedding
-        from pilotcore.retrieval.reranker import rerank_chunks
+
         from pilotcore.schemas.retrieval import RetrievalResult
 
         query = kwargs.pop("query")
@@ -267,74 +306,28 @@ def retrieve(
             key=lambda chunk: chunk.score,
             reverse=True,
         )
-
-        if experiment_config is None or experiment_config.deduplication:
-            fused_chunks = run_dedup(fused_chunks)
-
-        # If reranker disabled, return fused results directly
-        if experiment_config and not experiment_config.reranker:
-
-            result = RetrievalResult(
-                trace_id=trace_id,
-                query=query,
-                retrieved_chunks=fused_chunks[:top_k],
-                latency_ms=(vector_result.latency_ms + lexical_result.latency_ms),
-                retriever_version="hybrid_rrf_only_v1",
-            )
-
-            end_span(span)
-
-            return result
-        # Cross-encoder reranking
-        # -----------------------------------------
-        # RRF builds a strong hybrid candidate pool.
-        # The reranker then evaluates:
-        #
-        #   (query, chunk)
-        #
-        # jointly to determine final relevance.
-        #
-        # This dramatically improves:
-        # - compare questions
-        # - explanatory questions
-        # - benchmark retrieval
-        # - semantic ranking quality
-        print("\n===== DEDUP DEBUG =====")
-
-        for i, c in enumerate(fused_chunks, start=1):
-            print(f"\nRANK {i}")
-            print("CHUNK ID:", c.chunk.chunk_id)
-            print(c.chunk.text[:120])
-
-        print("========================\n")
-        RERANK_POOL_SIZE = 20
-
-        rerank_candidates = fused_chunks[:RERANK_POOL_SIZE]
-
-        deduped = rerank_chunks(
+        fused_chunks = apply_post_processing(
+            chunks=fused_chunks,
             query=query,
-            candidate_chunks=rerank_candidates,
             top_k=top_k,
+            experiment_config=experiment_config,
         )
-
         print("\n===== HYBRID DEBUG =====")
 
-        for idx, chunk in enumerate(deduped, start=1):
+        for idx, chunk in enumerate(fused_chunks, start=1):
 
             print(f"\nRANK {idx}")
             print(chunk.chunk.text[:400])
             print("SCORE:", chunk.score)
 
         print("========================\n")
-
         result = RetrievalResult(
             trace_id=trace_id,
             query=query,
-            retrieved_chunks=deduped,
+            retrieved_chunks=fused_chunks[:top_k],
             latency_ms=(vector_result.latency_ms + lexical_result.latency_ms),
             retriever_version="hybrid_rrf_v1",
         )
-
         end_span(span)
 
         return result
