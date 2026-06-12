@@ -18,7 +18,7 @@ const consensusColor = { strong: "#16a34a", semantic: "#3b82f6", lexical: "#f59e
 const riskColor = { low: "#16a34a", medium: "#eab308", moderate: "#eab308", high: "#ef4444", none: "#6b7280", unknown: "#6b7280" };
 const ansColor = { high: "#16a34a", medium: "#eab308", moderate: "#eab308", partial: "#eab308", low: "#ef4444", none: "#ef4444", unknown: "#6b7280", abstained: "#7c4dff" };
 
-export default function TraceExplorer({ onHome, onDocPilot }) {
+export default function TraceExplorer({ onHome, onDocPilot, experimentMode, }) {
     const [traces, setTraces] = useState([]);
     const [selectedTrace, setSelectedTrace] = useState(null);
     const [selectedId, setSelectedId] = useState(null);
@@ -28,7 +28,7 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [resetting, setResetting] = useState(false);
     const [resetMessage, setResetMessage] = useState("");
-
+    
    useEffect(() => {
     const fetchIfVisible = () => {
         if (document.visibilityState === "visible") {
@@ -41,11 +41,17 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
     const interval = setInterval(fetchIfVisible, 30000);
 
     return () => clearInterval(interval);
-}, []);
+}, [experimentMode]);
 
     function fetchTraces() {
         setLoadingTraces(true);
-        api.get("/traces")
+        api.get("/traces", {
+        params: {
+             mode: experimentMode
+        ? "experimental"
+        : "production",
+        },
+    })
             .then(r => setTraces(r.data))
             .catch(() => {})
             .finally(() => setLoadingTraces(false));
@@ -75,27 +81,47 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
         }
     }
 
-    async function resetTraces() {
-        if (!window.confirm("Are you sure you want to delete all traces?")) return;
-        if (resetting) return;
-        setResetting(true);
-        setResetMessage("");
-        try {
-            await api.delete("/traces/reset");
-            setSelectedTrace(null);
-            setSelectedId(null);
-            fetchTraces();
-            setResetMessage("Trace history cleared.");
-            setTimeout(() => setResetMessage(""), 3500);
-        } catch (error) {
-            console.error("Failed to reset traces", error);
-            setResetMessage("Failed to reset traces.");
-            setTimeout(() => setResetMessage(""), 3500);
-        } finally {
-            setResetting(false);
-        }
-    }
+async function resetTraces() {
+    console.log("RESET CLICKED");
 
+    const mode = experimentMode
+        ? "experimental"
+        : "production";
+
+    console.log("MODE =", mode);
+
+    try {
+        setResetting(true);
+
+        const response = await api.delete(
+            "/traces/reset",
+            {
+                params: { mode },
+            }
+        );
+
+        console.log("RESET SUCCESS", response.data);
+
+        fetchTraces();
+
+        setSelectedTrace(null);
+        setSelectedId(null);
+
+        setResetMessage(
+            `${mode} traces cleared`
+        );
+
+    } catch (err) {
+        console.error("RESET FAILED", err);
+        console.error(err?.response?.data);
+
+        setResetMessage(
+            "Failed to reset traces."
+        );
+    } finally {
+        setResetting(false);
+    }
+}
     const avgLatency = traces.length
         ? Math.round(traces.reduce((s, t) => s + (t.latency || 0), 0) / traces.length)
         : 0;
@@ -118,6 +144,7 @@ export default function TraceExplorer({ onHome, onDocPilot }) {
                 <p style={{ margin: "6px 0 0", color: "var(--text-muted)", fontSize: "13px" }}>
                     execution intelligence layer
                 </p>
+                
                 {onHome && (
                     <>
                         <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>

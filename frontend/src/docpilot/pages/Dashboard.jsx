@@ -236,6 +236,7 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
   const [loadingSessionId, setLoadingSessionId] = useState(null);
   const [deletingSessionId, setDeletingSessionId] = useState(null);
   const [deletingDoc, setDeletingDoc] = useState(false);
+  const [clearingSessions, setClearingSessions] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const messagesEndRef = useRef(null);
@@ -467,6 +468,23 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
     }
   };
 
+  const clearAllSessions = async () => {
+    if (clearingSessions) return;
+    const mode = experimentMode ? "experimental" : "production";
+    if (!window.confirm(`Delete all ${mode} conversations?`)) return;
+    setClearingSessions(true);
+    try {
+      await apiRequest(`/history/sessions/reset?mode=${mode}`, "DELETE");
+      setMessages([]);
+      setCurrentSessionId(null);
+      await fetchSessions();
+    } catch {
+      alert("Failed to clear conversations.");
+    } finally {
+      setClearingSessions(false);
+    }
+  };
+
   const activeModelLabel =
     models.length === 0 ? "Loading models..." : models.find((m) => m.id === selectedModel)?.label || selectedModel;
 
@@ -599,17 +617,40 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
 
         {/* SESSIONS */}
         <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 16px" }}>
-          <p
+          <div
             style={{
-              margin: "0 0 10px",
-              fontSize: "11px",
-              color: "#777",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "10px",
             }}
           >
-            Conversations
-          </p>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "11px",
+                color: "#777",
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+              }}
+            >
+              Conversations
+            </p>
+            <button
+              onClick={clearAllSessions}
+              disabled={clearingSessions}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#ef4444",
+                cursor: clearingSessions ? "not-allowed" : "pointer",
+                fontSize: "11px",
+                padding: 0,
+              }}
+            >
+              {clearingSessions ? "Clearing..." : "Clear All"}
+            </button>
+          </div>
 
           {loadingSessions && sessions.length === 0 && (
             <p style={{ color: "#777", fontSize: "12px", display: "flex", alignItems: "center", gap: "8px" }}>

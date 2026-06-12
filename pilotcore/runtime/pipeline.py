@@ -103,12 +103,13 @@ def run_pipeline(
     )
 
     _emit_trace(
-        trace,
-        latency_ms,
-        evaluation,
-        user_id,
-        source,
+        trace=trace,
+        latency_ms=latency_ms,
+        evaluation=evaluation,
+        user_id=user_id,
+        source=source,
         model_name=model_name,
+        experiment_config=experiment_config,
     )
 
     return trace
@@ -123,6 +124,10 @@ def _emit_trace(
     model_name=None,
     experiment_config=None,
 ):
+    print(
+        "TRACE MODE:",
+        experiment_config.mode if experiment_config else "NO_CONFIG",
+    )
     chunks = trace.retrieval_result.retrieved_chunks if trace.retrieval_result else []
 
     payload = {

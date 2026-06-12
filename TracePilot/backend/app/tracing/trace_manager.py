@@ -16,9 +16,9 @@ def save_trace(trace: Trace):
         timestamp, model_name, retrieval_score_avg, response_length,
         chunk_count, parent_trace_id, retrieval_quality, grounded,
         top_retrieval_score, spans, failure_types, prompt_mode, evaluation,
-        user_id, source, evaluator_version, prompt_version, retriever_version
+        user_id, source, evaluator_version, prompt_version, retriever_version, mode
     )
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """,
         (
             trace.trace_id,
@@ -46,6 +46,7 @@ def save_trace(trace: Trace):
             trace.evaluator_version,
             trace.prompt_version,
             trace.retriever_version,
+            trace.mode,
         ),
     )
 
@@ -82,20 +83,60 @@ def _row_to_trace(row) -> Trace:
         evaluator_version=row["evaluator_version"] or "1.0",
         prompt_version=row["prompt_version"] or "1.0",
         retriever_version=row["retriever_version"] or "vector_v1",
+        mode=row["mode"] or "production",
     )
 
 
-def get_traces(retrieval_quality=None):
+def get_traces(
+    retrieval_quality=None,
+    mode=None,
+):
 
     conn = get_connection()
     cursor = conn.cursor()
 
-    if retrieval_quality:
+    if retrieval_quality and mode:
+
         cursor.execute(
-            "SELECT * FROM traces WHERE retrieval_quality = %s ORDER BY timestamp DESC",
+            """
+            SELECT *
+            FROM traces
+            WHERE retrieval_quality = %s
+            AND mode = %s
+            ORDER BY timestamp DESC
+            """,
+            (
+                retrieval_quality,
+                mode,
+            ),
+        )
+
+    elif mode:
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM traces
+            WHERE mode = %s
+            ORDER BY timestamp DESC
+            """,
+            (mode,),
+        )
+
+    elif retrieval_quality:
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM traces
+            WHERE retrieval_quality = %s
+            ORDER BY timestamp DESC
+            """,
             (retrieval_quality,),
         )
+
     else:
+
         cursor.execute("SELECT * FROM traces ORDER BY timestamp DESC")
 
     rows = cursor.fetchall()
@@ -118,12 +159,19 @@ def get_trace_by_id(trace_id: str):
     return _row_to_trace(row)
 
 
-def delete_all_traces():
+def delete_all_traces(mode: str):
 
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM ingestion_traces")
-    cursor.execute("DELETE FROM traces")
+
+    cursor.execute(
+        """
+        DELETE FROM traces
+        WHERE mode = %s
+        """,
+        (mode,),
+    )
+
     conn.commit()
     conn.close()
 
@@ -163,4 +211,5 @@ def get_trace(trace_id: str) -> dict | None:
         "evaluator_version": row["evaluator_version"] or "1.0",
         "prompt_version": row["prompt_version"] or "1.0",
         "retriever_version": row["retriever_version"] or "vector_v1",
+        "mode": row["mode"] or "production",
     }

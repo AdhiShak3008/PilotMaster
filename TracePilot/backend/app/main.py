@@ -201,6 +201,7 @@ def ingest_trace(request: IngestRequest):
         evaluator_version=request.evaluator_version or "1.0",
         prompt_version=request.prompt_version or "1.0",
         retriever_version=request.retriever_version or "vector_v1",
+        mode=request.mode,
     )
 
     save_trace(trace)
@@ -237,23 +238,27 @@ def get_failures():
 
 
 @app.get("/traces")
-def get_all_traces(retrieval_quality: str | None = None):
-
-    return get_traces(retrieval_quality)
-
-
-@app.delete("/traces")
-def clear_all_traces():
-
-    delete_all_traces()
-    return {"status": "ok", "message": "All traces cleared."}
+def get_all_traces(
+    retrieval_quality: str | None = None,
+    mode: str | None = None,
+):
+    return get_traces(
+        retrieval_quality,
+        mode,
+    )
 
 
 @app.delete("/traces/reset")
-def reset_traces():
+def reset_traces(
+    mode: str = "production",
+):
 
-    delete_all_traces()
-    return {"status": "ok", "message": "TracePilot reset complete."}
+    delete_all_traces(mode)
+
+    return {
+        "status": "ok",
+        "message": f"{mode} traces cleared.",
+    }
 
 
 @app.get("/traces/compare")

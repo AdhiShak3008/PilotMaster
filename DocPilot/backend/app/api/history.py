@@ -64,6 +64,43 @@ def get_session_messages(
     return messages
 
 
+@router.delete("/sessions/reset")
+def reset_sessions(
+    mode: str = "production",
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+
+    sessions = (
+        db.query(ChatSession)
+        .filter(
+            ChatSession.owner_id == current_user.id,
+            ChatSession.mode == mode,
+        )
+        .all()
+    )
+
+    session_ids = [s.id for s in sessions]
+
+    if session_ids:
+
+        db.query(ChatMessage).filter(ChatMessage.session_id.in_(session_ids)).delete(
+            synchronize_session=False,
+        )
+
+        db.query(ChatSession).filter(ChatSession.id.in_(session_ids)).delete(
+            synchronize_session=False,
+        )
+
+        db.commit()
+
+    return {
+        "status": "ok",
+        "deleted_sessions": len(session_ids),
+        "mode": mode,
+    }
+
+
 @router.delete("/{session_id}")
 def delete_session(
     session_id: int,
