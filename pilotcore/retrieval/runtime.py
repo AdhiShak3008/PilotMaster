@@ -64,6 +64,7 @@ def apply_post_processing(
             query=query,
             candidate_chunks=chunks,
             top_k=top_k,
+            model_key=experiment_config.reranker_model,
         )
 
     return chunks

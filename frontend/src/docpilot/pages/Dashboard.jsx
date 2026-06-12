@@ -132,7 +132,22 @@ const RERANKER_OPTIONS = [
   {
     id: "minilm",
     label: "MiniLM",
-    subtitle: "cross-encoder/ms-marco-MiniLM-L-6-v2",
+    subtitle: "Fast balanced baseline",
+  },
+  {
+    id: "tinybert",
+    label: "TinyBERT",
+    subtitle: "Ultra-fast lightweight",
+  },
+  {
+    id: "bge-large",
+    label: "BGE Large",
+    subtitle: "High-quality semantic ranking",
+  },
+  {
+    id: "bge-m3",
+    label: "BGE M3",
+    subtitle: "Modern retrieval-focused reranker",
   },
 ];
 // ─────────────────────────────────────────────

@@ -23,7 +23,17 @@ import math
 # higher = better relevance
 
 
-_reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+RERANKER_MODELS = {
+    "minilm": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+    "tinybert": "cross-encoder/ms-marco-TinyBERT-L-2-v2",
+    "bge-large": "BAAI/bge-reranker-large",
+    "bge-m3": "BAAI/bge-reranker-v2-m3",
+    #  "jina-v3": "jinaai/jina-reranker-v3",
+    #  "nv-rerankqa": "nvidia/nv-rerankqa",
+    #  "zerank-2": "ZeroEntropy/zerank-2",
+}
+
+_loaded_rerankers = {}
 
 
 def softmax(scores, temperature=1.0):
@@ -36,6 +46,7 @@ def rerank_chunks(
     query,
     candidate_chunks,
     top_k=7,
+    model_key="minilm",
 ):
 
     if not candidate_chunks:
@@ -46,13 +57,17 @@ def rerank_chunks(
     for chunk in candidate_chunks:
         pairs.append((query, chunk.chunk.text))
 
-    scores = _reranker.predict(pairs)
+    reranker = get_reranker(model_key)
+
+    scores = reranker.predict(pairs)
 
     confidences = softmax(scores)
 
     reranked = []
 
-    for rank, (chunk, score, confidence) in enumerate(zip(candidate_chunks, scores, confidences), start=1):
+    for rank, (chunk, score, confidence) in enumerate(
+        zip(candidate_chunks, scores, confidences), start=1
+    ):
 
         chunk.score = float(score)
         chunk.reranker_score = float(score)
@@ -83,3 +98,19 @@ def rerank_chunks(
         chunk.reranker_margin = margin
 
     return reranked[:top_k]
+
+
+def get_reranker(model_key: str):
+
+    model_name = RERANKER_MODELS.get(
+        model_key,
+        RERANKER_MODELS["minilm"],
+    )
+
+    if model_key not in _loaded_rerankers:
+
+        print(f"Loading reranker: {model_name}")
+
+        _loaded_rerankers[model_key] = CrossEncoder(model_name)
+
+    return _loaded_rerankers[model_key]
