@@ -7,6 +7,7 @@ from pilotcore.retrieval.vector_store import (
 from pilotcore.schemas.chunk import Chunk
 from pilotcore.schemas.retrieval import RetrievedChunk, RetrievalResult
 from pilotcore.tracing.telemetry import emit_event
+from pilotcore.retrieval.bm25 import tokenize
 
 
 def retrieve_chunks(user_id, query, trace_id, source=None, top_k=3, **_):
@@ -24,7 +25,7 @@ def retrieve_chunks(user_id, query, trace_id, source=None, top_k=3, **_):
             retriever_version="bm25_v1",
         )
 
-    tokenized_query = query.lower().split()
+    tokenized_query = tokenize(query)
 
     scores = bm25.get_scores(tokenized_query)
 
@@ -40,20 +41,10 @@ def retrieve_chunks(user_id, query, trace_id, source=None, top_k=3, **_):
         if source and source != doc.get("source"):
             continue
 
-        if score <= 0:
+        if score == 0:
             continue
 
         matches.append((score, doc))
-
-    print("\n===== BM25 DEBUG =====")
-    print("QUERY:", query)
-
-    for score, doc in matches[:10]:
-        print("\nCHUNK:")
-        print(doc.get("text", "")[:300])
-        print("BM25 SCORE:", score)
-
-    print("======================\n")
 
     matches.sort(
         key=lambda item: item[0],

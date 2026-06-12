@@ -461,8 +461,8 @@ function RetrievalDiagnostics({ chunk }) {
 
 function Tag({ color, children }) {
     const isCssVar = typeof color === "string" && color.trim().startsWith("var(");
-    const backgroundColor = isCssVar ? color : color + "18";
-    const borderColor = isCssVar ? color : `${color}40`;
+    const backgroundColor = isCssVar ? "color-mix(in srgb, currentColor 12%, transparent)" : color + "18";
+    const borderColor = isCssVar ? "color-mix(in srgb, currentColor 34%, transparent)" : `${color}40`;
     return (
         <span style={{
             background: backgroundColor, color, border: `1px solid ${borderColor}`,

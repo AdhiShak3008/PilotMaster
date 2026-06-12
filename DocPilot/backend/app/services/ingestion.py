@@ -8,6 +8,8 @@ import time
 from docling.document_converter import DocumentConverter
 import pandas as pd
 import pytesseract
+
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 import requests
 from docx import Document
 from pdf2image import convert_from_path

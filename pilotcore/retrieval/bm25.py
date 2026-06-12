@@ -4,8 +4,11 @@ import pickle
 from rank_bm25 import BM25Okapi
 
 
+import re
+
+
 def tokenize(text):
-    return text.lower().split()
+    return re.findall(r"\w+", text.lower())
 
 
 def build_bm25(chunks):
