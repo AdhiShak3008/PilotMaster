@@ -53,7 +53,7 @@ export default function Leaderboards({ leaderboard }) {
   // ── Empty state ────────────────────────────────────────────────────────────
   if (!leaderboard || overall.length === 0) {
     return (
-      <div style={{ maxWidth: "1240px", margin: "0 auto", padding: "28px 24px" }}>
+      <div  id="leaderboards" style={{ maxWidth: "1240px", margin: "0 auto", padding: "28px 24px" }}>
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", marginBottom: "28px" }}>
@@ -108,7 +108,7 @@ export default function Leaderboards({ leaderboard }) {
   const meta = METRIC_META[selectedMetric] ?? METRIC_META.overall;
 
   return (
-    <div id="leaderboards" style={{ maxWidth: "1240px", margin: "0 auto", padding: "28px 24px", fontFamily: "inherit" }}>
+    <div  style={{ maxWidth: "1240px", margin: "0 auto", padding: "28px 24px", fontFamily: "inherit" }}>
 
       {/* ── Page Header ──────────────────────────────────────────────────────── */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", marginBottom: "24px" }}>

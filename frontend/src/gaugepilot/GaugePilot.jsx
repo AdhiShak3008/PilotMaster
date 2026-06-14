@@ -27,7 +27,7 @@ const NAV_GROUPS = [
 
 const SECTION_IDS = NAV_GROUPS.flatMap((g) => g.items.map((i) => i.scrollTo)).filter(Boolean);
 
-export default function GaugePilot() {
+export default function GaugePilot({ onHome }) {
   const [activeSection, setActiveSection] = useState("experiment-setup");
   const [isCollapsed, setIsCollapsed]     = useState(false);
   const [isMobileOpen, setIsMobileOpen]   = useState(false);
@@ -36,6 +36,14 @@ export default function GaugePilot() {
   const [isTablet, setIsTablet]           = useState(false);
   const observersRef = useRef([]);
 const mainRef = useRef(null);
+const scrollToSection = (id) => {
+  document
+    .getElementById(id)
+    ?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+};
 
   // ── Responsive breakpoints ─────────────────────────────────────────────────
   useEffect(() => {
@@ -69,29 +77,28 @@ const mainRef = useRef(null);
   }, []);
 
   // ── Navigation ─────────────────────────────────────────────────────────────
-  const navigateTo = (scrollTo) => {
+const navigateTo = (sectionId) => {
   if (isMobile) setIsMobileOpen(false);
 
-  if (!scrollTo) {
-    mainRef.current?.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-    setActiveSection("top");
+  if (!sectionId) {
+    onHome?.();
     return;
   }
 
-  const el = document.getElementById(scrollTo);
+  const element = document.getElementById(sectionId);
 
-  if (el) {
-    el.scrollIntoView({
+  if (element && mainRef.current) {
+    const top =
+      element.offsetTop - 20;
+
+    mainRef.current.scrollTo({
+      top,
       behavior: "smooth",
-      block: "start",
     });
-    setActiveSection(scrollTo);
+
+    setActiveSection(sectionId);
   }
 };
-
   // ── Design tokens ──────────────────────────────────────────────────────────
   const accent      = "#4f6ef7";
   const sidebarW    = isCollapsed ? "72px" : "240px";

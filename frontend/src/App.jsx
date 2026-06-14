@@ -129,7 +129,8 @@ export default function App() {
     );
    if (screen === "gaugepilot")
     return (
-        <GaugePilot />
+        <GaugePilot
+         onHome={() => setScreen("home")} />
     );
     return <PilotMasterHome username={username} plan={plan} onOpen={setScreen} onLogout={logout} />;
 }

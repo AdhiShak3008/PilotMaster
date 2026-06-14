@@ -3,13 +3,13 @@ import { useBenchmark } from "../hooks/useBenchmark";
 import Leaderboards from "./Leaderboards";
 import ExperimentSelector from "../components/ExperimentSelector";
 
-const SAMPLE_QUESTIONS = [
+/*const SAMPLE_QUESTIONS = [
   "What is the main contribution of this paper?",
   "How does the proposed method compare to baselines?",
   "What datasets were used for evaluation?",
   "What are the limitations acknowledged by the authors?",
   "What future work do the authors suggest?",
-];
+];*/
 
 export default function ExperimentSetup() {
   const { loading, results, error, executeBenchmark } = useBenchmark();
@@ -329,8 +329,8 @@ export default function ExperimentSetup() {
           {/* Questions header */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
-              <p style={{ ...sectionLabel, marginBottom: "3px" }}>Evaluation Questions</p>
-              <p style={{ margin: 0, fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>One question per line</p>
+              <p style={{ ...sectionLabel, marginBottom: "3px", color: "rgba(255,255,255,0.72)" }}>Evaluation Questions</p>
+              <p style={{ margin: 0, fontSize: "12px", color: "rgba(255,255,255,0.72)" }}>One question per line</p>
             </div>
             <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
               {questionList.length > 0 && (
@@ -350,61 +350,9 @@ export default function ExperimentSetup() {
             </div>
           </div>
 
-          {/* Sample questions */}
-          <div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-              <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                Sample Questions
-              </span>
-              <button
-                onClick={() => setQuestions(SAMPLE_QUESTIONS.join("\n"))}
-                style={{
-                  background: `rgba(79,110,247,0.1)`, border: `1px solid rgba(79,110,247,0.25)`,
-                  borderRadius: "8px", color: accent, fontSize: "11px", fontWeight: 600,
-                  padding: "3px 10px", cursor: "pointer", letterSpacing: "0.02em",
-                }}
-              >Import All</button>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-              {SAMPLE_QUESTIONS.map((q, i) => (
-                <button
-                  key={i}
-                  onClick={() => setQuestions((prev) => prev ? `${prev}\n${q}` : q)}
-                  style={{
-                    background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
-                    borderRadius: "8px", color: "rgba(255,255,255,0.72)", fontSize: "12px",
-                    padding: "7px 12px", cursor: "pointer", textAlign: "left",
-                    transition: "all 0.15s",
-                    display: "flex", alignItems: "center", gap: "8px",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "rgba(79,110,247,0.08)";
-                    e.currentTarget.style.borderColor = "rgba(79,110,247,0.2)";
-                    e.currentTarget.style.color = "rgba(255,255,255,0.7)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "rgba(255,255,255,0.02)";
-                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)";
-                    e.currentTarget.style.color = "rgba(255,255,255,0.72)";
-                  }}
-                >
-                  <span style={{ color: "rgba(79,110,247,0.6)", fontSize: "10px", fontWeight: 700 }}>+</span>
-                  {q}
-                </button>
-              ))}
-            </div>
-          </div>
+        
 
-          {/* Textarea with line numbers */}
-          {questionList.length === 0 && (
-            <div style={{
-              padding: "12px 14px", borderRadius: "10px",
-              background: "rgba(79,110,247,0.05)", border: "1px solid rgba(79,110,247,0.12)",
-              fontSize: "12px", color: "rgba(255,255,255,0.35)", lineHeight: 1.6,
-            }}>
-              💡 Click a sample above to add it, or type your own questions below. Each line = one evaluation question.
-            </div>
-          )}
+          
 
           <div style={{ position: "relative", display: "flex", borderRadius: "14px", overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
             {/* Line numbers */}
