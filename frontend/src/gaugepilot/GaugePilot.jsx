@@ -269,7 +269,7 @@ const mainRef = useRef(null);
               width: 7, height: 7, borderRadius: "50%", background: "#22c55e",
               boxShadow: "0 0 6px #22c55e", display: "inline-block", flexShrink: 0,
             }} />
-            <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)", fontWeight: 500 }}>
+            <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.72)", fontWeight: 500 }}>
               System ready
             </span>
           </div>

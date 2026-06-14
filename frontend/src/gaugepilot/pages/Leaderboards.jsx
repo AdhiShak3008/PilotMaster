@@ -62,7 +62,7 @@ export default function Leaderboards({ leaderboard }) {
               <span style={{ fontSize: "30px", lineHeight: 1 }}>🏆</span>
               <h1 style={{ margin: 0, fontSize: "34px", fontWeight: 700, letterSpacing: "-0.5px", color: "white" }}>Leaderboards</h1>
             </div>
-            <p style={{ margin: 0, fontSize: "13px", color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
+            <p style={{ margin: 0, fontSize: "13px", color: "rgba(255,255,255,0.72)", lineHeight: 1.6 }}>
               Compare benchmark performance across evaluation metrics and configurations.
             </p>
           </div>
@@ -117,7 +117,7 @@ export default function Leaderboards({ leaderboard }) {
             <span style={{ fontSize: "30px", lineHeight: 1 }}>🏆</span>
             <h1 style={{ margin: 0, fontSize: "34px", fontWeight: 700, letterSpacing: "-0.5px", color: "white" }}>Leaderboards</h1>
           </div>
-          <p style={{ margin: 0, fontSize: "13px", color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
+          <p style={{ margin: 0, fontSize: "13px", color: "rgba(255,255,255,0.72)", lineHeight: 1.6 }}>
             Compare benchmark performance across evaluation metrics and configurations.
           </p>
         </div>

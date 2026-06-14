@@ -103,7 +103,7 @@ export default function ExperimentSetup() {
               Experiment Setup
             </h1>
           </div>
-          <p style={{ margin: 0, fontSize: "13px", color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
+          <p style={{ margin: 0, fontSize: "13px", color: "rgba(255,255,255,0.72)", lineHeight: 1.6 }}>
             Configure your RAG pipeline, upload a source document, and define evaluation questions.
           </p>
         </div>
@@ -372,7 +372,7 @@ export default function ExperimentSetup() {
                   onClick={() => setQuestions((prev) => prev ? `${prev}\n${q}` : q)}
                   style={{
                     background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
-                    borderRadius: "8px", color: "rgba(255,255,255,0.45)", fontSize: "12px",
+                    borderRadius: "8px", color: "rgba(255,255,255,0.72)", fontSize: "12px",
                     padding: "7px 12px", cursor: "pointer", textAlign: "left",
                     transition: "all 0.15s",
                     display: "flex", alignItems: "center", gap: "8px",
@@ -385,7 +385,7 @@ export default function ExperimentSetup() {
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = "rgba(255,255,255,0.02)";
                     e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)";
-                    e.currentTarget.style.color = "rgba(255,255,255,0.45)";
+                    e.currentTarget.style.color = "rgba(255,255,255,0.72)";
                   }}
                 >
                   <span style={{ color: "rgba(79,110,247,0.6)", fontSize: "10px", fontWeight: 700 }}>+</span>
