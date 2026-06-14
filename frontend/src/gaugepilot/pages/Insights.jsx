@@ -1,4 +1,3 @@
- 
 import RecommendationCard from "../components/insights/RecommendationCard";
 
 import WinnerCard from "../components/insights/WinnerCard";
@@ -10,9 +9,19 @@ export default function Insights({
 }) {
   if (
     !leaderboard ||
-    !leaderboard.overall
+    !leaderboard.overall ||
+    leaderboard.overall.length === 0
   ) {
-    return null;
+    return (
+      <div id="insights">
+        <h2>Insights</h2>
+
+        <div className="gauge-card">
+          Run a benchmark to see
+          insights.
+        </div>
+      </div>
+    );
   }
 
   const winner =
