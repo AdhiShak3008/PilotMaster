@@ -162,6 +162,7 @@ def evaluate_retrieval_relevance(
             "reranker_confidence_avg": 0.0,
             "reranker_margin": 0.0,
             "retrieval_consensus": "none",
+            "retrieval_quality_score": 0.0,
         }
 
     overlap_relevance = evaluate_query_relevance(

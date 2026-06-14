@@ -8,6 +8,7 @@ from DocPilot.backend.app.api import (
     auth,
     billing,
     models,
+    benchmark,
 )
 
 from DocPilot.backend.app.db.database import (
@@ -36,7 +37,11 @@ app.include_router(auth.router, prefix="/auth")
 app.include_router(billing.router, prefix="/billing")
 app.include_router(history.router, prefix="/history")
 app.include_router(models.router, prefix="/models", tags=["models"])
-
+app.include_router(
+    benchmark.router,
+    prefix="/benchmark",
+    tags=["benchmark"],
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

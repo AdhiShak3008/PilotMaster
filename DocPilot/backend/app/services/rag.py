@@ -2,6 +2,9 @@ from pilotcore.retrieval.embeddings import get_embedding
 from pilotcore.retrieval.vector_store import add_vector
 from pilotcore.runtime.pipeline import run_pipeline
 from pilotcore.runtime.experiment_config import ExperimentConfig
+from pilotcore.benchmarking.config_builder import (
+    build_experiment_config,
+)
 
 
 def add_chunks(chunks, user_id):
@@ -30,7 +33,49 @@ def ask_question(
     mode="production",
 ):
     config = ExperimentConfig()
+    experimental_config = build_experiment_config(
+        retrieval_strategy=retrieval_strategy,
+        reranker=reranker,
+        enhancements=enhancements,
+        mode=mode,
+    )
+    print("\n===== CONFIG COMPARISON =====")
 
+    print(
+        "OLD METHOD:",
+        config.retrieval_method,
+    )
+
+    print(
+        "NEW METHOD:",
+        experimental_config.retrieval_method,
+    )
+
+    print(
+        "OLD RERANKER:",
+        config.reranker,
+    )
+
+    print(
+        "NEW RERANKER:",
+        experimental_config.reranker,
+    )
+
+    print(
+        "OLD MODEL:",
+        getattr(config, "reranker_model", None),
+    )
+
+    print(
+        "NEW MODEL:",
+        getattr(
+            experimental_config,
+            "reranker_model",
+            None,
+        ),
+    )
+
+    print("=============================\n")
     # ----------------------------------
     # Mode
     # ----------------------------------

@@ -26,3 +26,4 @@ class ExperimentConfig(BaseModel):
     context_compression: bool = False
 
     experiment_name: str = "default"
+    emit_trace: bool = True

@@ -20,3 +20,7 @@ class Trace(BaseModel):
     spans: List[Span] = []
 
     created_at: datetime
+
+    evaluation: Optional[dict] = None
+
+    latency_ms: Optional[float] = None

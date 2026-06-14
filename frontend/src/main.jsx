@@ -334,7 +334,94 @@ style.textContent = `
     .trace-title {
       font-size: 30px !important;
     }
-  }
+  }.gauge-root {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  background: var(--bg-primary);
+}
+
+.gauge-sidebar {
+  width: 260px;
+  border-right: 1px solid var(--border);
+  padding: 24px;
+  background: var(--bg-secondary);
+}
+
+.gauge-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px;
+}
+
+.gauge-title {
+  font-size: 38px;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+.gauge-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gauge-nav-button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.gauge-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+  .gauge-input {
+  width: 100%;
+  max-width: 400px;
+
+  background: var(--bg-primary);
+  color: var(--text-primary);
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  padding: 12px 16px;
+}
+
+.gauge-textarea {
+  width: 100%;
+  min-height: 220px;
+
+  background: var(--bg-primary);
+  color: var(--text-primary);
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  padding: 16px;
+
+  resize: vertical;
+}
+
+.gauge-button {
+  background: var(--surface-strong);
+  color: var(--text-primary);
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  padding: 12px 18px;
+
+  cursor: pointer;
+}
 `;
 document.head.appendChild(style);
 

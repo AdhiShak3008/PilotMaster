@@ -3,7 +3,7 @@ import { apiRequest, loginRequest } from "./docpilot/api.js";
 import DocPilotDashboard from "./docpilot/pages/Dashboard.jsx";
 import TraceExplorer from "./tracepilot/TraceExplorer.jsx";
 import { useTheme } from "./ThemeContext.jsx";
-
+import GaugePilot from "./gaugepilot/GaugePilot.jsx";
 // ─── THEME HELPER ─────────────────────────────────────────────────────────────
 // Must be called INSIDE components so it re-evaluates on every render
 function getTheme() {
@@ -127,7 +127,10 @@ export default function App() {
             onDocPilot={() => setScreen("docpilot")}
         />
     );
-
+   if (screen === "gaugepilot")
+    return (
+        <GaugePilot />
+    );
     return <PilotMasterHome username={username} plan={plan} onOpen={setScreen} onLogout={logout} />;
 }
 
@@ -236,6 +239,23 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
                         onClick={() => onOpen("tracepilot")}
                         accent="#cccccc"
                     />
+                    {experimentMode && (
+    <ProductCard
+        name="GaugePilot"
+        description="Benchmark RAG pipelines. Compare retrievers, rerankers and enhancements."
+        tags={[
+            "Benchmarking",
+            "Leaderboards",
+            "Experiments",
+            "Insights",
+        ]}
+       onClick={() => {
+    console.log("OPENING GAUGEPILOT");
+    onOpen("gaugepilot");
+}}
+        accent="#cccccc"
+    />
+)}
                 </div>
             </div>
 

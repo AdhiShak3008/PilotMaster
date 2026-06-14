@@ -101,17 +101,18 @@ def run_pipeline(
         chunks=chunks,
         scores=scores,
     )
-
-    _emit_trace(
-        trace=trace,
-        latency_ms=latency_ms,
-        evaluation=evaluation,
-        user_id=user_id,
-        source=source,
-        model_name=model_name,
-        experiment_config=experiment_config,
-    )
-
+    if experiment_config.emit_trace:
+        _emit_trace(
+            trace=trace,
+            latency_ms=latency_ms,
+            evaluation=evaluation,
+            user_id=user_id,
+            source=source,
+            model_name=model_name,
+            experiment_config=experiment_config,
+        )
+    trace.evaluation = evaluation
+    trace.latency_ms = latency_ms
     return trace
 
 
