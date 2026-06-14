@@ -6,7 +6,7 @@ def run_benchmark(
     questions,
     configs,
     user_id,
-    source,
+    source=None,
 ):
     results = []
 

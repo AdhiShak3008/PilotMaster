@@ -65,7 +65,7 @@ def run_benchmark_endpoint(
         questions=request.questions,
         configs=configs,
         user_id=current_user.id,
-        source=request.source,
+        source=None,
     )
 
     leaderboard = generate_leaderboard(results)
