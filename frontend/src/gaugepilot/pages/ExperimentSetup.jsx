@@ -2,7 +2,10 @@ import { useState, useRef } from "react";
 import { useBenchmark } from "../hooks/useBenchmark";
 import Leaderboards from "./Leaderboards";
 import ExperimentSelector from "../components/ExperimentSelector";
-
+import {
+  runBenchmark,
+  uploadDocument,
+} from "../api";
 /*const SAMPLE_QUESTIONS = [
   "What is the main contribution of this paper?",
   "How does the proposed method compare to baselines?",
@@ -22,6 +25,7 @@ export default function ExperimentSetup() {
   const [isDragging, setIsDragging] = useState(false);
   const [isHoveringUpload, setIsHoveringUpload] = useState(false);
   const [isHoveringRun, setIsHoveringRun] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [benchmarkRuns, setBenchmarkRuns] = useState(0);
   const [bestScore, setBestScore] = useState(null);
   const fileInputRef = useRef(null);
@@ -48,7 +52,36 @@ export default function ExperimentSetup() {
     }
   };
 
-  const handleFileChange = (file) => { if (file) setUploadedFile(file); };
+  const handleFileChange = async (file) => {
+  if (!file) return;
+
+  try {
+    setUploading(true);
+
+    const token = localStorage.getItem("token");
+
+    await uploadDocument(
+      file,
+      token
+    );
+
+    setUploadedFile(file);
+
+    console.log(
+      "GaugePilot upload successful"
+    );
+  } catch (err) {
+    console.error(
+      "GaugePilot upload failed",
+      err
+    );
+  } finally {
+    setUploading(false);
+  }
+};
+
+
+
   const handleDrop = (e) => {
     e.preventDefault(); setIsDragging(false);
     handleFileChange(e.dataTransfer.files[0]);
@@ -214,42 +247,141 @@ export default function ExperimentSetup() {
               pointerEvents: "none",
             }} />
 
-            {uploadedFile ? (
-              <>
-                <div style={{
-                  width: 60, height: 60, borderRadius: "16px",
-                  background: "rgba(34,197,94,0.15)",
-                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px",
-                  boxShadow: "0 0 20px rgba(34,197,94,0.2)",
-                }}>✅</div>
-                <div style={{ textAlign: "center", zIndex: 1 }}>
-                  <p style={{ margin: 0, fontWeight: 700, fontSize: "15px", color: green }}>{uploadedFile.name}</p>
-                  <p style={{ margin: "4px 0 0", fontSize: "12px", color: "rgba(255,255,255,0.35)" }}>
-                    {(uploadedFile.size / 1024).toFixed(1)} KB · Click to replace
-                  </p>
-                </div>
-              </>
-            ) : (
-              <>
-                <div style={{
-                  width: 64, height: 64, borderRadius: "18px",
-                  background: isDragging ? `rgba(79,110,247,0.2)` : "rgba(79,110,247,0.1)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "28px", zIndex: 1,
-                  boxShadow: isDragging ? `0 0 24px rgba(79,110,247,0.3)` : "none",
-                  transition: "all 0.2s ease",
-                }}>⬆️</div>
-                <div style={{ textAlign: "center", zIndex: 1 }}>
-                  <p style={{ margin: 0, fontWeight: 700, fontSize: "16px", color: "white" }}>
-                    {isDragging ? "Drop to upload" : "Upload Document"}
-                  </p>
-                  <p style={{ margin: "5px 0 0", fontSize: "12px", color: "rgba(255,255,255,0.35)", lineHeight: 1.6 }}>
-                    Drag & drop or click to browse<br />
-                    <span style={{ color: "rgba(255,255,255,0.2)" }}>Any document format supported</span>
-                  </p>
-                </div>
-              </>
-            )}
+            {uploading ? (
+  <>
+    <div
+      style={{
+        width: 60,
+        height: 60,
+        borderRadius: "16px",
+        background: "rgba(79,110,247,0.15)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "28px",
+        boxShadow: "0 0 20px rgba(79,110,247,0.2)",
+      }}
+    >
+      ⏳
+    </div>
+
+    <div style={{ textAlign: "center", zIndex: 1 }}>
+      <p
+        style={{
+          margin: 0,
+          fontWeight: 700,
+          fontSize: "15px",
+          color: "#4f6ef7",
+        }}
+      >
+        Uploading & Indexing...
+      </p>
+
+      <p
+        style={{
+          margin: "4px 0 0",
+          fontSize: "12px",
+          color: "rgba(255,255,255,0.35)",
+        }}
+      >
+        Processing document
+      </p>
+    </div>
+  </>
+) : uploadedFile ? (
+  <>
+    <div
+      style={{
+        width: 60,
+        height: 60,
+        borderRadius: "16px",
+        background: "rgba(34,197,94,0.15)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "28px",
+        boxShadow: "0 0 20px rgba(34,197,94,0.2)",
+      }}
+    >
+      ✅
+    </div>
+
+    <div style={{ textAlign: "center", zIndex: 1 }}>
+      <p
+        style={{
+          margin: 0,
+          fontWeight: 700,
+          fontSize: "15px",
+          color: green,
+        }}
+      >
+        {uploadedFile.name}
+      </p>
+
+      <p
+        style={{
+          margin: "4px 0 0",
+          fontSize: "12px",
+          color: "rgba(255,255,255,0.35)",
+        }}
+      >
+        {(uploadedFile.size / 1024).toFixed(1)} KB · Click to replace
+      </p>
+    </div>
+  </>
+) : (
+  <>
+    <div
+      style={{
+        width: 64,
+        height: 64,
+        borderRadius: "18px",
+        background: isDragging
+          ? `rgba(79,110,247,0.2)`
+          : "rgba(79,110,247,0.1)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "28px",
+        zIndex: 1,
+        boxShadow: isDragging
+          ? `0 0 24px rgba(79,110,247,0.3)`
+          : "none",
+        transition: "all 0.2s ease",
+      }}
+    >
+      ⬆️
+    </div>
+
+    <div style={{ textAlign: "center", zIndex: 1 }}>
+      <p
+        style={{
+          margin: 0,
+          fontWeight: 700,
+          fontSize: "16px",
+          color: "white",
+        }}
+      >
+        {isDragging
+          ? "Drop to upload"
+          : "Upload Document"}
+      </p>
+
+      <p
+        style={{
+          margin: "5px 0 0",
+          fontSize: "12px",
+          color: "rgba(255,255,255,0.35)",
+          lineHeight: 1.6,
+        }}
+      >
+        Drag & drop or click to browse
+        <br />
+        
+      </p>
+    </div>
+  </>
+)}
           </div>
 
           {/* Benchmark Summary */}
