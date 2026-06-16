@@ -15,3 +15,5 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 from DocPilot.backend.app.models import *
+
+print(Base.metadata.tables.keys())

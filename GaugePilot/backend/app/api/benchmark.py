@@ -1,11 +1,23 @@
 from fastapi import APIRouter, Depends
 
+from sqlalchemy.orm import Session
+
+import json
+
 from GaugePilot.backend.app.core.dependencies import (
     get_current_user,
 )
 
 from GaugePilot.backend.app.schemas.benchmark import (
     BenchmarkRequest,
+)
+
+from GaugePilot.backend.app.db.session import (
+    get_db,
+)
+
+from GaugePilot.backend.app.models.benchmark_run import (
+    BenchmarkRun,
 )
 
 from pilotcore.benchmarking.benchmark_runner import (
@@ -27,6 +39,7 @@ router = APIRouter()
 def run_benchmark_endpoint(
     request: BenchmarkRequest,
     current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     configs = [
         ExperimentConfig(
@@ -69,4 +82,32 @@ def run_benchmark_endpoint(
 
     leaderboard = generate_leaderboard(results)
 
-    return {"leaderboard": leaderboard}
+    run = BenchmarkRun(
+        owner_id=current_user.id,
+        name="Benchmark Run",
+        leaderboard_json=json.dumps(leaderboard),
+    )
+
+    db.add(run)
+    db.commit()
+    db.refresh(run)
+
+    return {
+        "benchmark_run_id": run.id,
+        "leaderboard": leaderboard,
+    }
+
+
+@router.get("/runs")
+def get_runs(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    runs = (
+        db.query(BenchmarkRun)
+        .filter(BenchmarkRun.owner_id == current_user.id)
+        .order_by(BenchmarkRun.created_at.desc())
+        .all()
+    )
+
+    return runs
