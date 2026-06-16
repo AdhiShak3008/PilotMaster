@@ -1,3 +1,4 @@
+print("USING DOCPILOT DEPENDENCIES")
 from fastapi import Depends, HTTPException
 
 from fastapi.security import OAuth2PasswordBearer

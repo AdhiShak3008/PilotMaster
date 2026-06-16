@@ -37,3 +37,70 @@ export async function uploadDocument(file, token) {
 
   return response.data;
 }
+export async function getBenchmarkRuns(token) {
+  const response = await API.get(
+    "/benchmark/runs",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return response.data;
+}
+export async function getDocuments(token) {
+  const response = await API.get(
+    "/docs/",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return response.data;
+}
+export async function deleteBenchmarkRun(
+  runId,
+  token,
+) {
+  const response = await API.delete(
+    `/benchmark/runs/${runId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return response.data;
+}
+export async function resetBenchmarkRuns(
+  token,
+) {
+  const response = await API.delete(
+    "/benchmark/runs/reset",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return response.data;
+}
+export async function resetDocuments(
+  token,
+) {
+  const response = await API.delete(
+    "/docs/reset",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return response.data;
+}

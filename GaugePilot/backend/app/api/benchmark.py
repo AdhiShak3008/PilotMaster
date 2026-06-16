@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from sqlalchemy.orm import Session
-
+from fastapi import HTTPException
 import json
 
 from GaugePilot.backend.app.core.dependencies import (
@@ -31,6 +31,12 @@ from pilotcore.benchmarking.leaderboard import (
 from pilotcore.runtime.experiment_config import (
     ExperimentConfig,
 )
+
+from sqlalchemy.orm import Session
+
+from GaugePilot.backend.app.db.session import get_db
+
+from GaugePilot.backend.app.models.benchmark_run import BenchmarkRun
 
 router = APIRouter()
 
@@ -82,9 +88,23 @@ def run_benchmark_endpoint(
 
     leaderboard = generate_leaderboard(results)
 
+    # Use the most recently uploaded document name (from DocPilot) as the benchmark run name.
+    from DocPilot.backend.app.models.document import Document as PilotDocument
+
+    uploaded_document = (
+        db.query(PilotDocument)
+        .filter(PilotDocument.owner_id == current_user.id)
+        .order_by(PilotDocument.created_at.desc())
+        .first()
+    )
+
+    benchmark_name = (
+        uploaded_document.filename if uploaded_document else "Benchmark Run"
+    )
+
     run = BenchmarkRun(
         owner_id=current_user.id,
-        name="Benchmark Run",
+        name=benchmark_name,
         leaderboard_json=json.dumps(leaderboard),
     )
 
@@ -111,3 +131,59 @@ def get_runs(
     )
 
     return runs
+
+
+@router.get("/runs")
+def get_benchmark_runs(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    runs = (
+        db.query(BenchmarkRun)
+        .filter(BenchmarkRun.owner_id == current_user.id)
+        .order_by(BenchmarkRun.created_at.desc())
+        .all()
+    )
+
+    return runs
+
+
+@router.delete("/runs/reset")
+def reset_benchmark_runs(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    (db.query(BenchmarkRun).filter(BenchmarkRun.owner_id == current_user.id).delete())
+
+    db.commit()
+
+    return {"message": "All benchmark runs deleted"}
+
+
+@router.delete("/runs/{run_id}")
+def delete_benchmark_run(
+    run_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    run = (
+        db.query(BenchmarkRun)
+        .filter(
+            BenchmarkRun.id == run_id,
+            BenchmarkRun.owner_id == current_user.id,
+        )
+        .first()
+    )
+
+    if not run:
+        raise HTTPException(
+            status_code=404,
+            detail="Benchmark run not found",
+        )
+
+    db.delete(run)
+    db.commit()
+
+    return {
+        "message": "Benchmark deleted",
+    }

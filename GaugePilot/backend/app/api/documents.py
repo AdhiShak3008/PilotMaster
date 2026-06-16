@@ -21,12 +21,11 @@ from pilotcore.retrieval.vector_store import (
     rebuild_index_without_document,
 )
 
-from DocPilot.backend.app.core.dependencies import (
+from GaugePilot.backend.app.core.dependencies import (
     get_current_user,
 )
 
-from DocPilot.backend.app.db.session import get_db
-
+from GaugePilot.backend.app.db.session import get_db
 from DocPilot.backend.app.models.document import Document
 
 from GaugePilot.backend.app.schemas.document import (
