@@ -4,12 +4,22 @@ import logging
 import mimetypes
 import os
 import re
+import shutil  # <-- Added for dynamic binary lookup
 import time
 from docling.document_converter import DocumentConverter
 import pandas as pd
 import pytesseract
 
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+# --- FIX START ---
+# Dynamically locate the executable for both Linux/Docker and Windows local testing
+binary_path = shutil.which("tesseract")
+if not binary_path and os.name == "nt":
+    binary_path = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+if binary_path:
+    pytesseract.pytesseract.tesseract_cmd = binary_path
+# --- FIX END ---
+
 import requests
 from docx import Document
 from pdf2image import convert_from_path
