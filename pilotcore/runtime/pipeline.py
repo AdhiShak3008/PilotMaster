@@ -131,6 +131,34 @@ def _emit_trace(
     )
     chunks = trace.retrieval_result.retrieved_chunks if trace.retrieval_result else []
 
+    active_enhancements = []
+
+    if experiment_config:
+
+        if experiment_config.query_rewrite:
+            active_enhancements.append("Query Rewrite")
+
+        if experiment_config.hyde:
+            active_enhancements.append("HyDE")
+
+        if experiment_config.multi_query:
+            active_enhancements.append("Multi Query")
+
+        if experiment_config.query_expansion:
+            active_enhancements.append("Query Expansion")
+
+        if experiment_config.parent_child:
+            active_enhancements.append("Parent Child")
+
+        if experiment_config.contextual_retrieval:
+            active_enhancements.append("Contextual Retrieval")
+
+        if experiment_config.graph_rag:
+            active_enhancements.append("Graph RAG")
+
+        if experiment_config.context_compression:
+            active_enhancements.append("Context Compression")
+
     payload = {
         "trace_id": trace.trace_id,
         "query": trace.user_query,
@@ -185,8 +213,45 @@ def _emit_trace(
             for s in trace.spans
         ],
         "mode": (experiment_config.mode if experiment_config else "production"),
+        "pipeline_config": {
+            "retrieval_strategy": (
+                experiment_config.retrieval_method if experiment_config else "hybrid"
+            ),
+            "reranker_model": (
+                getattr(
+                    experiment_config,
+                    "reranker_model",
+                    None,
+                )
+                if experiment_config
+                else None
+            ),
+            "active_enhancements": active_enhancements,
+            "query_rewrite": (
+                experiment_config.query_rewrite if experiment_config else False
+            ),
+            "hyde": (experiment_config.hyde if experiment_config else False),
+            "multi_query": (
+                experiment_config.multi_query if experiment_config else False
+            ),
+            "query_expansion": (
+                experiment_config.query_expansion if experiment_config else False
+            ),
+            "parent_child": (
+                experiment_config.parent_child if experiment_config else False
+            ),
+            "contextual_retrieval": (
+                experiment_config.contextual_retrieval if experiment_config else False
+            ),
+            "graph_rag": (experiment_config.graph_rag if experiment_config else False),
+            "context_compression": (
+                experiment_config.context_compression if experiment_config else False
+            ),
+        },
     }
-
+    print("\n===== PIPELINE CONFIG =====")
+    print(payload["pipeline_config"])
+    print("===========================\n")
     try:
         resp = requests.post(
             f"{TRACEPILOT_URL}/tracepilot/ingest",

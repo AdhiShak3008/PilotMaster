@@ -71,6 +71,24 @@ class IngestChunk(BaseModel):
     section_title: Optional[str] = None
 
 
+class PipelineConfig(BaseModel):
+    retrieval_strategy: Optional[str] = None
+    reranker_model: Optional[str] = None
+
+    active_enhancements: List[str] = []
+
+    query_rewrite: bool = False
+    hyde: bool = False
+    multi_query: bool = False
+    query_expansion: bool = False
+
+    parent_child: bool = False
+    contextual_retrieval: bool = False
+    graph_rag: bool = False
+
+    context_compression: bool = False
+
+
 class IngestRequest(BaseModel):
     trace_id: str
     query: str
@@ -98,6 +116,7 @@ class IngestRequest(BaseModel):
     retrieval_consensus: Optional[str] = None
     rewritten_query: Optional[str] = None
     mode: str = "production"
+    pipeline_config: Optional[PipelineConfig] = None
 
 
 class EventRequest(BaseModel):
@@ -202,6 +221,9 @@ def ingest_trace(request: IngestRequest):
         prompt_version=request.prompt_version or "1.0",
         retriever_version=request.retriever_version or "vector_v1",
         mode=request.mode,
+        pipeline_config=(
+            request.pipeline_config.model_dump() if request.pipeline_config else None
+        ),
     )
 
     save_trace(trace)

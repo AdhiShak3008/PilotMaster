@@ -29,6 +29,12 @@ export default function ExperimentSetup() {
   const [allRuns, setAllRuns] = useState([]);
   const [selectedRun, setSelectedRun] = useState(null);
 
+  // Holds the leaderboard the user is currently viewing in the dropdown.
+  // This is separate from `results` (which comes from useBenchmark and only
+  // reflects the most recently executed run) so that selecting an older run
+  // from history doesn't require touching the hook's internals.
+  const [selectedLeaderboard, setSelectedLeaderboard] = useState(null);
+
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -50,6 +56,8 @@ export default function ExperimentSetup() {
         if (sorted.length) {
           setSelectedRun(sorted[0]);
           const leaderboard = JSON.parse(sorted[0].leaderboard_json);
+          setSelectedLeaderboard(leaderboard);
+
           const score =
             leaderboard.overall?.[0]?.average_rank ??
             leaderboard.overall?.[0]?.avg_rank;
@@ -87,23 +95,37 @@ export default function ExperimentSetup() {
     const token = localStorage.getItem("token");
     setBenchmarkRuns((r) => r + 1);
     const res = await executeBenchmark(payload, token);
-    if (res?.leaderboard?.overall?.[0]?.avg_rank) {
-      setBestScore((prev) => {
-        const s = res.leaderboard.overall[0].avg_rank;
-        return prev === null ? s : Math.min(prev, s);
-      });
-      // Refresh runs list after a new run completes
-      try {
-        const updatedRuns = await getBenchmarkRuns(token);
-        const sorted = [...updatedRuns].sort(
-          (a, b) => new Date(b.created_at) - new Date(a.created_at)
+
+    // Backend returns `average_rank`, not `avg_rank` — support both so this
+    // doesn't silently break again if the field name changes either way.
+    const newScore =
+      res?.leaderboard?.overall?.[0]?.average_rank ??
+      res?.leaderboard?.overall?.[0]?.avg_rank;
+
+    if (newScore != null) {
+      setBestScore((prev) => (prev === null ? newScore : Math.min(prev, newScore)));
+    }
+
+    // Refresh the run list unconditionally after a run completes, regardless
+    // of whether a score was present, so history/dropdown/count never go stale.
+    try {
+      const updatedRuns = await getBenchmarkRuns(token);
+      const sorted = [...updatedRuns].sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+      );
+
+      setAllRuns(updatedRuns);
+      setBenchmarkRuns(updatedRuns.length);
+
+      if (sorted.length) {
+        setSelectedRun(sorted[0]);
+        // New run becomes the active view in the dropdown/leaderboard.
+        setSelectedLeaderboard(
+          res?.leaderboard ?? JSON.parse(sorted[0].leaderboard_json)
         );
-        setAllRuns(updatedRuns);
-        setBenchmarkRuns(updatedRuns.length);
-        if (sorted.length) setSelectedRun(sorted[0]);
-      } catch (err) {
-        console.error("Failed to refresh runs", err);
       }
+    } catch (err) {
+      console.error("Failed to refresh runs", err);
     }
   };
 
@@ -121,6 +143,22 @@ export default function ExperimentSetup() {
     }
   };
 
+  const handleSelectRun = (runId) => {
+    const run = allRuns.find((r) => String(r.id) === runId) ?? null;
+    setSelectedRun(run);
+
+    if (run?.leaderboard_json) {
+      try {
+        setSelectedLeaderboard(JSON.parse(run.leaderboard_json));
+      } catch (err) {
+        console.error("Failed to parse leaderboard for run", err);
+        setSelectedLeaderboard(null);
+      }
+    } else {
+      setSelectedLeaderboard(null);
+    }
+  };
+
   const handleDeleteRun = async () => {
     if (!selectedRun) return;
     const token = localStorage.getItem("token");
@@ -130,10 +168,22 @@ export default function ExperimentSetup() {
       const sorted = [...updated].sort(
         (a, b) => new Date(b.created_at) - new Date(a.created_at)
       );
+
       setAllRuns(updated);
       setBenchmarkRuns(updated.length);
-      setSelectedRun(sorted.length ? sorted[0] : null);
-      if (!sorted.length) setBestScore(null);
+
+      if (sorted.length) {
+        setSelectedRun(sorted[0]);
+        try {
+          setSelectedLeaderboard(JSON.parse(sorted[0].leaderboard_json));
+        } catch {
+          setSelectedLeaderboard(null);
+        }
+      } else {
+        setSelectedRun(null);
+        setSelectedLeaderboard(null);
+        setBestScore(null);
+      }
     } catch (err) {
       console.error("Delete run failed", err);
     }
@@ -146,6 +196,7 @@ export default function ExperimentSetup() {
       setAllRuns([]);
       setBenchmarkRuns(0);
       setSelectedRun(null);
+      setSelectedLeaderboard(null);
       setBestScore(null);
     } catch (err) {
       console.error("Reset runs failed", err);
@@ -237,6 +288,20 @@ export default function ExperimentSetup() {
       color: "#f59e0b",
     },
   ];
+
+  // The leaderboard actually rendered: prefer whatever is currently selected
+  // in history (covers both "just ran" and "picked an old run" cases), and
+  // fall back to the hook's results only if nothing has been selected yet.
+  const displayedLeaderboard =
+    selectedLeaderboard ||
+    results?.leaderboard || {
+      overall: [],
+      faithfulness: [],
+      grounding: [],
+      retrieval_quality: [],
+      query_coverage: [],
+      latency: [],
+    };
 
   return (
     <div
@@ -940,11 +1005,7 @@ export default function ExperimentSetup() {
             {/* Run selector dropdown */}
             <select
               value={selectedRun?.id ?? ""}
-              onChange={(e) =>
-                setSelectedRun(
-                  allRuns.find((r) => String(r.id) === e.target.value) ?? null
-                )
-              }
+              onChange={(e) => handleSelectRun(e.target.value)}
               style={{
                 flex: "1 1 260px",
                 padding: "10px 14px",
@@ -1014,18 +1075,7 @@ export default function ExperimentSetup() {
       </div>
 
       <div style={{ marginTop: "24px" }}>
-        <Leaderboards
-          leaderboard={
-            results?.leaderboard || {
-              overall: [],
-              faithfulness: [],
-              grounding: [],
-              retrieval_quality: [],
-              query_coverage: [],
-              latency: [],
-            }
-          }
-        />
+        <Leaderboards leaderboard={displayedLeaderboard} />
       </div>
     </div>
   );

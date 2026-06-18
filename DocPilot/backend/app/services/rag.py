@@ -1,7 +1,6 @@
 from pilotcore.retrieval.embeddings import get_embedding
 from pilotcore.retrieval.vector_store import add_vector
 from pilotcore.runtime.pipeline import run_pipeline
-from pilotcore.runtime.experiment_config import ExperimentConfig
 from pilotcore.benchmarking.config_builder import (
     build_experiment_config,
 )
@@ -10,6 +9,7 @@ from pilotcore.benchmarking.config_builder import (
 def add_chunks(chunks, user_id):
     for chunk in chunks:
         embedding = get_embedding(chunk["text"])
+
         add_vector(
             user_id=user_id,
             embedding=embedding,
@@ -32,116 +32,30 @@ def ask_question(
     enhancements=None,
     mode="production",
 ):
-    config = ExperimentConfig()
-    experimental_config = build_experiment_config(
+    config = build_experiment_config(
         retrieval_strategy=retrieval_strategy,
         reranker=reranker,
         enhancements=enhancements,
         mode=mode,
     )
-    print("\n===== CONFIG COMPARISON =====")
 
-    print(
-        "OLD METHOD:",
-        config.retrieval_method,
-    )
-
-    print(
-        "NEW METHOD:",
-        experimental_config.retrieval_method,
-    )
-
-    print(
-        "OLD RERANKER:",
-        config.reranker,
-    )
-
-    print(
-        "NEW RERANKER:",
-        experimental_config.reranker,
-    )
-
-    print(
-        "OLD MODEL:",
-        getattr(config, "reranker_model", None),
-    )
-
-    print(
-        "NEW MODEL:",
-        getattr(
-            experimental_config,
-            "reranker_model",
-            None,
-        ),
-    )
-
-    print("=============================\n")
-    # ----------------------------------
-    # Mode
-    # ----------------------------------
-    config.mode = mode
-
-    # ----------------------------------
-    # Experimental overrides only
-    # ----------------------------------
-    if mode == "experimental":
-
-        strategy_map = {
-            "FAISS": "vector",
-            "BM25": "lexical",
-            "Hybrid": "hybrid",
-        }
-
-        selected = strategy_map.get(retrieval_strategy)
-
-        if selected:
-            config.retrieval_method = selected
-
-        # ----------------------------------
-        # Reranker
-        # ----------------------------------
-        if reranker == "none":
-            config.reranker = False
-
-        elif reranker:
-            config.reranker = True
-            config.reranker_model = reranker
-
-        # ----------------------------------
-        # Enhancements
-        # ----------------------------------
-        config.query_rewrite = False
-        config.hyde = False
-        config.multi_query = False
-        config.context_compression = False
-
-        if enhancements:
-
-            if "Query Rewrite" in enhancements:
-                config.query_rewrite = True
-
-            if "HyDE" in enhancements:
-                config.hyde = True
-
-            if "Multi Query" in enhancements:
-                config.multi_query = True
-
-            if "Context Compression" in enhancements:
-                config.context_compression = True
-
-    # ----------------------------------
-    # Debug
-    # ----------------------------------
     print("\n===== EXPERIMENT CONFIG =====")
     print("mode               =", config.mode)
     print("retrieval_strategy =", retrieval_strategy)
     print("retrieval_method   =", config.retrieval_method)
     print("reranker           =", config.reranker)
     print("reranker_model     =", getattr(config, "reranker_model", None))
+
     print("query_rewrite      =", config.query_rewrite)
     print("hyde               =", config.hyde)
     print("multi_query        =", config.multi_query)
-    print("compression        =", config.context_compression)
+    print("query_expansion    =", config.query_expansion)
+
+    print("parent_child       =", config.parent_child)
+    print("contextual_ret     =", config.contextual_retrieval)
+    print("graph_rag          =", config.graph_rag)
+
+    print("context_compress   =", config.context_compression)
     print("=============================\n")
 
     trace = run_pipeline(
@@ -171,7 +85,6 @@ def ask_question(
         )
 
         if key not in seen:
-
             seen.add(key)
 
             sources.append(

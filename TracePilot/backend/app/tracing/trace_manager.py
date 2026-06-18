@@ -16,9 +16,9 @@ def save_trace(trace: Trace):
         timestamp, model_name, retrieval_score_avg, response_length,
         chunk_count, parent_trace_id, retrieval_quality, grounded,
         top_retrieval_score, spans, failure_types, prompt_mode, evaluation,
-        user_id, source, evaluator_version, prompt_version, retriever_version, mode
+        user_id, source, evaluator_version, prompt_version, retriever_version, mode, pipeline_config
     )
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """,
         (
             trace.trace_id,
@@ -47,6 +47,7 @@ def save_trace(trace: Trace):
             trace.prompt_version,
             trace.retriever_version,
             trace.mode,
+            json.dumps(trace.pipeline_config or {}),
         ),
     )
 
@@ -84,6 +85,7 @@ def _row_to_trace(row) -> Trace:
         prompt_version=row["prompt_version"] or "1.0",
         retriever_version=row["retriever_version"] or "vector_v1",
         mode=row["mode"] or "production",
+        pipeline_config=json.loads(row["pipeline_config"] or "{}"),
     )
 
 
@@ -212,4 +214,5 @@ def get_trace(trace_id: str) -> dict | None:
         "prompt_version": row["prompt_version"] or "1.0",
         "retriever_version": row["retriever_version"] or "vector_v1",
         "mode": row["mode"] or "production",
+        "pipeline_config": json.loads(row["pipeline_config"] or "{}"),
     }

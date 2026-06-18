@@ -53,6 +53,7 @@ class Trace(BaseModel):
     retrieval_consensus: str | None = None
     rewritten_query: Optional[str] = None
     mode: str = "production"
+    pipeline_config: Optional[dict] = None
 
     @staticmethod
     def create_id():

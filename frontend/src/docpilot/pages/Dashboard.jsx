@@ -163,22 +163,22 @@ const ENHANCEMENT_OPTIONS = [
   {
   id: "Query Rewrite",
   label: "Query Rewrite",
-  subtitle: "Rewrite the user query before retrieval."
+  subtitle: "Rewrite the user's question into a retrieval-optimized query."
   },
   {
     id: "HyDE",
     label: "HyDE",
-    subtitle: "Generate hypothetical answers before retrieval.",
+    subtitle: "Generate a hypothetical answer and retrieve using its embeddings.",
   },
   {
     id: "Multi Query",
     label: "Multi Query",
-    subtitle: "Generate multiple query variants.",
+    subtitle: "Generate multiple query variants and merge retrieval results.",
   },
   {
-    id: "Context Compression",
-    label: "Context Compression",
-    subtitle: "Compress retrieved context before generation.",
+    id: "Query Expansion",
+    label: "Query Expansion",
+    subtitle: "Expand the query with related concepts and keywords.",
   },
   {
     id: "All",
@@ -191,7 +191,7 @@ const ALL_ENHANCEMENT_IDS = [
   "Query Rewrite",
   "HyDE",
   "Multi Query",
-  "Context Compression",
+  "Query Expansion",
 ];
 function buildEnhancementLabel(selected) {
   if (selected.includes("Default") || selected.length === 0) return "Default";
