@@ -52,6 +52,7 @@ class Trace(BaseModel):
     retriever_version: str = "vector_v1"
     retrieval_consensus: str | None = None
     rewritten_query: Optional[str] = None
+    generated_queries: List[str] = Field(default_factory=list)
     mode: str = "production"
     pipeline_config: Optional[dict] = None
 

@@ -15,6 +15,9 @@ from pilotcore.generation.prompt_builder import build_prompt
 from pilotcore.evaluation.evaluator import run_evaluation
 from pilotcore.retrieval.query_rewriter import rewrite_query
 from pilotcore.runtime.experiment_config import ExperimentConfig
+from pilotcore.retrieval.multi_query import (
+    generate_queries,
+)
 
 
 def run_pipeline(
@@ -39,21 +42,64 @@ def run_pipeline(
         retrieval_query = rewrite_query(query)
 
     trace.rewritten_query = retrieval_query
+    generated_queries = [retrieval_query]
+
+    if experiment_config.multi_query:
+
+        generated_queries = generate_queries(retrieval_query)
+
+    trace.generated_queries = generated_queries
 
     print("\n===== QUERY REWRITE =====")
     print("ORIGINAL :", query)
     print("REWRITTEN:", retrieval_query)
     print("=========================\n")
     print("STRATEGY:", experiment_config.retrieval_method)
-    retrieval_result = retrieve(
-        strategy=experiment_config.retrieval_method,
-        query=retrieval_query,
-        user_id=user_id,
-        source=source,
-        trace_id=trace.trace_id,
-        trace=trace,
-        experiment_config=experiment_config,
-    )
+
+    print("\n===== MULTI QUERY =====")
+
+    for i, q in enumerate(generated_queries):
+        print(f"{i + 1}. {q}")
+
+    print("=======================\n")
+
+    all_chunks = []
+    retrieval_result = None
+
+    for query_variant in generated_queries:
+
+        result = retrieve(
+            strategy=experiment_config.retrieval_method,
+            query=query_variant,
+            user_id=user_id,
+            source=source,
+            trace_id=trace.trace_id,
+            trace=trace,
+            experiment_config=experiment_config,
+        )
+
+        if result:
+
+            if retrieval_result is None:
+                retrieval_result = result
+
+            all_chunks.extend(result.retrieved_chunks)
+
+    seen = set()
+    deduped_chunks = []
+
+    for chunk in all_chunks:
+
+        chunk_id = chunk.chunk.chunk_id
+
+        if chunk_id not in seen:
+
+            seen.add(chunk_id)
+
+            deduped_chunks.append(chunk)
+
+    if retrieval_result:
+        retrieval_result.retrieved_chunks = deduped_chunks
 
     trace.retrieval_result = retrieval_result
 
@@ -163,6 +209,11 @@ def _emit_trace(
         "trace_id": trace.trace_id,
         "query": trace.user_query,
         "rewritten_query": getattr(trace, "rewritten_query", None),
+        "generated_queries": getattr(
+            trace,
+            "generated_queries",
+            [],
+        ),
         "response": trace.final_response or "",
         "prompt": build_prompt(trace),
         "latency": round(latency_ms, 2),
@@ -229,6 +280,11 @@ def _emit_trace(
             "active_enhancements": active_enhancements,
             "query_rewrite": (
                 experiment_config.query_rewrite if experiment_config else False
+            ),
+            "generated_queries": getattr(
+                trace,
+                "generated_queries",
+                [],
             ),
             "hyde": (experiment_config.hyde if experiment_config else False),
             "multi_query": (

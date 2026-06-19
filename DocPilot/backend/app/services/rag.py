@@ -32,6 +32,10 @@ def ask_question(
     enhancements=None,
     mode="production",
 ):
+    print("\n===== FRONTEND VALUES =====")
+    print("mode =", mode)
+    print("enhancements =", enhancements)
+    print("===========================\n")
     config = build_experiment_config(
         retrieval_strategy=retrieval_strategy,
         reranker=reranker,

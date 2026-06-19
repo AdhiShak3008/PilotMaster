@@ -12,6 +12,10 @@ from pilotcore.tracing.spans import (
 )
 from pilotcore.retrieval.reranker import rerank_chunks
 
+from pilotcore.retrieval.multi_query import (
+    generate_queries,
+)
+
 
 def deduplicate_chunks(chunks):
 
@@ -161,23 +165,50 @@ def retrieve(
         trace_id = kwargs.pop("trace_id")
         top_k = kwargs.pop("top_k", 7)
 
-        query_embedding = get_embedding(query)
+        query_variants = [query]
 
-        vector_result = search_vectors(
-            user_id=user_id,
-            query_embedding=query_embedding,
-            source=source,
-            trace_id=trace_id,
-            top_k=top_k,
-        )
+        if experiment_config and experiment_config.multi_query:
 
-        lexical_result = retrieve_chunks(
-            user_id=user_id,
-            query=query,
-            source=source,
-            trace_id=trace_id,
-            top_k=top_k,
-        )
+            query_variants = generate_queries(query)
+            print("\n===== MULTI QUERY =====")
+
+            for i, q in enumerate(query_variants, start=1):
+                print(f"{i}. {q}")
+
+            print("=======================\n")
+            if trace:
+                trace.generated_queries = query_variants
+
+        all_vector_chunks = []
+        all_lexical_chunks = []
+
+        for query_variant in query_variants:
+
+            query_embedding = get_embedding(query_variant)
+
+            vector_result = search_vectors(
+                user_id=user_id,
+                query_embedding=query_embedding,
+                source=source,
+                trace_id=trace_id,
+                top_k=top_k,
+            )
+
+            lexical_result = retrieve_chunks(
+                user_id=user_id,
+                query=query_variant,
+                source=source,
+                trace_id=trace_id,
+                top_k=top_k,
+            )
+
+            all_vector_chunks.extend(vector_result.retrieved_chunks)
+
+            all_lexical_chunks.extend(lexical_result.retrieved_chunks)
+
+        vector_result.retrieved_chunks = deduplicate_chunks(all_vector_chunks)
+
+        lexical_result.retrieved_chunks = deduplicate_chunks(all_lexical_chunks)
 
         # Reciprocal Rank Fusion (RRF)
         # -----------------------------------------
