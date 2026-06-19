@@ -11,7 +11,7 @@ import {
   getDocuments,
   resetDocuments,
 } from "../api";
-
+import Visualizations from "./Visualizations";
 export default function ExperimentSetup() {
   const { loading, results, error, executeBenchmark } = useBenchmark();
   const [questions, setQuestions] = useState("");
@@ -1077,6 +1077,14 @@ export default function ExperimentSetup() {
       <div style={{ marginTop: "24px" }}>
         <Leaderboards leaderboard={displayedLeaderboard} />
       </div>
+      <div
+  id="visualizations"
+  style={{ marginTop: "24px" }}
+>
+  <Visualizations
+    leaderboard={displayedLeaderboard}
+  />
+</div>
     </div>
   );
 }

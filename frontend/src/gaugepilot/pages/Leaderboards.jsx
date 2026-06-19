@@ -167,7 +167,7 @@ export default function Leaderboards({ leaderboard }) {
 
       {/* ── Metric Selector Card ─────────────────────────────────────────────── */}
       <div style={{ ...card, marginBottom: "16px" }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", flexWrap: "wrap", gap: "24px" }}>
           <div>
             <p style={sectionLabel}>Leaderboard View</p>
             <p style={{ margin: 0, fontSize: "13px", color: "rgba(255,255,255,0.35)", lineHeight: 1.5 }}>
@@ -212,21 +212,7 @@ export default function Leaderboards({ leaderboard }) {
         <OverallTable data={leaderboard[selectedMetric]} />
       </div>
 
-      {/* ── Insights Section ─────────────────────────────────────────────────── */}
-      <div style={{ ...card, padding: 0, overflow: "hidden" }}>
-        <div style={{
-          padding: "20px 28px", borderBottom: "1px solid rgba(255,255,255,0.06)",
-          background: "rgba(255,255,255,0.02)",
-        }}>
-          <p style={sectionLabel}>AI Insights</p>
-          <p style={{ margin: 0, fontSize: "13px", color: "rgba(255,255,255,0.35)" }}>
-            Automatically generated observations from your benchmark results.
-          </p>
-        </div>
-        <div style={{ padding: "24px" }}>
-          <Insights leaderboard={leaderboard} />
-        </div>
-      </div>
+      
     </div>
   );
 }
