@@ -3,7 +3,7 @@
 // latency, each shaped like [{ config_name, value, ... }]) into one flat row
 // per configuration:
 //
-//   { config, faithfulness, grounding, quality, coverage, latency }
+//   { config, faithfulness, grounding, quality, coverage, latency, averageRank }
 //
 // This is the shape every visualization component consumes, so charts never
 // need to know about the underlying leaderboard structure.
@@ -64,6 +64,15 @@ export function useVisualizations(leaderboard) {
       const target = ensureConfig(row.config_name);
       target[metricKey] = extractValue(row, category);
     });
+  });
+
+  // Average rank lives on the "overall" array rather than as its own
+  // category — the backend has used both `average_rank` and `avg_rank`
+  // for this field at different times, so support both.
+  (leaderboard.overall ?? []).forEach((row) => {
+    if (!row?.config_name) return;
+    const target = ensureConfig(row.config_name);
+    target.averageRank = row.average_rank ?? row.avg_rank ?? row.value ?? null;
   });
 
   return Array.from(configMap.values());
