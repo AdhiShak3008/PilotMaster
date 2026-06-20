@@ -432,7 +432,101 @@ export default function ExperimentSetup() {
           </div>
         ))}
       </div>
+{/* ── Benchmark History ─────────────────────────────────────────────── */}
+      <div style={{ ...card, marginBottom: "16px" }}>
+        <p style={sectionLabel}>Benchmark History</p>
 
+        {allRuns.length === 0 ? (
+          <p
+            style={{
+              margin: "0 0 16px",
+              fontSize: "13px",
+              color: "rgba(255,255,255,0.5)",
+            }}
+          >
+            No benchmark runs yet. Run your first benchmark above.
+          </p>
+        ) : (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              flexWrap: "wrap",
+              marginBottom: "16px",
+            }}
+          >
+            {/* Run selector dropdown */}
+            <select
+              value={selectedRun?.id ?? ""}
+              onChange={(e) => handleSelectRun(e.target.value)}
+              style={{
+                flex: "1 1 260px",
+                padding: "10px 14px",
+                borderRadius: "10px",
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                color: "white",
+                fontSize: "13px",
+                fontWeight: 600,
+                outline: "none",
+                cursor: "pointer",
+                appearance: "auto",
+              }}
+            >
+              {[...allRuns]
+                .sort(
+                  (a, b) =>
+                    new Date(b.created_at) - new Date(a.created_at)
+                )
+                .map((run) => (
+                  <option
+                    key={run.id}
+                    value={run.id}
+                    style={{ background: "#1a1a2e", color: "white" }}
+                  >
+                    {run.name}
+                  </option>
+                ))}
+            </select>
+
+            {/* Delete selected run */}
+            <button
+              onClick={handleDeleteRun}
+              disabled={!selectedRun}
+              title="Delete selected run"
+              style={{
+                ...dangerBtn,
+                opacity: selectedRun ? 1 : 0.4,
+                cursor: selectedRun ? "pointer" : "not-allowed",
+              }}
+            >
+              ❌ Delete Selected
+            </button>
+          </div>
+        )}
+
+        {/* Destructive actions row */}
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+            flexWrap: "wrap",
+            paddingTop: allRuns.length > 0 ? "14px" : "0",
+            borderTop:
+              allRuns.length > 0
+                ? "1px solid rgba(255,255,255,0.08)"
+                : "none",
+          }}
+        >
+          <button onClick={handleResetRuns} style={dangerBtn}>
+            🗑 Delete All Benchmarks
+          </button>
+          <button onClick={handleResetDocuments} style={dangerBtn}>
+            📂 Delete Documents &amp; Vector Store
+          </button>
+        </div>
+      </div>
       {/* ── Configuration Panel ───────────────────────────────────────────── */}
       <div style={{ ...card, marginBottom: "16px" }}>
         <p style={sectionLabel}>Pipeline Configuration</p>
@@ -978,101 +1072,7 @@ export default function ExperimentSetup() {
         </div>
       )}
 
-      {/* ── Benchmark History ─────────────────────────────────────────────── */}
-      <div style={{ ...card, marginTop: "16px" }}>
-        <p style={sectionLabel}>Benchmark History</p>
-
-        {allRuns.length === 0 ? (
-          <p
-            style={{
-              margin: "0 0 16px",
-              fontSize: "13px",
-              color: "rgba(255,255,255,0.5)",
-            }}
-          >
-            No benchmark runs yet. Run your first benchmark above.
-          </p>
-        ) : (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              flexWrap: "wrap",
-              marginBottom: "16px",
-            }}
-          >
-            {/* Run selector dropdown */}
-            <select
-              value={selectedRun?.id ?? ""}
-              onChange={(e) => handleSelectRun(e.target.value)}
-              style={{
-                flex: "1 1 260px",
-                padding: "10px 14px",
-                borderRadius: "10px",
-                background: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,255,255,0.2)",
-                color: "white",
-                fontSize: "13px",
-                fontWeight: 600,
-                outline: "none",
-                cursor: "pointer",
-                appearance: "auto",
-              }}
-            >
-              {[...allRuns]
-                .sort(
-                  (a, b) =>
-                    new Date(b.created_at) - new Date(a.created_at)
-                )
-                .map((run) => (
-                  <option
-                    key={run.id}
-                    value={run.id}
-                    style={{ background: "#1a1a2e", color: "white" }}
-                  >
-                    {run.name}
-                  </option>
-                ))}
-            </select>
-
-            {/* Delete selected run */}
-            <button
-              onClick={handleDeleteRun}
-              disabled={!selectedRun}
-              title="Delete selected run"
-              style={{
-                ...dangerBtn,
-                opacity: selectedRun ? 1 : 0.4,
-                cursor: selectedRun ? "pointer" : "not-allowed",
-              }}
-            >
-              ❌ Delete Selected
-            </button>
-          </div>
-        )}
-
-        {/* Destructive actions row */}
-        <div
-          style={{
-            display: "flex",
-            gap: "10px",
-            flexWrap: "wrap",
-            paddingTop: allRuns.length > 0 ? "14px" : "0",
-            borderTop:
-              allRuns.length > 0
-                ? "1px solid rgba(255,255,255,0.08)"
-                : "none",
-          }}
-        >
-          <button onClick={handleResetRuns} style={dangerBtn}>
-            🗑 Delete All Benchmarks
-          </button>
-          <button onClick={handleResetDocuments} style={dangerBtn}>
-            📂 Delete Documents &amp; Vector Store
-          </button>
-        </div>
-      </div>
+      
 
       <div style={{ marginTop: "24px" }}>
         <Leaderboards leaderboard={displayedLeaderboard} />
