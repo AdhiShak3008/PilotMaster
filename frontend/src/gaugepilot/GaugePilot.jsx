@@ -156,7 +156,7 @@ export default function GaugePilot({ onHome }) {
             }}>GaugePilot</h1>
             <p style={{
               margin: "7px 0 0", fontFamily: "'Courier New', monospace",
-              fontSize: "10px", fontWeight: 700, color: "rgba(255,255,255,0.5)",
+              fontSize: "11px", fontWeight: 700, color: "rgba(255,255,255,0.5)",
               letterSpacing: "0.05em", textTransform: "uppercase", whiteSpace: "nowrap",
             }}>benchmark & analysis</p>
           </div>
