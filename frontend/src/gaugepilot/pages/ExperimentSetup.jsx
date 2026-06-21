@@ -12,13 +12,192 @@ import {
   resetDocuments,
 } from "../api";
 import Visualizations from "./Visualizations";
+const ENHANCEMENT_OPTIONS = [
+  {
+    id: "Default",
+    label: "Default",
+    subtitle:
+      "Run the normal retrieval pipeline.",
+  },
+  {
+    id: "Query Rewrite",
+    label: "Query Rewrite",
+    subtitle:
+      "Rewrite the user's question.",
+  },
+  {
+    id: "HyDE",
+    label: "HyDE",
+    subtitle:
+      "Generate hypothetical answer embeddings.",
+  },
+  {
+    id: "Multi Query",
+    label: "Multi Query",
+    subtitle:
+      "Generate multiple query variants.",
+  },
+  {
+    id: "Query Expansion",
+    label: "Query Expansion",
+    subtitle:
+      "Expand the query.",
+  },
+  {
+    id: "All",
+    label: "All",
+    subtitle:
+      "Enable every enhancement.",
+  },
+];
+
+const ALL_ENHANCEMENT_IDS = [
+  "Query Rewrite",
+  "HyDE",
+  "Multi Query",
+  "Query Expansion",
+];
+
+function toggleEnhancement(current, id) {
+  if (id === "Default") {
+    return ["Default"];
+  }
+
+  if (id === "All") {
+    return [...ALL_ENHANCEMENT_IDS];
+  }
+
+  let next = current.filter(
+    (e) => e !== "Default"
+  );
+
+  if (next.includes(id)) {
+    next = next.filter((e) => e !== id);
+  } else {
+    next.push(id);
+  }
+
+  return next.length
+    ? next
+    : ["Default"];
+}
+function CustomSelector({ label, sublabel, items, open, onToggle, selectorRef, children }) {
+  return (
+    <div style={{ position: "relative", display: "flex", flexDirection: "column" }} ref={selectorRef}>
+      <button
+        onClick={onToggle}
+        style={{
+          background: "transparent",
+          border: "none",
+          color: "var(--text-primary)",
+          cursor: "pointer",
+          padding: 0,
+          fontSize: "14px",
+          textAlign: "left",
+        }}
+      >
+        {label} ▼
+      </button>
+
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: "100%",
+            left: 0,
+            marginBottom: "10px",
+            width: "320px",
+            zIndex: 9999,
+            borderRadius: "18px",
+            border: "1px solid var(--border)",
+            background: "var(--surface)",
+            overflow: "hidden",
+          }}
+        >
+          {children}
+        </div>
+      )}
+
+      <span style={{ fontSize: "11px", color: "#777", marginTop: "4px" }}>{sublabel}</span>
+    </div>
+  );
+}
+function SelectorItem({ label, subtitle, active, onClick, multiSelect }) {
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        padding: "8px",
+        cursor: "pointer",
+        background: active ? "var(--surface-hover)" : "transparent",
+        transition: "background 0.12s",
+      }}
+      onMouseEnter={(e) => {
+        if (!active) e.currentTarget.style.background = "var(--surface-hover)";
+      }}
+      onMouseLeave={(e) => {
+        if (!active) e.currentTarget.style.background = "transparent";
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+        {multiSelect ? (
+          <span
+            style={{
+              width: "14px",
+              height: "14px",
+              border: "1px solid var(--border)",
+              borderRadius: "3px",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "10px",
+              background: active ? "var(--surface-hover)" : "transparent",
+              flexShrink: 0,
+            }}
+          >
+            {active ? "✓" : ""}
+          </span>
+        ) : (
+          <span style={{ width: "16px", fontSize: "13px" }}>{active ? "✓" : ""}</span>
+        )}
+        <span>{label}</span>
+      </div>
+      {subtitle && (
+        <div style={{ fontSize: "12px", color: "#888", marginTop: "4px", paddingLeft: multiSelect ? "20px" : "16px" }}>
+          {subtitle}
+        </div>
+      )}
+    </div>
+  );
+}
+function buildEnhancementLabel(selected) {
+  if (selected.includes("Default") || selected.length === 0)
+    return "Default";
+
+  if (
+    ALL_ENHANCEMENT_IDS.every((id) =>
+      selected.includes(id)
+    ) &&
+    selected.length === ALL_ENHANCEMENT_IDS.length
+  ) {
+    return "All";
+  }
+
+  return selected.join(" + ");
+}
+
 export default function ExperimentSetup() {
   const { loading, results, error, executeBenchmark } = useBenchmark();
   const [questions, setQuestions] = useState("");
   const [model, setModel] = useState("llama-3.1-8b");
-  const [retrievalMethod, setRetrievalMethod] = useState("hybrid");
+  const [retrievalMethod, setRetrievalMethod] = useState("Hybrid");
   const [reranker, setReranker] = useState("minilm");
-  const [enhancement, setEnhancement] = useState("default");
+  const [selectedEnhancements, setSelectedEnhancements] =
+  useState(["Default"]);
+
+const [showEnhancements, setShowEnhancements] =
+  useState(false);
+  //const [enhancement, setEnhancement] = useState("Default");
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isHoveringUpload, setIsHoveringUpload] = useState(false);
@@ -36,7 +215,28 @@ export default function ExperimentSetup() {
   const [selectedLeaderboard, setSelectedLeaderboard] = useState(null);
 
   const fileInputRef = useRef(null);
+  const enhancementRef = useRef(null);
+  useEffect(() => {
+  const handleClick = (e) => {
+    if (
+      enhancementRef.current &&
+      !enhancementRef.current.contains(e.target)
+    ) {
+      setShowEnhancements(false);
+    }
+  };
 
+  document.addEventListener(
+    "pointerdown",
+    handleClick
+  );
+
+  return () =>
+    document.removeEventListener(
+      "pointerdown",
+      handleClick
+    );
+}, []);
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
@@ -89,7 +289,7 @@ export default function ExperimentSetup() {
       model,
       retrieval_method: retrievalMethod,
       reranker,
-      enhancement,
+       enhancements: selectedEnhancements,
       questions: questionList,
     };
     const token = localStorage.getItem("token");
@@ -221,11 +421,16 @@ export default function ExperimentSetup() {
 
   const labelMap = {
     "llama-3.1-8b": "Llama 3.1 8B",
-    hybrid: "Hybrid",
-    vector: "Vector",
-    lexical: "BM25",
+    "llama-3.3-70b": "Llama 3.3 70B",
+    "llama-4-scout": "Llama 4 Scout",
+    "qwen-3-32b": "Qwen 3 32B",
+    "gpt-oss-20b": "GPT OSS 20B",
+    "gpt-oss-120b": "GPT OSS 120B",
     minilm: "MiniLM",
-    default: "Default",
+    tinybert: "TinyBERT",
+    "bge-large": "BGE Large",
+    "bge-m3": "BGE M3",
+    none: "None",
   };
 
   // ── Design tokens ──────────────────────────────────────────────────────────
@@ -288,7 +493,8 @@ export default function ExperimentSetup() {
       color: "#f59e0b",
     },
   ];
-
+  const activeEnhancementLabel =
+  buildEnhancementLabel(selectedEnhancements);
   // The leaderboard actually rendered: prefer whatever is currently selected
   // in history (covers both "just ran" and "picked an old run" cases), and
   // fall back to the hook's results only if nothing has been selected yet.
@@ -541,6 +747,31 @@ export default function ExperimentSetup() {
                 label: "Llama 3.1 8B",
                 description: "Fast & Efficient",
               },
+              {
+                value: "llama-3.3-70b",
+                label: "Llama 3.3 70B",
+                description: "Best Overall",
+              },
+              {
+                value: "llama-4-scout",
+                label: "Llama 4 Scout",
+                description: "Large Context Window",
+              },
+              {
+                value: "qwen-3-32b",
+                label: "Qwen 3 32B",
+                description: "Reasoning & Analysis",
+              },
+              {
+                value: "gpt-oss-20b",
+                label: "GPT OSS 20B",
+                description: "Fast Reasoning",
+              },
+              {
+                value: "gpt-oss-120b",
+                label: "GPT OSS 120B",
+                description: "Deep Reasoning",
+              },
             ]}
           />
           <ExperimentSelector
@@ -548,13 +779,21 @@ export default function ExperimentSetup() {
             value={retrievalMethod}
             onChange={setRetrievalMethod}
             options={[
-              { value: "hybrid", label: "Hybrid", description: "Vector + BM25" },
               {
-                value: "vector",
-                label: "Vector",
-                description: "Embedding Search",
+                value: "FAISS",
+                label: "FAISS",
+                description: "Dense vector retrieval",
               },
-              { value: "lexical", label: "BM25", description: "Keyword Search" },
+              {
+                value: "BM25",
+                label: "BM25",
+                description: "Sparse keyword retrieval",
+              },
+              {
+                value: "Hybrid",
+                label: "Hybrid",
+                description: "Dense + sparse retrieval",
+              },
             ]}
           />
           <ExperimentSelector
@@ -563,24 +802,62 @@ export default function ExperimentSetup() {
             onChange={setReranker}
             options={[
               {
+                value: "none",
+                label: "None",
+                description: "No reranking",
+              },
+              {
                 value: "minilm",
                 label: "MiniLM",
                 description: "Fast balanced baseline",
               },
-            ]}
-          />
-          <ExperimentSelector
-            label="Enhancements"
-            value={enhancement}
-            onChange={setEnhancement}
-            options={[
               {
-                value: "default",
-                label: "Default",
-                description: "Standard pipeline",
+                value: "tinybert",
+                label: "TinyBERT",
+                description: "Ultra-fast lightweight",
+              },
+              {
+                value: "bge-large",
+                label: "BGE Large",
+                description: "High-quality semantic ranking",
+              },
+              {
+                value: "bge-m3",
+                label: "BGE M3",
+                description: "Modern retrieval-focused reranker",
               },
             ]}
           />
+          <CustomSelector
+  label={activeEnhancementLabel}
+  sublabel="Enhancements"
+  open={showEnhancements}
+  onToggle={() =>
+    setShowEnhancements((v) => !v)
+  }
+  selectorRef={enhancementRef}
+>
+  {ENHANCEMENT_OPTIONS.map((opt) => (
+    <SelectorItem
+      key={opt.id}
+      label={opt.label}
+      subtitle={opt.subtitle}
+      multiSelect
+      active={
+        opt.id === "All"
+          ? ALL_ENHANCEMENT_IDS.every((e) =>
+              selectedEnhancements.includes(e)
+            )
+          : selectedEnhancements.includes(opt.id)
+      }
+      onClick={() => {
+        setSelectedEnhancements((prev) =>
+          toggleEnhancement(prev, opt.id)
+        );
+      }}
+    />
+  ))}
+</CustomSelector>
         </div>
       </div>
 
@@ -809,9 +1086,9 @@ export default function ExperimentSetup() {
                 },
                 { label: "Reranker", value: labelMap[reranker] ?? reranker },
                 {
-                  label: "Enhancement",
-                  value: labelMap[enhancement] ?? enhancement,
-                },
+  label: "Enhancements",
+  value: selectedEnhancements.join(", "),
+},
                 {
                   label: "Questions",
                   value:

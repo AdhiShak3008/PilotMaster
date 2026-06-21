@@ -5,8 +5,8 @@ from dataclasses import dataclass
 class ExperimentConfig:
     name: str
 
-    model: str
+    model: str | None = None
     retriever: str
     reranker: str
-    enhancement: str
+    enhancements: list[str] = []
     evaluator: str
