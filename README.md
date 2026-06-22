@@ -8,69 +8,146 @@ app_port: 7860
 pinned: false
 ---
 
-# PilotMaster
+# 🚀 PilotMaster
 
-**PilotMaster** is a retrieval engineering, document intelligence, and AI observability platform for building, debugging, evaluating, and improving Retrieval-Augmented Generation (RAG) systems.
+<p align="center">
+  <h3 align="center">Retrieval Engineering • Document Intelligence • Benchmarking • AI Observability</h3>
+</p>
 
-Most RAG applications expose only the final answer.
-
-PilotMaster exposes the entire retrieval journey.
-
-From retrieval and reranking to evaluation and trace replay, every major decision can be inspected, analyzed, benchmarked, and improved.
+<p align="center">
+PilotMaster is an end-to-end platform for building, debugging, evaluating, benchmarking, and improving Retrieval-Augmented Generation (RAG) systems.
+</p>
 
 ---
 
-# Platform Overview
+## Live Demo
 
-PilotMaster consists of three major layers:
+🔗 [PilotMaster](https://pilot-master.vercel.app/)
 
-## DocPilot
+# Table of Contents
 
-The document intelligence workspace.
+- [The Story Behind PilotMaster](#the-story-behind-pilotmaster)
+- [Why PilotMaster Exists](#why-pilotmaster-exists)
+- [Platform Philosophy](#platform-philosophy)
+- [Two Operating Modes](#two-operating-modes)
+- [Platform Overview](#platform-overview)
+- [Unified Workflow](#unified-workflow)
+- [Architecture](#architecture)
+- [Retrieval Pipeline](#retrieval-pipeline)
+- [DocPilot](#docpilot)
+- [TracePilot](#tracepilot)
+- [GaugePilot](#gaugepilot)
+- [PilotCore](#pilotcore)
+- [Experimentation Framework](#experimentation-framework)
+- [Evaluation Framework](#evaluation-framework)
+- [Tech Stack](#tech-stack)
+- [Roadmap](#roadmap)
+- [Local Setup](#local-setup)
+- [Contributing](#contributing)
 
-Provides:
+---
 
-- Document ingestion
-- OCR processing
-- Grounded question answering
-- Citation-aware responses
+# The Story Behind PilotMaster
+
+PilotMaster did not begin as a single platform.
+
+It started as two completely independent projects.
+
+## 📄 DocPilot
+
+DocPilot originally began as a simple **chat-with-your-documents RAG application**.
+
+The goal was straightforward:
+
+1. Upload a document.
+2. Ask a question.
+3. Receive a grounded answer.
+4. Display citations.
+
+Over time, it evolved into a far more capable document intelligence system supporting:
+
+- OCR ingestion
 - Runtime model selection
 - Retrieval experimentation
+- Multi-model comparisons
+- Production and experimental workflows
 
-## TracePilot
+---
 
-The observability workspace.
+## 🔍 TracePilot
 
-Provides:
+TracePilot originally began as a lightweight **text-file based RAG evaluator**.
+
+The original idea was simply:
+
+> "What exactly happened inside my RAG pipeline?"
+
+That tiny evaluator eventually evolved into an observability platform capable of:
 
 - Retrieval diagnostics
-- Chunk lineage inspection
+- Ranking inspection
 - Replayable traces
-- Reranker analysis
-- Evaluation metrics
 - Hallucination analysis
 - Retrieval agreement analysis
+- Evaluation metrics
 
-## PilotCore
+---
 
-The shared execution kernel.
+## ⚙️ The Birth of PilotCore
 
-Provides:
+As both projects matured, they started solving the exact same problems.
 
-- Embeddings
+Both required:
+
 - Retrieval
-- Fusion
+- Embeddings
 - Reranking
 - Prompt construction
 - Generation
 - Evaluation
 - Tracing
 
+Maintaining separate implementations became increasingly painful.
+
+The solution was to extract everything shared into a common execution engine.
+
+That engine became:
+
+# ⚙️ PilotCore
+
+PilotCore is the shared kernel powering every workflow inside the platform.
+
+Today:
+
+- DocPilot runs on PilotCore.
+- TracePilot runs on PilotCore.
+- GaugePilot runs on PilotCore.
+
+---
+
+## 🔬 The Emergence of GaugePilot
+
+As experimentation increased, another question emerged:
+
+> Which configuration actually performs best?
+
+This eventually led to the creation of **GaugePilot**.
+
+GaugePilot exists to benchmark and compare:
+
+- Retrieval strategies
+- Models
+- Rerankers
+- Query enhancements
+- End-to-end configurations
+
+GaugePilot currently exists exclusively inside **Experimental Mode**.
+
 ---
 
 # Why PilotMaster Exists
 
-Modern GenAI systems frequently behave like black boxes.
+Most RAG applications expose only the final answer.
 
 A document is uploaded.
 
@@ -78,110 +155,285 @@ A question is asked.
 
 An answer is returned.
 
-What remains hidden:
+Everything in between is hidden.
+
+Questions that usually remain unanswered:
 
 - What was retrieved?
-- Why did those chunks rank first?
-- Which retriever contributed the evidence?
-- Did BM25 or dense retrieval dominate?
-- How confident was the reranker?
+- Why was it retrieved?
+- Which retriever found the evidence?
 - Was the answer grounded?
 - Did the model hallucinate?
-- Would another model answer differently using the same evidence?
+- Did reranking improve anything?
+- Which configuration performs best?
+- Which model is actually superior?
 
-PilotMaster was built to make those decisions observable.
-
----
-
-# Unified Workspace
-
-DocPilot and TracePilot operate inside the same platform experience.
-
-Typical workflow:
-
-1. Upload a document
-2. Ask a question
-3. Review citations
-4. Inspect retrieved chunks
-5. Analyze ranking signals
-6. Evaluate answer quality
-7. Replay the execution
-8. Compare retrieval strategies
+PilotMaster was built to answer those questions.
 
 ---
 
-# Research Workspace
+# Why PilotMaster is Different
 
-PilotMaster includes a dedicated workspace for retrieval engineering.
+Most RAG applications focus primarily on generating answers.
 
-Supported retrieval modes:
+PilotMaster focuses on understanding, debugging, evaluating, and improving the entire retrieval process.
 
-- Dense Retrieval
-- BM25 Retrieval
-- Hybrid Retrieval
-- Hybrid + RRF
-- Hybrid + RRF + Reranking
+| Typical RAG App                             | PilotMaster                                                              |
+| ------------------------------------------- | ------------------------------------------------------------------------ |
+| Returns only the final answer               | Exposes the entire retrieval journey                                     |
+| Hidden retrieval process                    | Full retrieval observability                                             |
+| No explanation of why chunks were retrieved | Chunk lineage and provenance tracking                                    |
+| Limited debugging capabilities              | Replayable traces and diagnostics                                        |
+| Single retrieval strategy                   | Runtime retrieval experimentation                                        |
+| Fixed model configuration                   | Runtime model switching                                                  |
+| No benchmarking tools                       | Built-in benchmarking with GaugePilot                                    |
+| Difficult to compare configurations         | Leaderboards and comparative evaluation                                  |
+| Minimal evaluation metrics                  | Grounding, faithfulness, coverage, latency, hallucination risk, and more |
+| Retrieval treated as a black box            | Retrieval treated as a first-class engineering problem                   |
+| Little insight into reranking               | Reranker confidence, margin, and scoring analysis                        |
+| No understanding of retriever agreement     | Retrieval agreement analysis                                             |
+| Hard to reproduce failures                  | Replayable and inspectable executions                                    |
+| Little support for research workflows       | Dedicated Experimental Mode                                              |
+| Focuses only on generation                  | Focuses on retrieval, observability, and experimentation                 |
+| One-size-fits-all interface                 | Separate Production and Experimental modes                               |
+| No way to determine the best configuration  | Benchmarking and configuration ranking                                   |
+| Usually a single application                | Unified platform of DocPilot, TracePilot, GaugePilot, and PilotCore      |
 
-Experimental controls include:
+PilotMaster treats retrieval not as a hidden implementation detail, but as an engineering discipline that can be inspected, evaluated, and systematically improved.
 
-- Embedding model selection
-- Reranker selection
-- Retrieval strategy selection
+---
+
+# Platform Philosophy
+
+PilotMaster is built around several core beliefs.
+
+## 1. Retrieval Quality Matters More Than People Think
+
+Generation quality has improved dramatically.
+
+Retrieval quality remains one of the biggest bottlenecks in RAG systems.
+
+---
+
+## 2. Observability Is Not Optional
+
+You cannot improve what you cannot inspect.
+
+---
+
+## 3. Benchmarking Should Be Easy
+
+Experimentation should not require rewriting the entire pipeline.
+
+---
+
+## 4. Everything Should Be Reproducible
+
+Every execution should be:
+
+- inspectable
+- benchmarkable
+- replayable
+
+---
+
+# Two Operating Modes
+
+## 🏭 Production Mode
+
+Designed for everyday document intelligence workflows.
+
+Features:
+
+- Stable pipelines
+- Fast execution
+- Minimal controls
+- Grounded question answering
+- Citations
+
+---
+
+## 🧪 Experimental Mode
+
+Designed for retrieval engineering and research.
+
+Features:
+
+- Runtime model switching
+- Embedding experimentation
+- Reranker experimentation
 - Query enhancement testing
-- Model benchmarking
+- Benchmarking
+- Comparative evaluation
+- Observability tooling
 
-Questions the workspace helps answer:
-
-- Does reranking improve grounding?
-- When does BM25 outperform dense retrieval?
-- Does RRF improve recall?
-- Which embedding model performs best?
-- Which reranker produces the best ranking quality?
+GaugePilot currently exists exclusively inside Experimental Mode.
 
 ---
 
-# High-Level Architecture
+# Platform Overview
 
-Dashboard
-→ FastAPI
-→ DocPilot
-→ PilotCore
-→ Retrieval
-→ Fusion
-→ Reranking
-→ Generation
-→ Evaluation
-→ TracePilot
+## 📄 DocPilot
 
-PilotCore acts as the execution kernel shared by every workspace.
+The document intelligence workspace.
+
+Provides:
+
+- Document ingestion
+- OCR processing
+- Grounded QA
+- Citations
+- Runtime model selection
+- Retrieval experimentation
+- Multi-model comparisons
 
 ---
 
-# Retrieval Architecture
+## 🔍 TracePilot
 
-## Retrieval Pipeline
+The observability workspace.
 
+Provides:
+
+- Retrieval diagnostics
+- Replayable traces
+- Hallucination analysis
+- Evaluation metrics
+- Retrieval agreement analysis
+- Chunk lineage inspection
+
+---
+
+## 🔬 GaugePilot
+
+The benchmarking workspace.
+
+Provides:
+
+- Configuration benchmarking
+- Leaderboards
+- Correlation analysis
+- Pareto frontier analysis
+- Comparative evaluation
+- Metric visualizations
+
+---
+
+## ⚙️ PilotCore
+
+The shared execution engine.
+
+Provides:
+
+- Retrieval
+- Fusion
+- Reranking
+- Prompt construction
+- Generation
+- Evaluation
+- Tracing
+- Benchmark execution
+
+---
+
+# Unified Workflow
+
+```text
+Upload Document
+        ↓
+     Ask Question
+        ↓
+   Review Citations
+        ↓
+ Inspect Retrieved Chunks
+        ↓
+ Analyze Ranking Signals
+        ↓
+ Evaluate Answer Quality
+        ↓
+      Replay Trace
+        ↓
+ Benchmark Configurations
+        ↓
+ Compare Models
+```
+
+---
+
+# Architecture
+
+```text
+Frontend
+    ↓
+FastAPI
+    ↓
+PilotCore
+    ↓
+Retrieval
+    ↓
+Fusion
+    ↓
+Reranking
+    ↓
+Generation
+    ↓
+Evaluation
+    ↓
+Trace Storage
+```
+
+---
+
+# Project Structure
+
+```text
+PilotMaster/
+├── DocPilot/
+├── GaugePilot/
+├── TracePilot/
+├── pilotcore/
+├── frontend/
+├── docs/
+└── scripts/
+```
+
+---
+
+# Retrieval Pipeline
+
+```text
 Query
-→ Dense Retrieval
-→ BM25 Retrieval
-→ Reciprocal Rank Fusion
-→ Candidate Pool
-→ Cross-Encoder Reranking
-→ Context Selection
-→ LLM Generation
-→ Evaluation
-→ Trace Storage
+  ↓
+Dense Retrieval
+  ↓
+BM25 Retrieval
+  ↓
+Reciprocal Rank Fusion
+  ↓
+Candidate Pool
+  ↓
+Cross-Encoder Reranking
+  ↓
+Context Selection
+  ↓
+LLM Generation
+  ↓
+Evaluation
+  ↓
+Trace Storage
+```
 
 ---
 
-## Dense Retrieval
+# Dense Retrieval
 
 Semantic retrieval uses:
 
 - SentenceTransformers
-- Cosine Similarity
 - FAISS
+- Cosine Similarity
 - IndexFlatIP
+- IndexFlatL2
 
 Responsibilities:
 
@@ -191,7 +443,7 @@ Responsibilities:
 
 ---
 
-## BM25 Retrieval
+# BM25 Retrieval
 
 Responsibilities:
 
@@ -201,11 +453,9 @@ Responsibilities:
 - Lexical precision
 - Negation-sensitive retrieval
 
-BM25 compensates for weaknesses found in purely vector-based systems.
-
 ---
 
-## Reciprocal Rank Fusion
+# Reciprocal Rank Fusion (RRF)
 
 Combines:
 
@@ -220,60 +470,137 @@ Benefits:
 
 ---
 
-## Cross-Encoder Reranking
-
-Reranking occurs after retrieval and before prompt construction.
+# Cross Encoder Reranking
 
 Supported families:
 
-- MiniLM rerankers
-- BGE rerankers
-- Experimental rerankers
+- MiniLM
+- TinyBERT
+- BGE Large
+- BGE M3
 
 Responsibilities:
 
-- Joint query/chunk evaluation
 - Candidate rescoring
 - Precision improvement
 - Evidence prioritization
 
 ---
 
-# Runtime Retrieval Components
+# DocPilot
 
-PilotMaster supports runtime experimentation.
+DocPilot is the primary user-facing workspace.
 
-## Embedding Models
+Capabilities:
 
-Examples:
-
-- all-mpnet-base-v2
-- BGE family
-- Additional SentenceTransformer models
-
-## Rerankers
-
-Examples:
-
-- MiniLM
-- BGE Reranker Large
-- BGE Reranker v2 M3
-
-## Retrieval Strategies
-
-- Dense
-- BM25
-- Hybrid
-- Hybrid + RRF
-- Hybrid + RRF + Reranking
+- Upload documents
+- Ask questions
+- Inspect citations
+- Compare models
+- Experiment with retrieval
 
 ---
 
-# Model Runtime
+# TracePilot
 
-Models are managed through a centralized registry.
+TracePilot exposes the internal behavior of the system.
 
-Currently supported:
+## Per Chunk Diagnostics
+
+- Dense Score
+- Dense Rank
+- BM25 Score
+- BM25 Rank
+- RRF Score
+- Reranker Score
+- Confidence
+- Margin
+- Final Rank
+
+## Replayable Traces
+
+Replay enables:
+
+- Regression testing
+- Retrieval debugging
+- Experimentation
+- Ranking inspection
+
+---
+
+# GaugePilot
+
+GaugePilot focuses on comparative evaluation.
+
+## Benchmarking Features
+
+- Configuration Leaderboards
+- Correlation Matrix
+- Pareto Frontier Analysis
+- Configuration History
+- Comparative Evaluation
+- Multi-run Benchmarking
+
+## Evaluation Metrics
+
+- Retrieval Quality
+- Grounding
+- Faithfulness
+- Query Coverage
+- Answerability
+- Hallucination Risk
+- Latency
+
+---
+
+# PilotCore
+
+PilotCore acts as the execution kernel shared by every workspace.
+
+Responsibilities:
+
+- Retrieval
+- Fusion
+- Reranking
+- Prompt construction
+- Generation
+- Evaluation
+- Tracing
+- Benchmark execution
+
+---
+
+# Experimentation Framework
+
+## Retrieval Strategies
+
+- Dense Retrieval
+- BM25 Retrieval
+- Hybrid Retrieval
+- Hybrid + RRF
+- Hybrid + Reranking
+
+## Query Enhancements
+
+- Query Rewrite
+- HyDE
+- Multi Query
+- Query Expansion
+- Parent Child Retrieval
+- Contextual Retrieval
+- Metadata Retrieval
+- Graph RAG
+
+## Runtime Controls
+
+- Model Selection
+- Embedding Selection
+- Reranker Selection
+- Retrieval Strategy Selection
+
+---
+
+# Supported Models
 
 - Llama 3.1 8B
 - Llama 3.3 70B
@@ -282,114 +609,20 @@ Currently supported:
 - GPT OSS 20B
 - GPT OSS 120B
 
-Runtime selection enables:
-
-- Latency comparisons
-- Grounding comparisons
-- Retrieval-consistent benchmarking
-- Comparative model evaluation
-
----
-
-# TracePilot
-
-TracePilot exposes the internal behavior of the system.
-
-## Per-Chunk Diagnostics
-
-Available metrics:
-
-- Dense Score
-- Dense Rank
-- BM25 Score
-- BM25 Rank
-- RRF Score
-- Reranker Score
-- Reranker Confidence
-- Reranker Margin
-- Final Rank
-- Retrieval Provenance
-
----
-
-## Retrieval Lineage
-
-Every chunk records where it originated:
-
-- Dense Retrieval
-- BM25 Retrieval
-- Hybrid Retrieval
-- RRF Fusion
-- Reranking
-
-This makes ranking behavior significantly easier to debug.
-
----
-
-## Retrieval Agreement
-
-TracePilot determines whether retrieval was:
-
-- Strong
-- Semantic-Dominant
-- Lexical-Dominant
-
-Agreement analysis helps explain why a response succeeded or failed.
-
----
-
-## Replayable Traces
-
-Every execution can be replayed.
-
-Replay enables:
-
-- Retrieval debugging
-- Regression testing
-- Evaluation comparison
-- Pipeline experimentation
-- Ranking inspection
-
 ---
 
 # Evaluation Framework
 
-PilotMaster evaluates multiple dimensions of answer quality.
+PilotMaster evaluates:
 
-Current metrics:
-
-- Retrieval Quality
 - Grounding
 - Faithfulness
+- Retrieval Quality
 - Query Coverage
 - Retrieval Agreement
-- Answerability
 - Hallucination Risk
-
-Evaluation incorporates:
-
-- Retrieval confidence
-- Reranker confidence
-- Reranker margin
-- Retrieval agreement
-- Evidence quality
-- Retrieval lineage
-
----
-
-# Comparative Model Evaluation
-
-Multiple models can be tested against identical retrieved evidence.
-
-Developers can compare:
-
-- Grounding
-- Reasoning quality
+- Answerability
 - Latency
-- Retrieval utilization
-- Answer completeness
-
-Because retrieval context remains fixed, behavioral differences can be attributed primarily to model behavior.
 
 ---
 
@@ -400,32 +633,29 @@ Because retrieval context remains fixed, behavioral differences can be attribute
 - Dense Retrieval
 - BM25 Retrieval
 - Hybrid Retrieval
-- Reciprocal Rank Fusion
-- Cross-Encoder Reranking
-- Retrieval Lineage Tracking
+- RRF
+- Cross Encoder Reranking
 
 ## Observability
 
 - Replayable Traces
 - Retrieval Diagnostics
 - Ranking Inspection
-- Latency Tracking
-- Confidence Metrics
 - Evaluation Insights
 
-## Runtime Controls
+## Benchmarking
 
-- Runtime Model Selection
-- Runtime Embedding Selection
-- Runtime Reranker Selection
-- Dynamic Model Registry
+- Leaderboards
+- Pareto Analysis
+- Correlation Analysis
+- Comparative Evaluation
 
 ## Document Intelligence
 
-- OCR Ingestion
+- OCR
 - Grounded QA
-- Citation-Aware Responses
-- Multi-Format Support
+- Citation Aware Responses
+- Multi Format Support
 
 ---
 
@@ -436,15 +666,16 @@ Current focus areas:
 - Semantic Chunking
 - Query Rewriting
 - Query Expansion
-- Multi-Query Retrieval
-- Parent-Child Retrieval
+- Multi Query Retrieval
+- Parent Child Retrieval
 - Contextual Retrieval
-- Metadata-Aware Retrieval
+- Metadata Retrieval
 - Agentic Retrieval
+- Graph RAG
 
 Observation:
 
-Retrieval quality increasingly appears to be a larger bottleneck than generation quality, making retrieval engineering a primary area of exploration.
+> Retrieval quality increasingly appears to be a larger bottleneck than generation quality.
 
 ---
 
@@ -452,25 +683,21 @@ Retrieval quality increasingly appears to be a larger bottleneck than generation
 
 ## Retrieval Engineering
 
-- Query Rewriting
-- Query Expansion
-- Multi-Query Retrieval
-- Parent-Child Retrieval
-- Contextual Retrieval
-- Metadata-Aware Retrieval
-- Semantic Chunking
 - Agentic Retrieval
+- Graph RAG
+- Metadata Retrieval
+- Semantic Chunking
 
 ## Evaluation
 
-- Comparative Evaluation
 - Judge Ensembles
 - Grounding Regression Testing
+- Automated Benchmark Generation
 
 ## Observability
 
-- Cross-Run Comparisons
-- Retrieval Lineage Visualization
+- Failure Clustering
+- Cross Run Comparisons
 - Advanced Diagnostics
 
 ## Experimentation
@@ -492,25 +719,9 @@ Retrieval quality increasingly appears to be a larger bottleneck than generation
 | Vector Engine | FAISS                        |
 | Embeddings    | SentenceTransformers         |
 | Retrieval     | Dense + BM25 + RRF           |
-| Reranking     | Cross-Encoder Models         |
-| Runtime       | Multi-Model Inference        |
+| Reranking     | Cross Encoder Models         |
+| Runtime       | Multi Model Inference        |
 | Deployment    | Hugging Face Spaces + Vercel |
-
----
-
-# Screenshots
-
-## DocPilot
-
-_Add screenshot_
-
-## TracePilot
-
-_Add screenshot_
-
-## Research Workspace
-
-_Add screenshot_
 
 ---
 
@@ -529,14 +740,21 @@ uvicorn main:app --reload --port 8000
 
 ```bash
 cd frontend
-
 npm install
 npm run dev
 ```
 
 ---
 
-# What Makes PilotMaster Different
+# Contributing
+
+Contributions, ideas, experiments, and issues are always welcome.
+
+PilotMaster is ultimately a playground for exploring the future of retrieval engineering and observable AI systems.
+
+---
+
+# Final Philosophy
 
 Most RAG systems expose only the final answer.
 
@@ -549,8 +767,9 @@ PilotMaster exposes:
 - How grounded the answer was
 - Where hallucination risk emerged
 - How different models behave on identical context
+- Which configuration performs best
 - How retrieval quality evolves over time
 
-The goal is not simply AI generation.
+## The goal is not simply AI generation.
 
-The goal is observable AI execution.
+# The goal is observable AI execution and understanding why those answers happened.

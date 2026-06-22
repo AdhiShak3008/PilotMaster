@@ -5,7 +5,7 @@ from typing import Literal
 class ExperimentConfig(BaseModel):
 
     mode: str = "production"
-
+    model_name: str | None = None
     retrieval_method: Literal[
         "vector",
         "lexical",

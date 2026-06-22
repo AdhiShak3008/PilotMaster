@@ -285,17 +285,26 @@ const [showEnhancements, setShowEnhancements] =
   const canRun = questionList.length > 0 && !loading;
 
   const handleRun = async () => {
+    const retrievalMap = {
+  FAISS: "vector",
+  BM25: "lexical",
+  Hybrid: "hybrid",
+};
     const payload = {
       model,
-      retrieval_method: retrievalMethod,
+      retrieval_method:
+  retrievalMap[retrievalMethod],
       reranker,
        enhancements: selectedEnhancements,
       questions: questionList,
     };
     const token = localStorage.getItem("token");
     setBenchmarkRuns((r) => r + 1);
+    console.log("retrievalMethod state:", retrievalMethod);
+console.log("mapped value:", retrievalMap[retrievalMethod]);
+console.log("payload:", payload);
     const res = await executeBenchmark(payload, token);
-
+    
     // Backend returns `average_rank`, not `avg_rank` — support both so this
     // doesn't silently break again if the field name changes either way.
     const newScore =

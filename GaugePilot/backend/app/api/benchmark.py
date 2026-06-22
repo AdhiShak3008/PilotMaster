@@ -55,7 +55,10 @@ def run_benchmark_endpoint(
     )
 
     experiment_name = (
-        f"{request.retrieval_method}_" f"{request.reranker}_" f"{enhancement_name}"
+        f"{request.model}_"
+        f"{request.retrieval_method}_"
+        f"{request.reranker}_"
+        f"{enhancement_name}"
     )
 
     config = ExperimentConfig(
