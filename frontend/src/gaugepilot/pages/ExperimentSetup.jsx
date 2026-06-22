@@ -103,9 +103,9 @@ function CustomSelector({ label, sublabel, items, open, onToggle, selectorRef, c
         <div
           style={{
             position: "absolute",
-            bottom: "100%",
+top: "100%",
             left: 0,
-            marginBottom: "10px",
+            marginTop: "10px",
             width: "320px",
             zIndex: 9999,
             borderRadius: "18px",
