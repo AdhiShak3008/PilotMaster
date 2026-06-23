@@ -38,6 +38,9 @@ from sqlalchemy.orm import Session
 from GaugePilot.backend.app.db.session import get_db
 
 from GaugePilot.backend.app.models.benchmark_run import BenchmarkRun
+from pilotcore.benchmarking.analysis_service import (
+    generate_benchmark_analysis,
+)
 
 router = APIRouter()
 
@@ -101,7 +104,7 @@ def run_benchmark_endpoint(
     )
 
     leaderboard = generate_leaderboard(results)
-
+    analysis = generate_benchmark_analysis(results, leaderboard)
     from DocPilot.backend.app.models.document import (
         Document as PilotDocument,
     )
@@ -140,7 +143,10 @@ def run_benchmark_endpoint(
         all_results = [BenchmarkResult(**r) for r in existing_results]
 
         leaderboard = generate_leaderboard(all_results)
-
+        analysis = generate_benchmark_analysis(
+            all_results,
+            leaderboard,
+        )
         existing_run.results_json = json.dumps(existing_results)
 
         existing_run.leaderboard_json = json.dumps(leaderboard)
@@ -167,6 +173,7 @@ def run_benchmark_endpoint(
     return {
         "benchmark_run_id": run.id,
         "leaderboard": leaderboard,
+        "analysis": analysis.model_dump(),
     }
 
 
