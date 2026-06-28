@@ -1,5 +1,12 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime
-from datetime import datetime
+from datetime import datetime, timezone
+
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Integer,
+    String,
+    Text,
+)
 
 from GaugePilot.backend.app.db.database import Base
 
@@ -13,9 +20,13 @@ class BenchmarkRun(Base):
 
     name = Column(String, nullable=False)
 
-    leaderboard_json = Column(Text)
     results_json = Column(Text)
+
+    leaderboard_json = Column(Text)
+
+    analysis_json = Column(Text)
+
     created_at = Column(
         DateTime,
-        default=datetime.utcnow,
+        default=lambda: datetime.now(timezone.utc),
     )

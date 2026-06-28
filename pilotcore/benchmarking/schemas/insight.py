@@ -1,17 +1,27 @@
-from pydantic import BaseModel
-from typing import Literal
+from typing import Any, Literal
+
+from pydantic import BaseModel, Field
 
 
 class Insight(BaseModel):
-    type: Literal[
-        "improvement",
-        "regression",
-        "observation",
+    """
+    Deterministic benchmark finding.
+
+    An Insight represents a structured engineering observation
+    produced by the analysis engine. It intentionally contains
+    structured evidence instead of natural language explanations.
+    """
+
+    category: Literal[
+        "metric",
         "tradeoff",
+        "ranking",
+        "outlier",
+        "observation",
     ]
 
     title: str
-    description: str
+
     severity: Literal[
         "info",
         "warning",
@@ -19,4 +29,9 @@ class Insight(BaseModel):
     ] = "info"
 
     metric: str | None = None
+
     configuration: str | None = None
+
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+    )

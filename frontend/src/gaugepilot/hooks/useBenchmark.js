@@ -4,6 +4,7 @@ import {
   runBenchmark,
   getBenchmarkRuns,
 } from "../api";
+
 export function useBenchmark() {
   const [loading, setLoading] = useState(false);
 
@@ -12,39 +13,35 @@ export function useBenchmark() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-  const loadLatestRun = async () => {
-    try {
-      const token =
-        localStorage.getItem("token");
+    const loadLatestRun = async () => {
+      try {
+        const token = localStorage.getItem("token");
 
-      if (!token) return;
+        if (!token) return;
 
-      const runs =
-        await getBenchmarkRuns(token);
+        const runs = await getBenchmarkRuns(token);
 
-      if (!runs.length) return;
+        if (!runs.length) return;
 
-      const latest =
-  runs.sort(
-    (a, b) =>
-      new Date(b.created_at) -
-      new Date(a.created_at)
-  )[0];
+        const latest = runs.sort(
+          (a, b) =>
+            new Date(b.created_at) -
+            new Date(a.created_at)
+        )[0];
 
-      setResults({
-        leaderboard:
-          JSON.parse(
-            latest.leaderboard_json
-          ),
-      });
+        setResults({
+          results: latest.results,
+          leaderboard: latest.leaderboard,
+          analysis: latest.analysis,
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    };
 
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    loadLatestRun();
+  }, []);
 
-  loadLatestRun();
-}, []);
   const executeBenchmark = async (
     payload,
     token,
@@ -66,7 +63,7 @@ export function useBenchmark() {
       console.error(err);
 
       setError(
-        err.response?.data?.detail ||
+        err.response?.data?.detail ??
           "Benchmark failed",
       );
 

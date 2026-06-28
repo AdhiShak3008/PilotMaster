@@ -2,15 +2,10 @@ from ..schemas.diagnosis import Diagnosis
 
 
 def generate_diagnoses(results):
-
     diagnoses = []
     seen = set()
 
     for r in results:
-
-        # ------------------------------
-        # Classic threshold diagnoses
-        # ------------------------------
 
         if (
             r.semantic_grounding < 0.6
@@ -24,11 +19,6 @@ def generate_diagnoses(results):
                     causes=[
                         "Poor retrieval coverage.",
                         "Insufficient supporting context.",
-                    ],
-                    recommendations=[
-                        "Try Hybrid retrieval.",
-                        "Try Multi Query.",
-                        "Enable Query Rewrite.",
                     ],
                 )
             )
@@ -44,13 +34,8 @@ def generate_diagnoses(results):
                     issue="Insufficient Context",
                     severity="warning",
                     causes=[
-                        "Retrieved chunks do not answer the question.",
-                        "Coverage is extremely low.",
-                    ],
-                    recommendations=[
-                        "Upload additional documents.",
-                        "Try Hybrid retrieval.",
-                        "Try Multi Query.",
+                        "Retrieved chunks do not adequately answer benchmark questions.",
+                        "Semantic query coverage is critically low.",
                     ],
                 )
             )
@@ -62,13 +47,8 @@ def generate_diagnoses(results):
                     issue="High Latency",
                     severity="warning",
                     causes=[
-                        "Expensive retrieval pipeline.",
-                        "Large model or reranker overhead.",
-                    ],
-                    recommendations=[
-                        "Disable Multi Query.",
-                        "Use a lighter reranker.",
-                        "Try a smaller model.",
+                        "Retrieval pipeline incurs significant processing overhead.",
+                        "Generation or reranking is computationally expensive.",
                     ],
                 )
             )
@@ -80,19 +60,11 @@ def generate_diagnoses(results):
                     issue="Frequent Abstention",
                     severity="warning",
                     causes=[
-                        "The system lacks sufficient evidence to answer.",
-                    ],
-                    recommendations=[
-                        "Upload more relevant documents.",
-                        "Improve retrieval coverage.",
+                        "The pipeline frequently lacks sufficient evidence to answer.",
                     ],
                 )
             )
             seen.add("Frequent Abstention")
-
-        # ------------------------------
-        # Multi-variable failure modes
-        # ------------------------------
 
         if (
             r.latency > 5000
@@ -105,13 +77,7 @@ def generate_diagnoses(results):
                     issue="Lost in the Middle",
                     severity="warning",
                     causes=[
-                        "Large amounts of context are being retrieved.",
-                        "Important evidence may be buried in the middle.",
-                    ],
-                    recommendations=[
-                        "Reduce context size.",
-                        "Try LongContextReorder.",
-                        "Reduce retrieved chunk count.",
+                        "Relevant evidence may be diluted within excessive retrieved context.",
                     ],
                 )
             )
@@ -128,13 +94,7 @@ def generate_diagnoses(results):
                     issue="Semantic Drift",
                     severity="warning",
                     causes=[
-                        "Retriever is failing to find semantically relevant context.",
-                        "Coverage and retrieval quality are critically low.",
-                    ],
-                    recommendations=[
-                        "Increase dense retrieval weighting.",
-                        "Try Hybrid retrieval.",
-                        "Enable Query Rewrite.",
+                        "Retriever is failing to locate semantically relevant evidence.",
                     ],
                 )
             )
@@ -150,12 +110,7 @@ def generate_diagnoses(results):
                     issue="Inefficient Reranking",
                     severity="warning",
                     causes=[
-                        "High compute cost without proportional quality gains.",
-                    ],
-                    recommendations=[
-                        "Reduce rerank pool size.",
-                        "Use a lighter reranker.",
-                        "Disable reranking and compare results.",
+                        "Additional computation is not translating into better answer quality.",
                     ],
                 )
             )

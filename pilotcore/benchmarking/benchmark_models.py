@@ -1,15 +1,16 @@
-from pydantic import BaseModel
+from dataclasses import dataclass
 
 
-class BenchmarkResult(BaseModel):
+@dataclass
+class BenchmarkResult:
     config_name: str
 
-    faithfulness: float
-    semantic_grounding: float
-    semantic_query_coverage: float
-    retrieval_quality_score: float
+    faithfulness: float = 0.0
+    semantic_grounding: float = 0.0
+    semantic_query_coverage: float = 0.0
+    retrieval_quality_score: float = 0.0
 
-    latency: float
+    latency: float = 0.0
 
-    grounded_rate: float
-    abstain_rate: float
+    grounded_rate: float = 0.0
+    abstain_rate: float = 0.0

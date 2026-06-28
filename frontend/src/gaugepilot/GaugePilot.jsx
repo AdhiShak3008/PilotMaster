@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import ExperimentSetup from "./pages/ExperimentSetup";
+import AIAnalysis from "./pages/AIAnalysis";
 
 const NAV_GROUPS = [
   {
@@ -14,13 +15,7 @@ const NAV_GROUPS = [
     items: [
       { id: "leaderboards",    label: "Leaderboards",    icon: "🏆", scrollTo: "leaderboards"    },
       { id: "visualizations",  label: "Visualizations",  icon: "📈", scrollTo: "visualizations"  },
-    ],
-  },
-  {
-    label: "Intelligence",
-    items: [
-      { id: "insights",        label: "Insights",        icon: "💡", scrollTo: "insights"        },
-      { id: "recommendations", label: "Recommendations", icon: "⭐", scrollTo: "recommendations" },
+      { id: "ai-analysis",     label: "AI Analysis",     icon: "🤖", scrollTo: "ai-analysis"     },
     ],
   },
 ];
@@ -33,23 +28,23 @@ export default function GaugePilot({ onHome }) {
   const [isMobileOpen, setIsMobileOpen]   = useState(false);
   const [hoveredItem, setHoveredItem]     = useState(null);
   const [isMobile, setIsMobile]           = useState(false);
+
+  // selectedRun is lifted here so AIAnalysis can always reflect the currently
+  // active run even when the user navigates away from ExperimentSetup.
+  const [selectedRun, setSelectedRun]     = useState(null);
+
   const observersRef = useRef([]);
-  const mainRef = useRef(null);
+  const mainRef      = useRef(null);
 
   // ── Responsive breakpoints ─────────────────────────────────────────────────
   useEffect(() => {
-    const check = () => {
-      setIsMobile(window.innerWidth < 640);
-    };
+    const check = () => setIsMobile(window.innerWidth < 640);
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // ── Scroll spy (bidirectional) ─────────────────────────────────────────────
-  // Uses scroll position on the main container to determine which section is
-  // currently "in view" by comparing scrollTop against each section's offsetTop.
-  // This avoids IntersectionObserver's one-directional rootMargin bias.
+  // ── Scroll spy ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const mainEl = mainRef.current;
     if (!mainEl) return;
@@ -58,7 +53,6 @@ export default function GaugePilot({ onHome }) {
       const scrollTop = mainEl.scrollTop;
       const viewportH = mainEl.clientHeight;
 
-      // Collect all sections that exist in the DOM
       const sections = SECTION_IDS
         .map((id) => {
           const el = document.getElementById(id);
@@ -69,7 +63,6 @@ export default function GaugePilot({ onHome }) {
 
       if (!sections.length) return;
 
-      // Pick the last section whose top edge is within the upper 40% of viewport
       const threshold = scrollTop + viewportH * 0.4;
       let current = sections[0].id;
       for (const s of sections) {
@@ -80,7 +73,6 @@ export default function GaugePilot({ onHome }) {
     };
 
     mainEl.addEventListener("scroll", handleScroll, { passive: true });
-    // Run once on mount so initial state is correct
     handleScroll();
 
     return () => mainEl.removeEventListener("scroll", handleScroll);
@@ -365,7 +357,44 @@ export default function GaugePilot({ onHome }) {
           paddingTop: isMobile ? "56px" : 0,
         }}
       >
-        <ExperimentSetup />
+        {/*
+          ExperimentSetup owns the primary workflow. It receives onRunChange so
+          it can bubble the currently-selected run up to GaugePilot, which then
+          passes it down to AIAnalysis.
+        */}
+        <ExperimentSetup
+          onRunChange={setSelectedRun}
+        />
+
+        {/* AI Analysis section — rendered below ExperimentSetup in the
+            same scroll container so the sidebar scroll-spy picks it up. */}
+        <AIAnalysis
+          selectedRun={selectedRun}
+          onRunRefresh={async () => {
+            // Re-fetch runs and update selectedRun in-place so the AI
+            // Analysis page shows new reports without any user interaction.
+            try {
+              const { getBenchmarkRuns } = await import("./api");
+              const token = localStorage.getItem("token");
+              const runs  = await getBenchmarkRuns(token);
+              const sorted = [...runs].sort(
+                (a, b) => new Date(b.created_at) - new Date(a.created_at)
+              );
+              if (!sorted.length) return;
+
+              // Match on id so switching runs mid-generation still lands
+              // on the right run rather than always jumping to the latest.
+              const currentId = selectedRun?.id;
+              const refreshed = currentId
+                ? (sorted.find((r) => r.id === currentId) ?? sorted[0])
+                : sorted[0];
+
+              setSelectedRun(refreshed);
+            } catch (err) {
+              console.error("Failed to refresh runs after analysis", err);
+            }
+          }}
+        />
       </main>
     </div>
   );

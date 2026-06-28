@@ -104,3 +104,18 @@ export async function resetDocuments(
 
   return response.data;
 }
+
+// New: trigger AI analysis generation for a specific run
+export async function generateAnalysis(runId, token) {
+  const response = await API.post(
+    `/benchmark/runs/${runId}/generate-analysis`,
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return response.data;
+}

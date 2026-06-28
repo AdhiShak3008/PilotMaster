@@ -29,6 +29,9 @@ def run_pipeline(
 ):
     if experiment_config is None:
         experiment_config = ExperimentConfig()
+    print("\n===== EXPERIMENT CONFIG =====")
+    print(experiment_config.model_dump())
+    print("=============================\n")
     trace_id = generate_trace_id()
     start_time = time.perf_counter()
 

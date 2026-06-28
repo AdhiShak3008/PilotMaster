@@ -1,7 +1,6 @@
 import { useState } from "react";
 import OverallTable from "../components/leaderboards/OverallTable";
 import ExperimentSelector from "../components/ExperimentSelector";
-import Insights from "./Insights";
 
 const METRIC_META = {
   overall:          { label: "Overall Rankings",          desc: "Combined benchmark ranking across all evaluation metrics.", icon: "🏆" },
@@ -53,9 +52,8 @@ export default function Leaderboards({ leaderboard }) {
   // ── Empty state ────────────────────────────────────────────────────────────
   if (!leaderboard || overall.length === 0) {
     return (
-      <div  id="leaderboards" style={{ maxWidth: "1240px", margin: "0 auto", padding: "28px 24px" }}>
+      <div id="leaderboards" style={{ maxWidth: "1240px", margin: "0 auto", padding: "28px 24px" }}>
 
-        {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", marginBottom: "28px" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
@@ -72,7 +70,6 @@ export default function Leaderboards({ leaderboard }) {
           </div>
         </div>
 
-        {/* Empty state card */}
         <div style={{
           ...card, minHeight: "320px",
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -130,10 +127,10 @@ export default function Leaderboards({ leaderboard }) {
       {/* ── KPI Row ──────────────────────────────────────────────────────────── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "16px" }}>
         {[
-          { label: "Best Overall",        value: formatName(bestConfig),      icon: "🥇", color: "#f59e0b" },
-          { label: "Fastest Config",      value: formatName(fastestConfig),   icon: "⚡", color: "#22c55e" },
-          { label: "Top Faithfulness",    value: formatName(topFaithfulness), icon: "📋", color: accent },
-          { label: "Configs Evaluated",   value: totalConfigs,                icon: "🔬", color: "#a78bfa" },
+          { label: "Best Overall",      value: formatName(bestConfig),      icon: "🥇", color: "#f59e0b" },
+          { label: "Fastest Config",    value: formatName(fastestConfig),   icon: "⚡", color: "#22c55e" },
+          { label: "Top Faithfulness",  value: formatName(topFaithfulness), icon: "📋", color: accent    },
+          { label: "Configs Evaluated", value: totalConfigs,                icon: "🔬", color: "#a78bfa" },
         ].map(({ label, value, icon, color }) => (
           <div key={label} style={{
             ...card, padding: "16px 20px",
@@ -191,7 +188,6 @@ export default function Leaderboards({ leaderboard }) {
 
       {/* ── Table Section ────────────────────────────────────────────────────── */}
       <div style={{ ...card, padding: 0, overflow: "hidden", marginBottom: "16px" }}>
-        {/* Table header */}
         <div style={{
           padding: "20px 28px", borderBottom: "1px solid rgba(255,255,255,0.06)",
           display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px",
@@ -212,7 +208,6 @@ export default function Leaderboards({ leaderboard }) {
         <OverallTable data={leaderboard[selectedMetric]} />
       </div>
 
-      
     </div>
   );
 }

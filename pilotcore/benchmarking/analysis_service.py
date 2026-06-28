@@ -1,51 +1,71 @@
-from .insights.aggregator import aggregate
-from .insights.insights_engine import generate_insights
-
-from .recommendations.diagnostics_engine import (
-    generate_diagnoses,
+from .insights.service import (
+    generate_insight_analysis,
+    generate_ai_insight_report,
 )
 
-from .recommendations.recommendation_engine import (
-    generate_recommendations,
-)
-
-from .recommendations.llm_summarizer import (
-    generate_llm_summary,
+from .recommendations.service import (
+    generate_recommendation_analysis,
+    generate_ai_recommendation_report,
 )
 
 from .schemas.analysis import BenchmarkAnalysis
 
 
-def generate_benchmark_analysis(
+def generate_deterministic_analysis(
     results,
     leaderboard,
 ):
+    """
+    Generates only deterministic benchmark analysis.
+    """
 
-    aggregated = aggregate(results)
-
-    insights = generate_insights(
-        results,
-        aggregated,
-    )
-
-    diagnoses = generate_diagnoses(
+    insights = generate_insight_analysis(
         results,
     )
 
-    recommendations = generate_recommendations(
-        results,
-    )
-
-    llm_summary = generate_llm_summary(
-        leaderboard,
-        insights,
-        diagnoses,
-        recommendations,
+    diagnoses, recommendations = generate_recommendation_analysis(
+        results=results,
     )
 
     return BenchmarkAnalysis(
         insights=insights,
         diagnoses=diagnoses,
         recommendations=recommendations,
-        llm_summary=llm_summary,
+        insight_report=None,
+        recommendation_report=None,
+    )
+
+
+def generate_ai_analysis(
+    results,
+    leaderboard,
+):
+    """
+    Generates only AI-written benchmark reports.
+    """
+
+    insights = generate_insight_analysis(
+        results,
+    )
+
+    diagnoses, recommendations = generate_recommendation_analysis(
+        results=results,
+    )
+
+    insight_report = generate_ai_insight_report(
+        results=results,
+    )
+
+    recommendation_report = generate_ai_recommendation_report(
+        results=results,
+        leaderboard=leaderboard,
+        insights=insights,
+    )
+
+    return BenchmarkAnalysis(
+        insights=insights,
+        diagnoses=diagnoses,
+        recommendations=recommendations,
+        insight_report=insight_report,
+        recommendation_report=recommendation_report,
     )

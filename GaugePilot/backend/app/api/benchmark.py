@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends
-
+from DocPilot.backend.app.models.document import (
+    Document as PilotDocument,
+)
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 import json
-
+from dataclasses import asdict
 from GaugePilot.backend.app.core.dependencies import (
     get_current_user,
 )
@@ -12,13 +14,6 @@ from GaugePilot.backend.app.schemas.benchmark import (
     BenchmarkRequest,
 )
 
-from GaugePilot.backend.app.db.session import (
-    get_db,
-)
-
-from GaugePilot.backend.app.models.benchmark_run import (
-    BenchmarkRun,
-)
 
 from pilotcore.benchmarking.benchmark_runner import (
     run_benchmark,
@@ -33,13 +28,13 @@ from pilotcore.runtime.experiment_config import (
     ExperimentConfig,
 )
 
-from sqlalchemy.orm import Session
 
 from GaugePilot.backend.app.db.session import get_db
 
 from GaugePilot.backend.app.models.benchmark_run import BenchmarkRun
 from pilotcore.benchmarking.analysis_service import (
-    generate_benchmark_analysis,
+    generate_deterministic_analysis,
+    generate_ai_analysis,
 )
 
 router = APIRouter()
@@ -104,10 +99,7 @@ def run_benchmark_endpoint(
     )
 
     leaderboard = generate_leaderboard(results)
-    analysis = generate_benchmark_analysis(results, leaderboard)
-    from DocPilot.backend.app.models.document import (
-        Document as PilotDocument,
-    )
+    analysis = generate_deterministic_analysis(results, leaderboard)
 
     uploaded_document = (
         db.query(PilotDocument)
@@ -135,7 +127,7 @@ def run_benchmark_endpoint(
         existing_names = {r["config_name"] for r in existing_results}
 
         for result in results:
-            row = result.model_dump()
+            row = asdict(result)
 
             if row["config_name"] not in existing_names:
                 existing_results.append(row)
@@ -143,7 +135,7 @@ def run_benchmark_endpoint(
         all_results = [BenchmarkResult(**r) for r in existing_results]
 
         leaderboard = generate_leaderboard(all_results)
-        analysis = generate_benchmark_analysis(
+        analysis = generate_deterministic_analysis(
             all_results,
             leaderboard,
         )
@@ -151,28 +143,73 @@ def run_benchmark_endpoint(
 
         existing_run.leaderboard_json = json.dumps(leaderboard)
 
+        existing_run.analysis_json = json.dumps(analysis.dict())
+
         db.commit()
         db.refresh(existing_run)
 
         run = existing_run
-
+        results_to_return = all_results
     else:
-        serialized_results = [r.model_dump() for r in results]
+        serialized_results = [asdict(r) for r in results]
 
         run = BenchmarkRun(
             owner_id=current_user.id,
             name=benchmark_name,
             results_json=json.dumps(serialized_results),
             leaderboard_json=json.dumps(leaderboard),
+            analysis_json=json.dumps(analysis.dict()),
         )
 
         db.add(run)
         db.commit()
         db.refresh(run)
-
+        results_to_return = results
     return {
         "benchmark_run_id": run.id,
+        "results": [asdict(r) for r in results_to_return],
         "leaderboard": leaderboard,
+        "analysis": analysis.dict(),
+    }
+
+
+@router.post("/runs/{run_id}/generate-analysis")
+def generate_ai_analysis_endpoint(
+    run_id: int,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    run = (
+        db.query(BenchmarkRun)
+        .filter(
+            BenchmarkRun.id == run_id,
+            BenchmarkRun.owner_id == current_user.id,
+        )
+        .first()
+    )
+
+    if not run:
+        raise HTTPException(
+            status_code=404,
+            detail="Benchmark run not found",
+        )
+
+    results = [BenchmarkResult(**r) for r in json.loads(run.results_json or "[]")]
+
+    leaderboard = json.loads(run.leaderboard_json or "{}")
+
+    analysis = generate_ai_analysis(
+        results=results,
+        leaderboard=leaderboard,
+    )
+
+    run.analysis_json = json.dumps(analysis.model_dump())
+
+    db.commit()
+    db.refresh(run)
+
+    return {
+        "message": "AI analysis generated successfully",
         "analysis": analysis.model_dump(),
     }
 
@@ -189,22 +226,17 @@ def get_runs(
         .all()
     )
 
-    return runs
-
-
-@router.get("/runs")
-def get_benchmark_runs(
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    runs = (
-        db.query(BenchmarkRun)
-        .filter(BenchmarkRun.owner_id == current_user.id)
-        .order_by(BenchmarkRun.created_at.desc())
-        .all()
-    )
-
-    return runs
+    return [
+        {
+            "id": run.id,
+            "name": run.name,
+            "created_at": run.created_at,
+            "results": json.loads(run.results_json or "[]"),
+            "leaderboard": json.loads(run.leaderboard_json or "{}"),
+            "analysis": json.loads(run.analysis_json or "{}"),
+        }
+        for run in runs
+    ]
 
 
 @router.delete("/runs/reset")
