@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import ExperimentSetup from "./pages/ExperimentSetup";
-import AIAnalysis from "./pages/AIAnalysis";
+import AIAnalysis from "./pages/AIanalysis";
 
 const NAV_GROUPS = [
   {
