@@ -6,8 +6,8 @@ const NAV_GROUPS = [
   {
     label: "Workspace",
     items: [
-      { id: "top",              label: "Home",            icon: "⌂",  scrollTo: null },
-      { id: "experiment-setup", label: "Experiment Setup",icon: "⬡",  scrollTo: "experiment-setup" },
+      { id: "top",              label: "Home",            icon: "🏠",  scrollTo: null },
+      { id: "experiment-setup", label: "Experiment Setup",icon: "🧪",  scrollTo: "experiment-setup" },
     ],
   },
   {
