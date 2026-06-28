@@ -37,12 +37,14 @@ def generate_recommendation_report(
     try:
         return RecommendationReport(**json.loads(response))
 
-    except Exception:
+    except Exception as e:
+        print("=" * 80)
+        print("RECOMMENDATION REPORT GENERATION FAILED")
+        print("ERROR:")
+        print(e)
+        print("-" * 80)
+        print("RAW RESPONSE:")
+        print(response)
+        print("=" * 80)
 
-        return RecommendationReport(
-            executive_recommendation="",
-            priority_actions=[],
-            pipeline_optimizations=[],
-            next_experiment="",
-            production_readiness="",
-        )
+        raise

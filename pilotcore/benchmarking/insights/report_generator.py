@@ -33,12 +33,14 @@ def generate_insight_report(
     try:
         return InsightReport(**json.loads(response))
 
-    except Exception:
+    except Exception as e:
+        print("=" * 80)
+        print("INSIGHT REPORT GENERATION FAILED")
+        print("ERROR:")
+        print(e)
+        print("-" * 80)
+        print("RAW RESPONSE:")
+        print(response)
+        print("=" * 80)
 
-        return InsightReport(
-            executive_insight="",
-            strengths=[],
-            weaknesses=[],
-            engineering_observations=[],
-            benchmark_takeaway="",
-        )
+        raise
