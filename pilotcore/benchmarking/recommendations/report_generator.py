@@ -10,6 +10,23 @@ from .prompts import (
 )
 
 
+def clean_json_response(response: str) -> str:
+    response = response.strip()
+
+    if response.startswith("```"):
+        lines = response.splitlines()
+
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+
+        if lines and lines[-1].startswith("```"):
+            lines = lines[:-1]
+
+        response = "\n".join(lines).strip()
+
+    return response
+
+
 def generate_recommendation_report(
     leaderboard,
     results,
@@ -33,6 +50,8 @@ def generate_recommendation_report(
         system_prompt=SYSTEM_PROMPT,
         prompt=prompt,
     )
+
+    response = clean_json_response(response)
 
     try:
         return RecommendationReport(**json.loads(response))
