@@ -9,6 +9,7 @@ import time
 from docling.document_converter import DocumentConverter
 import pandas as pd
 import pytesseract
+from pilotcore.chunking.runtime import ChunkingRuntime
 
 # --- FIX START ---
 # Dynamically locate the executable for both Linux/Docker and Windows local testing
@@ -221,50 +222,6 @@ def clean_text(text):
     text = re.sub(r"\n{3,}", "\n\n", text)
 
     return text.strip()
-
-
-def chunk_text(
-    text,
-    chunk_size=500,
-    overlap=80,
-):
-
-    chunks = []
-
-    start = 0
-
-    while start < len(text):
-
-        end = start + chunk_size
-
-        if end < len(text):
-
-            sentence_end = text.rfind(".", start, end)
-
-            newline_end = text.rfind("\n", start, end)
-
-            boundary = max(sentence_end, newline_end)
-
-            if boundary != -1 and boundary > start:
-
-                end = boundary + 1
-
-        chunk = text[start:end].strip()
-
-        if chunk:
-
-            chunks.append(chunk)
-
-        next_start = end - overlap
-
-        # Ensure forward progress to avoid infinite loops
-        if next_start <= start:
-
-            next_start = end
-
-        start = next_start
-
-    return chunks
 
 
 def detect_type(file_path, mime_type=None):
@@ -719,7 +676,12 @@ def process_document(
 
         page = metadata.get("page") or metadata.get("slide") or metadata.get("row") or 1
 
-        for chunk in chunk_text(section.text):
+        chunks = ChunkingRuntime.chunk(
+            text=section.text,
+            strategy="fixed",
+        )
+
+        for chunk in chunks:
             all_chunks.append(
                 {
                     "document_id": document_id,
