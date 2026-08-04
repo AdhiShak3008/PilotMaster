@@ -68,6 +68,7 @@ def ask(
             question=query.question,
             user_id=current_user.id,
             source=query.source,
+            document_ids=query.document_ids,
             model_name=query.model_name,
             retrieval_strategy=query.retrieval_strategy,
             reranker=query.reranker,

@@ -24,9 +24,11 @@ def run_pipeline(
     query: str,
     user_id=None,
     source=None,
+    document_ids=None,
     model_name=None,
     experiment_config=None,
 ):
+    print("PIPELINE document_ids =", document_ids)
     if experiment_config is None:
         experiment_config = ExperimentConfig()
     print("\n===== EXPERIMENT CONFIG =====")
@@ -76,6 +78,7 @@ def run_pipeline(
             query=query_variant,
             user_id=user_id,
             source=source,
+            document_ids=document_ids,
             trace_id=trace.trace_id,
             trace=trace,
             experiment_config=experiment_config,

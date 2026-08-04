@@ -234,7 +234,7 @@ function isEnhancementActive(selected, id) {
 // Main Dashboard
 // ─────────────────────────────────────────────
 function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [question, setQuestion] = useState("");
   const [source, setSource] = useState("");
   const [selectedModel, setSelectedModel] = useState("llama-3.1-8b-instant");
@@ -254,11 +254,20 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
   const [clearingSessions, setClearingSessions] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // ── Document-scoped retrieval state (NEW) ──
+  // `documents` holds every document the backend knows about for this
+  // user/session: [{ document_id, filename }]. `selectedDocumentIds` holds
+  // the subset the user wants retrieval scoped to.
+  const [documents, setDocuments] = useState([]);
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState([]);
+  const [showDocuments, setShowDocuments] = useState(false);
+
   const messagesEndRef = useRef(null);
   const modelSelectorRef = useRef(null);
   const retrievalSelectorRef = useRef(null);
   const rerankerSelectorRef = useRef(null);
   const enhancementSelectorRef = useRef(null);
+  const documentSelectorRef = useRef(null); // NEW
 
   // Experiment toggles
   const [retrievalStrategy, setRetrievalStrategy] = useState("Hybrid");
@@ -284,6 +293,8 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
         setShowEnhancements(false);
       if (rerankerSelectorRef.current && !rerankerSelectorRef.current.contains(event.target))
         setShowReranker(false);
+      if (documentSelectorRef.current && !documentSelectorRef.current.contains(event.target)) // NEW
+        setShowDocuments(false);
     };
 
     const handleEsc = (event) => {
@@ -292,6 +303,7 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
         setShowRetrieval(false);
         setShowReranker(false);
         setShowEnhancements(false);
+        setShowDocuments(false); // NEW
       }
     };
 
@@ -372,7 +384,12 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop: (files) => files.length > 0 && setFile(files[0]),
+    multiple: true,
+    onDrop: (acceptedFiles) => {
+    if (acceptedFiles.length > 0) {
+        setFiles(acceptedFiles);
+    }
+},
     accept: {
       "application/pdf": [".pdf"],
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
@@ -383,21 +400,45 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
       "image/png": [".png"],
       "image/jpeg": [".jpg", ".jpeg"],
       "image/webp": [".webp"],
+      
     },
   });
 
   const uploadFile = async () => {
-    if (!file || uploading) return;
+    if (files.length === 0 || uploading) return;
     setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
     try {
+      const formData = new FormData();
+      for (const file of files) {
+        formData.append("files", file);
+      }
+
       const data = await apiRequest("/docs/upload", "POST", formData);
+      const uploaded = data.uploaded || [];
       if (data.detail) {
         alert(data.detail);
       } else {
-        alert(data.message);
-        setSource(file.name);
+        setSource(`${uploaded.length} documents`);
+        setFiles([]);
+        // ── NEW: capture per-document metadata from the upload response ──
+        // Expected shape: { documents: [{ document_id, filename }, ...] }
+        // Adjust this line if the backend's actual response key/shape differs.
+        
+
+        if (uploaded.length > 0) {
+          setDocuments((prev) => {
+            const existingIds = new Set(prev.map((d) => d.document_id));
+            const newOnes = uploaded.filter((d) => !existingIds.has(d.document_id));
+            return [...prev, ...newOnes];
+          });
+
+          // Auto-select the newly uploaded documents, keeping any
+          // previously selected documents selected as well.
+          setSelectedDocumentIds((prev) => {
+            const merged = new Set([...prev, ...uploaded.map((d) => d.document_id)]);
+            return Array.from(merged);
+          });
+        }
       }
     } catch {
       alert("Upload failed");
@@ -425,6 +466,7 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
         session_id: currentSessionId,
         model_name: selectedModel,
         mode: experimentMode ? "experimental" : "production",
+        document_ids: selectedDocumentIds, // NEW: scope retrieval to selected documents
       };
 
       if (experimentMode) {
@@ -472,9 +514,11 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
     try {
       await apiRequest("/docs/reset", "DELETE");
       setSource("");
-      setFile(null);
+      setFiles([]);
       setMessages([]);
       setCurrentSessionId(null);
+      setDocuments([]); // NEW: backend vector store is wiped, so drop local doc list too
+      setSelectedDocumentIds([]); // NEW
       fetchSessions();
     } catch {
       alert("Failed to delete documents.");
@@ -507,6 +551,10 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
   const activeRerankerLabel =
     RERANKER_OPTIONS.find((r) => r.id === reranker)?.label || "MiniLM";
   const activeEnhancementLabel = buildEnhancementLabel(selectedEnhancements);
+  const activeDocumentsLabel =
+    selectedDocumentIds.length === documents.length
+        ? "All Documents"
+        : `${selectedDocumentIds.length} Documents`;
 
   return (
     <div
@@ -585,12 +633,16 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
             ) : (
               <p style={{ margin: 0 }}>Drag &amp; drop or click to upload</p>
             )}
-            {file && <p style={{ margin: "8px 0 0", color: "#888", fontSize: "12px" }}>{file.name}</p>}
+            {files.length > 0 && (
+              <p style={{ margin: "8px 0 0", color: "#888", fontSize: "12px" }}>
+                {files.length} files selected
+              </p>
+            )}
           </div>
 
           <button
             onClick={uploadFile}
-            disabled={uploading || !file}
+            disabled={uploading || files.length === 0}
             style={{
               width: "100%",
               padding: "11px",
@@ -598,9 +650,9 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
               color: uploading ? "var(--text-muted)" : "var(--text-primary)",
               border: "1px solid var(--border)",
               borderRadius: "10px",
-              cursor: uploading || !file ? "not-allowed" : "pointer",
+              cursor: uploading || files.length === 0 ? "not-allowed" : "pointer",
               fontSize: "14px",
-              opacity: uploading || !file ? 0.75 : 1,
+              opacity: uploading || files.length === 0 ? 0.75 : 1,
               transition: "opacity 0.15s",
             }}
           >
@@ -943,6 +995,73 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
                         }}
                       />
                     ))}
+                </CustomSelector>
+
+                {/* DOCUMENTS SELECTOR (NEW) — always visible, independent of experimentMode */}
+                <CustomSelector
+                  label={activeDocumentsLabel}
+                  sublabel="Documents"
+                  open={showDocuments}
+                  onToggle={() => setShowDocuments((v) => !v)}
+                  selectorRef={documentSelectorRef}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      borderBottom: "1px solid var(--border)",
+                    }}
+                  >
+                    <button
+                      onClick={() => setSelectedDocumentIds(documents.map((d) => d.document_id))}
+                      style={{
+                        flex: 1,
+                        padding: "10px 8px",
+                        background: "transparent",
+                        border: "none",
+                        color: "var(--text-primary)",
+                        cursor: "pointer",
+                        fontSize: "13px",
+                      }}
+                    >
+                      Select All
+                    </button>
+                    <button
+                      onClick={() => setSelectedDocumentIds([])}
+                      style={{
+                        flex: 1,
+                        padding: "10px 8px",
+                        background: "transparent",
+                        border: "none",
+                        color: "var(--text-primary)",
+                        cursor: "pointer",
+                        fontSize: "13px",
+                      }}
+                    >
+                      Clear All
+                    </button>
+                  </div>
+
+                  {documents.length === 0 && (
+                    <div style={{ padding: "12px", fontSize: "12px", color: "#888" }}>
+                      No documents uploaded yet
+                    </div>
+                  )}
+
+                  {documents.map((doc) => (
+                    <SelectorItem
+                      key={doc.document_id}
+                      label={doc.filename}
+                      active={selectedDocumentIds.includes(doc.document_id)}
+                      multiSelect
+                      onClick={() => {
+                        setSelectedDocumentIds((prev) =>
+                          prev.includes(doc.document_id)
+                            ? prev.filter((id) => id !== doc.document_id)
+                            : [...prev, doc.document_id]
+                        );
+                      }}
+                    />
+                  ))}
                 </CustomSelector>
 
                 {experimentMode && (

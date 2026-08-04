@@ -19,3 +19,5 @@ class ChatRequest(BaseModel):
     reranker: str | None = None
 
     mode: Literal["production", "experimental"] = "production"
+
+    document_ids: list[int] | None = None

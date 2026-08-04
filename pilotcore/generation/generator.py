@@ -18,7 +18,9 @@ def generate_response(
         raise ValueError(f"Unsupported model: {selected_model}")
 
     prompt = build_prompt(trace)
-
+    print("\n===== FINAL PROMPT SENT TO LLM =====")
+    print(prompt)
+    print("===================================\n")
     completion = client.chat.completions.create(
         model=selected_model,
         messages=[

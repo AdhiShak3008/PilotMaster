@@ -13,7 +13,7 @@ class FixedCharacterChunker(BaseChunker):
         text: str,
         chunk_size: int = 500,
         overlap: int = 80,
-    ) -> list[str]:
+    ) -> list[dict]:
 
         chunks = []
 
@@ -50,4 +50,10 @@ class FixedCharacterChunker(BaseChunker):
 
             start = next_start
 
-        return chunks
+        return [
+            {
+                "text": chunk,
+                "metadata": {},
+            }
+            for chunk in chunks
+        ]

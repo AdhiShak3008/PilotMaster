@@ -15,7 +15,7 @@ class ChunkingRuntime:
         text: str,
         strategy: str = "fixed",
         **kwargs,
-    ) -> list[str]:
+    ) -> list[dict]:
         """
         Generate chunks using the requested strategy.
 
@@ -25,7 +25,7 @@ class ChunkingRuntime:
             **kwargs: Strategy-specific arguments.
 
         Returns:
-            List of text chunks.
+            List of chunk dictionaries containing text and metadata.
         """
 
         chunker_class = get_chunker(strategy)

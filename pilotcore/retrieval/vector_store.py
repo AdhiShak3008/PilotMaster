@@ -140,15 +140,22 @@ def search_vectors(
     query_embedding,
     trace_id: str,
     source=None,
+    document_ids=None,
     top_k=10,
 ):
+    print("VECTOR document_ids =", document_ids)
 
+    
     start_time = time.perf_counter()
 
     index = load_user_index(user_id)
 
     documents = load_user_documents(user_id)
-
+    
+    print("Stored document IDs:")
+    for doc in documents:
+        print(doc["document_id"], type(doc["document_id"]))
+    
     if index.ntotal == 0:
 
         return RetrievalResult(
@@ -168,6 +175,12 @@ def search_vectors(
     # higher score = higher cosine similarity
     similarities, indices = index.search(vector, min(index.ntotal, 100))
 
+    print("\n===== FAISS SEARCH DEBUG =====")
+    print("INDEX SIZE:", index.ntotal)
+    print("SIMILARITIES:", similarities)
+    print("INDICES:", indices)
+    print("==============================\n")
+
     retrieved_chunks = []
 
     for rank, (similarity, idx) in enumerate(
@@ -175,15 +188,36 @@ def search_vectors(
         start=1,
     ):
 
+        print(
+            f"RANK={rank}  IDX={idx}  SCORE={similarity}"
+        )
+
         if idx >= len(documents):
+            print("-> skipped (index out of range)")
             continue
 
         doc = documents[idx]
 
-        if source:
+        print(
+            "Candidate:",
+            doc["document_id"],
+            doc["source"],
+        )
 
-            if source != doc["source"]:
-                continue
+        if (
+            document_ids
+            and doc["document_id"] not in document_ids
+        ):
+            print("-> skipped (document_id filter)")
+            continue
+
+        if (
+            source
+            and not document_ids
+            and source != doc["source"]
+        ):
+            continue
+        print("-> ACCEPTED")
 
         retrieved_chunks.append(
             RetrievedChunk(
@@ -206,12 +240,9 @@ def search_vectors(
                     page_number=doc.get("page"),
                     metadata=doc.get("metadata", {}),
                 ),
-                # legacy compatibility
                 score=float(similarity),
-                # dense retrieval lineage
                 dense_score=float(similarity),
                 dense_rank=rank,
-                # provenance
                 retrieval_sources=["dense"],
             )
         )

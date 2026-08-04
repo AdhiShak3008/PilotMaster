@@ -1,0 +1,2 @@
+Alice works on Project Atlas.
+Project Atlas is managed by Bob.

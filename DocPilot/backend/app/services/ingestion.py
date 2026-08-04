@@ -678,20 +678,23 @@ def process_document(
 
         chunks = ChunkingRuntime.chunk(
             text=section.text,
-            strategy="fixed",
+            strategy="parent_child",
         )
 
         for chunk in chunks:
             all_chunks.append(
                 {
                     "document_id": document_id,
-                    "text": chunk,
+                    "text": chunk["text"],
                     "source": source_file,
                     "source_file": source_file,
                     "file_type": extension.lstrip("."),
                     "page": page,
                     "chunk_id": chunk_id,
-                    "metadata": metadata,
+                    "metadata": {
+                        **metadata,
+                        **chunk["metadata"],
+                    },
                 }
             )
             chunk_id += 1
@@ -700,7 +703,12 @@ def process_document(
 
     if not all_chunks:
         raise TextExtractionError("Could not extract enough text from document")
-
+    print("\n===== CHUNKS TO EMBED =====")
+    for chunk in all_chunks:
+        print("DOC:", chunk["document_id"])
+        print("SOURCE:", chunk["source"])
+        print("TEXT:", chunk["text"][:200])
+        print("------------------------")
     add_chunks(all_chunks, user_id)
 
     logger.info("Embedded %s chunks successfully", len(all_chunks))

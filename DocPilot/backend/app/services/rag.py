@@ -26,12 +26,14 @@ def ask_question(
     question,
     user_id,
     source=None,
+    document_ids=None,
     model_name=None,
     retrieval_strategy=None,
     reranker=None,
     enhancements=None,
     mode="production",
 ):
+    print("RAG document_ids =", document_ids)
     print("\n===== FRONTEND VALUES =====")
     print("mode =", mode)
     print("enhancements =", enhancements)
@@ -66,6 +68,7 @@ def ask_question(
         query=question,
         user_id=user_id,
         source=source,
+        document_ids=document_ids,
         model_name=model_name,
         experiment_config=config,
     )

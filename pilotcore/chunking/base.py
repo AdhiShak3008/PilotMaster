@@ -6,7 +6,7 @@ class BaseChunker(ABC):
     """
     Base interface for all chunking strategies.
 
-    Every chunker must return a list of chunk strings.
+    Every chunker returns a list of chunk objects.
     """
 
     @abstractmethod
@@ -14,7 +14,7 @@ class BaseChunker(ABC):
         self,
         text: str,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> List[Dict[str, Any]]:
         """
         Split text into chunks.
 
@@ -23,6 +23,11 @@ class BaseChunker(ABC):
             **kwargs: Optional strategy-specific configuration.
 
         Returns:
-            List[str]: Ordered list of text chunks.
+            List[Dict[str, Any]] where each item has the form:
+
+            {
+                "text": "<chunk text>",
+                "metadata": {}
+            }
         """
         pass

@@ -10,7 +10,7 @@ from pilotcore.tracing.telemetry import emit_event
 from pilotcore.retrieval.bm25 import tokenize
 
 
-def retrieve_chunks(user_id, query, trace_id, source=None, top_k=3, **_):
+def retrieve_chunks(user_id, query, trace_id, source=None, document_ids=None, top_k=3, **_):
     start_time = time.perf_counter()
 
     documents = load_user_documents(user_id)
@@ -37,10 +37,17 @@ def retrieve_chunks(user_id, query, trace_id, source=None, top_k=3, **_):
             continue
 
         doc = documents[idx]
-
-        if source and source != doc.get("source"):
+        if (
+            document_ids 
+            and doc["document_id"] not in document_ids
+        ):
             continue
-
+        if (
+            source
+            and not document_ids
+            and source != doc.get("source")
+        ):
+            continue
         if score == 0:
             continue
 

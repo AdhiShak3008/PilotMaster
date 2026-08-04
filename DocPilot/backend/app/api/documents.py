@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 import shutil
 import os
+import uuid
 
 from DocPilot.backend.app.services.ingestion import (
     process_document,
@@ -38,26 +39,25 @@ router = APIRouter()
 
 @router.post("/upload")
 async def upload_document(
-    file: UploadFile = File(...),
+    files: list[UploadFile] = File(...),
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
 
     document_count = (
-        db.query(Document).filter(Document.owner_id == current_user.id).count()
+        db.query(Document)
+        .filter(Document.owner_id == current_user.id)
+        .count()
     )
 
-    if current_user.plan == "free" and document_count >= 3:
-
+    if (
+        current_user.plan == "free"
+        and document_count + len(files) > 3
+    ):
         raise HTTPException(
             status_code=403,
             detail="Free plan upload limit reached.",
         )
-
-    os.makedirs(
-        "temp",
-        exist_ok=True,
-    )
 
     allowed_extensions = [
         ".pdf",
@@ -71,7 +71,6 @@ async def upload_document(
         ".jpg",
         ".jpeg",
         ".webp",
-        # treated as plain-text/code-like content
         ".py",
         ".js",
         ".jsx",
@@ -91,63 +90,101 @@ async def upload_document(
         ".html",
     ]
 
-    file_ext = os.path.splitext(file.filename)[1].lower()
-
-    if file_ext not in allowed_extensions:
-
-        raise HTTPException(
-            status_code=400,
-            detail="Unsupported file type.",
-        )
-
-    file_path = f"temp/{file.filename}"
-
-    with open(
-        file_path,
-        "wb",
-    ) as buffer:
-
-        shutil.copyfileobj(
-            file.file,
-            buffer,
-        )
-
-    document = Document(
-        owner_id=current_user.id,
-        filename=file.filename,
-        filepath=file_path,
-        file_size=os.path.getsize(file_path),
+    upload_dir = os.path.join(
+        "storage",
+        f"user_{current_user.id}",
     )
 
-    db.add(document)
+    os.makedirs(
+        upload_dir,
+        exist_ok=True,
+    )
 
-    db.commit()
+    uploaded_documents = []
+    failed_documents = []
 
-    db.refresh(document)
+    for file in files:
 
-    try:
+        file_ext = os.path.splitext(file.filename)[1].lower()
 
-        process_document(
-            file_path,
-            current_user.id,
-            document.id,
-            mime_type=file.content_type,
+        if file_ext not in allowed_extensions:
+
+            failed_documents.append(
+                {
+                    "filename": file.filename,
+                    "detail": "Unsupported file type.",
+                }
+            )
+
+            continue
+
+        unique_filename = (
+            f"{uuid.uuid4()}_{file.filename}"
         )
 
-    except TextExtractionError as exc:
+        file_path = os.path.join(
+            upload_dir,
+            unique_filename,
+        )
 
-        db.delete(document)
+        with open(file_path, "wb") as buffer:
 
+            shutil.copyfileobj(
+                file.file,
+                buffer,
+            )
+
+        document = Document(
+            owner_id=current_user.id,
+            filename=file.filename,
+            filepath=file_path,
+            file_size=os.path.getsize(file_path),
+        )
+
+        db.add(document)
         db.commit()
+        db.refresh(document)
 
-        raise HTTPException(
-            status_code=422,
-            detail=str(exc),
-        ) from exc
+        try:
+
+            process_document(
+                file_path,
+                current_user.id,
+                document.id,
+                mime_type=file.content_type,
+            )
+
+        except TextExtractionError as exc:
+
+            db.delete(document)
+            db.commit()
+
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
+            failed_documents.append(
+                {
+                    "filename": file.filename,
+                    "detail": str(exc),
+                }
+            )
+
+            continue
+
+        uploaded_documents.append(
+            {
+                "document_id": document.id,
+                "filename": document.filename,
+            }
+        )
 
     return {
-        "message": "Document uploaded",
-        "document_id": document.id,
+        "message": (
+            f"{len(uploaded_documents)} document(s) uploaded, "
+            f"{len(failed_documents)} failed."
+        ),
+        "uploaded": uploaded_documents,
+        "failed": failed_documents,
     }
 
 
@@ -160,7 +197,11 @@ def get_documents(
     current_user=Depends(get_current_user),
 ):
 
-    documents = db.query(Document).filter(Document.owner_id == current_user.id).all()
+    documents = (
+        db.query(Document)
+        .filter(Document.owner_id == current_user.id)
+        .all()
+    )
 
     return documents
 
@@ -170,12 +211,29 @@ def reset_documents(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+
     reset_vector_store(current_user.id)
 
-    db.query(Document).filter(Document.owner_id == current_user.id).delete()
+    documents = (
+        db.query(Document)
+        .filter(Document.owner_id == current_user.id)
+        .all()
+    )
+
+    for document in documents:
+
+        if os.path.exists(document.filepath):
+            os.remove(document.filepath)
+
+    db.query(Document).filter(
+        Document.owner_id == current_user.id
+    ).delete()
+
     db.commit()
 
-    return {"message": "Vector store and documents cleared."}
+    return {
+        "message": "Vector store and documents cleared.",
+    }
 
 
 @router.delete("/{document_id}")
@@ -202,7 +260,6 @@ def delete_document(
         )
 
     if os.path.exists(document.filepath):
-
         os.remove(document.filepath)
 
     rebuild_index_without_document(

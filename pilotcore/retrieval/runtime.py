@@ -129,10 +129,13 @@ def retrieve(
         top_k = kwargs.pop("top_k", 7)
         query_embedding = get_embedding(query)
 
+        document_ids = kwargs.pop("document_ids", None)
+
         result = search_vectors(
             user_id=user_id,
             query_embedding=query_embedding,
             source=source,
+            document_ids=document_ids,
             trace_id=trace_id,
             top_k=top_k,
         )
@@ -164,7 +167,7 @@ def retrieve(
         source = kwargs.pop("source", None)
         trace_id = kwargs.pop("trace_id")
         top_k = kwargs.pop("top_k", 7)
-
+        document_ids = kwargs.pop("document_ids", None)
         query_variants = [query]
 
         if experiment_config and experiment_config.multi_query:
@@ -185,11 +188,12 @@ def retrieve(
         for query_variant in query_variants:
 
             query_embedding = get_embedding(query_variant)
-
+            print("RETRIEVER document_ids =", document_ids)
             vector_result = search_vectors(
                 user_id=user_id,
                 query_embedding=query_embedding,
                 source=source,
+                document_ids=document_ids,
                 trace_id=trace_id,
                 top_k=top_k,
             )
@@ -198,6 +202,7 @@ def retrieve(
                 user_id=user_id,
                 query=query_variant,
                 source=source,
+                document_ids=document_ids,
                 trace_id=trace_id,
                 top_k=top_k,
             )
