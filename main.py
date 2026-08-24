@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from DocPilot.backend.app.main import app as docpilot_app
 from TracePilot.backend.app.main import app as tracepilot_app
 from GaugePilot.backend.app.main import app as gaugepilot_app
+from DocPilot.backend.app.api.models import router as models_router
 
 app = FastAPI(title="PilotMaster")
 
@@ -14,6 +15,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(models_router, prefix="/models", tags=["models"])
 
 app.mount("/docpilot", docpilot_app)
 app.mount("/tracepilot", tracepilot_app)

@@ -55,9 +55,17 @@ def run_benchmark_endpoint(
     chunker_name = request.chunker or "parent_child"
     embed_name = request.embedding_model or "all-mpnet-base-v2"
 
+    raw_method = (request.retrieval_method or "hybrid").strip().lower()
+    if raw_method in ("vector", "faiss", "dense"):
+        method = "vector"
+    elif raw_method in ("lexical", "bm25", "sparse"):
+        method = "lexical"
+    else:
+        method = "hybrid"
+
     experiment_name = (
         f"{request.model}_"
-        f"{request.retrieval_method}_"
+        f"{method}_"
         f"{request.reranker}_"
         f"{chunker_name}_"
         f"{embed_name}_"
@@ -66,7 +74,7 @@ def run_benchmark_endpoint(
 
     config = ExperimentConfig(
         experiment_name=experiment_name,
-        retrieval_method=request.retrieval_method,
+        retrieval_method=method,
         chunker=chunker_name,
         embedding_model=embed_name,
     )

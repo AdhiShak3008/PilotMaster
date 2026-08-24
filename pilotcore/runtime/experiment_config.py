@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Literal, List, Optional
 
 
@@ -11,6 +11,20 @@ class ExperimentConfig(BaseModel):
         "lexical",
         "hybrid",
     ] = "hybrid"
+
+    @field_validator("retrieval_method", mode="before")
+    @classmethod
+    def normalize_retrieval_method(cls, v):
+        if not v:
+            return "hybrid"
+        v_str = str(v).strip().lower()
+        if v_str in ("vector", "faiss", "dense"):
+            return "vector"
+        if v_str in ("lexical", "bm25", "sparse"):
+            return "lexical"
+        if v_str in ("hybrid", "rrf"):
+            return "hybrid"
+        return v_str
 
     # Multi-Select Query Enhancements Array
     enhancements: List[str] = Field(default_factory=list)

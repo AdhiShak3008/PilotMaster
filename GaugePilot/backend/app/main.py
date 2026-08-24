@@ -28,6 +28,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from DocPilot.backend.app.api.models import router as models_router
+
 app.include_router(
     benchmark.router,
     prefix="/benchmark",
@@ -37,6 +39,12 @@ app.include_router(
 app.include_router(
     documents.router,
     prefix="/docs",
+)
+
+app.include_router(
+    models_router,
+    prefix="/models",
+    tags=["models"],
 )
 
 

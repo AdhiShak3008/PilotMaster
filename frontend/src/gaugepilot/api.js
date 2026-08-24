@@ -8,13 +8,19 @@ const API = axios.create({
 
 export async function getModels(token) {
   try {
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    try {
+      const response = await API.get("/models", { headers });
+      if (Array.isArray(response.data) && response.data.length > 0) return response.data;
+    } catch {
+      // fallback
+    }
+
     const rawApi = axios.create({
       baseURL: import.meta.env.VITE_API_BASE_URL || "",
     });
-    const response = await rawApi.get("/models/", {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-    return response.data;
+    const docpilotRes = await rawApi.get("/docpilot/models/", { headers });
+    return docpilotRes.data;
   } catch (e) {
     console.error("Failed to fetch models in gaugepilot:", e);
     return [];
