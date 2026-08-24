@@ -275,32 +275,6 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "4px 10px",
-              borderRadius: "9999px",
-              background: "rgba(34, 197, 94, 0.08)",
-              border: "1px solid rgba(34, 197, 94, 0.2)",
-              fontSize: "11px",
-              color: "#4ade80",
-              fontWeight: 600,
-            }}
-          >
-            <span
-              style={{
-                width: "6px",
-                height: "6px",
-                borderRadius: "50%",
-                background: "#22c55e",
-                boxShadow: "0 0 8px #22c55e",
-              }}
-            />
-            Kernel v2.0
-          </div>
-
           <button
             onClick={handleQuickDemo}
             title="Instant one-click access with sample data and live Groq inference"

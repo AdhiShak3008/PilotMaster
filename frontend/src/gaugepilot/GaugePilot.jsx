@@ -262,7 +262,6 @@ export default function GaugePilot({ onHome, onDocPilot, onTracePilot }) {
                     fontSize: "13px",
                     fontWeight: isActive ? 600 : 400,
                     textAlign: "left",
-                    transition: "all 0.15s ease",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     boxSizing: "border-box",

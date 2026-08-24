@@ -9,14 +9,15 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
+import ConfigBadge from "../ConfigBadge";
 import { parseConfigDetails } from "../../utils/configUtils";
 
 const METRICS = [
   { key: "faithfulness", label: "Faithfulness" },
-  { key: "grounding", label: "Grounding" },
-  { key: "quality", label: "Quality" },
-  { key: "coverage", label: "Coverage" },
-  { key: "latency", label: "Latency" },
+  { key: "grounding",    label: "Grounding" },
+  { key: "quality",      label: "Quality" },
+  { key: "coverage",     label: "Coverage" },
+  { key: "latency",      label: "Latency" },
 ];
 
 const LOWER_IS_BETTER = new Set(["latency"]);
@@ -99,44 +100,42 @@ export default function RadarView({ data }) {
         style={{
           background: "rgba(15, 20, 36, 0.97)",
           border: "1px solid rgba(168, 85, 247, 0.35)",
-          borderRadius: 14,
-          padding: "12px 16px",
+          borderRadius: 12,
+          padding: "10px 14px",
           fontSize: 12,
-          minWidth: 260,
+          minWidth: 220,
           boxShadow: "0 16px 36px rgba(0,0,0,0.6)",
         }}
       >
-        <div style={{ color: "white", fontWeight: 700, marginBottom: 10, fontSize: "13px", borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: "6px" }}>
+        <div style={{ color: "white", fontWeight: 700, marginBottom: 8, fontSize: "12.5px", borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: "5px" }}>
           📊 {label} Comparison
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           {payload.map((entry) => {
             const info = rawMap[entry.dataKey];
             const rawVal = info?.metrics?.[metricKey];
-            const details = info?.details;
+            let rawFormatted = "";
+            if (rawVal != null) {
+              rawFormatted = metricKey === "latency" ? `(${Number(rawVal).toFixed(1)} ms)` : `(${Number(rawVal).toFixed(2)})`;
+            }
 
             return (
               <div
                 key={entry.dataKey}
                 style={{
-                  padding: "6px 8px",
-                  borderRadius: "8px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "3px 6px",
+                  borderRadius: "6px",
                   background: "rgba(255,255,255,0.03)",
-                  borderLeft: `3px solid ${entry.color}`,
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ color: entry.color, fontWeight: 700 }}>{entry.dataKey}</span>
-                  <span style={{ color: "#ffffff", fontWeight: 600 }}>
-                    Score: {entry.value}/100 {rawVal != null ? `(${Number(rawVal).toFixed(2)})` : ""}
-                  </span>
-                </div>
-                {details && (
-                  <div style={{ fontSize: "10.5px", color: "rgba(255,255,255,0.6)", marginTop: "2px" }}>
-                    {details.model} · {details.retrieval} · {details.reranker}
-                  </div>
-                )}
+                <span style={{ color: entry.color, fontWeight: 700 }}>{entry.dataKey}</span>
+                <span style={{ color: "#ffffff", fontWeight: 600, fontSize: "11.5px", marginLeft: "10px" }}>
+                  {entry.value}/100 {rawFormatted}
+                </span>
               </div>
             );
           })}
@@ -155,12 +154,12 @@ export default function RadarView({ data }) {
 
   return (
     <div>
-      <ResponsiveContainer width="100%" height={380}>
-        <RadarChart data={chartData} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
+      <ResponsiveContainer width="100%" height={480}>
+        <RadarChart data={chartData} outerRadius="75%" margin={{ top: 25, right: 35, bottom: 25, left: 35 }}>
           <PolarGrid stroke="rgba(255,255,255,0.08)" />
           <PolarAngleAxis
             dataKey="metric"
-            tick={{ fill: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: 600 }}
+            tick={{ fill: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: 600 }}
           />
           <PolarRadiusAxis
             angle={30}
@@ -178,7 +177,7 @@ export default function RadarView({ data }) {
               fontSize: 12,
               maxHeight: 70,
               overflowY: "auto",
-              paddingTop: "10px",
+              paddingTop: "12px",
             }}
             formatter={(value) => (
               <span style={{ color: "rgba(255,255,255,0.85)", fontWeight: 600, marginRight: 8 }}>
@@ -196,17 +195,40 @@ export default function RadarView({ data }) {
                 dataKey={cLabel}
                 stroke={getColor(i)}
                 fill={getColor(i)}
-                fillOpacity={0.12}
-                strokeWidth={2}
+                fillOpacity={0.14}
+                strokeWidth={2.5}
               />
             );
           })}
         </RadarChart>
       </ResponsiveContainer>
 
-      <p style={{ margin: "16px 0 0", fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
+      <p style={{ margin: "14px 0 0", fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
         Each axis is normalized from 0–100 across displayed configurations. Latency is inverted so outward represents better speed.
       </p>
+
+      {/* Configuration Reference Bar */}
+      <div style={{
+        marginTop: "16px",
+        padding: "14px 18px",
+        background: "rgba(255, 255, 255, 0.02)",
+        borderRadius: "14px",
+        border: "1px solid rgba(255, 255, 255, 0.06)",
+      }}>
+        <div style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", marginBottom: "10px" }}>
+          Configuration Reference (Hover any badge for full specifications)
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+          {displayRows.map((r, i) => (
+            <ConfigBadge
+              key={r.config || i}
+              configName={r.config}
+              label={r.configLabel || `Config ${i + 1}`}
+              isBest={i === 0}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

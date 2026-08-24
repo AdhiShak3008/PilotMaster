@@ -420,20 +420,6 @@ export default function ExperimentSetup({ onRunChange }) {
             >
               GaugePilot Benchmark Studio
             </h1>
-            <span
-              style={{
-                padding: "3px 10px",
-                borderRadius: "9999px",
-                background: "rgba(168, 85, 247, 0.18)",
-                color: "#c084fc",
-                fontSize: "11px",
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "0.06em",
-              }}
-            >
-              Kernel v2.0
-            </span>
           </div>
           <p style={{ margin: "4px 0 0", fontSize: "13px", color: "var(--text-secondary)" }}>
             Configure retrieval pipelines, evaluate faithfulness, and compare multi-model leaderboards.

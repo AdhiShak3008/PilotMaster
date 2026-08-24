@@ -9,14 +9,15 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import ConfigBadge from "../ConfigBadge";
 import { parseConfigDetails } from "../../utils/configUtils";
 
 const METRICS = [
   { key: "faithfulness", label: "Faithfulness" },
-  { key: "grounding", label: "Grounding" },
-  { key: "quality", label: "Quality" },
-  { key: "coverage", label: "Coverage" },
-  { key: "latency", label: "Latency" },
+  { key: "grounding",    label: "Grounding" },
+  { key: "quality",      label: "Quality" },
+  { key: "coverage",     label: "Coverage" },
+  { key: "latency",      label: "Latency" },
 ];
 
 const LOWER_IS_BETTER = new Set(["latency"]);
@@ -101,44 +102,42 @@ export default function ParallelCoordinatesView({ data }) {
         style={{
           background: "rgba(15, 20, 36, 0.97)",
           border: "1px solid rgba(168, 85, 247, 0.35)",
-          borderRadius: "14px",
-          padding: "12px 16px",
-          fontSize: "12px",
-          minWidth: "260px",
+          borderRadius: 12,
+          padding: "10px 14px",
+          fontSize: 12,
+          minWidth: 220,
           boxShadow: "0 16px 36px rgba(0,0,0,0.6)",
         }}
       >
-        <div style={{ color: "white", fontWeight: 700, marginBottom: 10, fontSize: "13px", borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: "6px" }}>
-          📊 {label} Coordinate Trajectory
+        <div style={{ color: "white", fontWeight: 700, marginBottom: 8, fontSize: "12.5px", borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: "5px" }}>
+          📊 {label} Trajectory
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           {payload.map((entry) => {
             const info = rawByConfigAndMetric[entry.dataKey];
             const rawVal = info?.metrics?.[metricKey];
-            const details = info?.details;
+            let rawFormatted = "";
+            if (rawVal != null) {
+              rawFormatted = metricKey === "latency" ? `(${Number(rawVal).toFixed(1)} ms)` : `(${Number(rawVal).toFixed(2)})`;
+            }
 
             return (
               <div
                 key={entry.dataKey}
                 style={{
-                  padding: "6px 8px",
-                  borderRadius: "8px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "3px 6px",
+                  borderRadius: "6px",
                   background: "rgba(255,255,255,0.03)",
-                  borderLeft: `3px solid ${entry.color}`,
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ color: entry.color, fontWeight: 700 }}>{entry.dataKey}</span>
-                  <span style={{ color: "rgba(255,255,255,0.9)", fontWeight: 600 }}>
-                    Score: {entry.value}/100 {rawVal != null ? `(${Number(rawVal).toFixed(2)})` : ""}
-                  </span>
-                </div>
-                {details && (
-                  <div style={{ fontSize: "10.5px", color: "rgba(255,255,255,0.6)", marginTop: "2px" }}>
-                    {details.model} · {details.retrieval} · {details.reranker}
-                  </div>
-                )}
+                <span style={{ color: entry.color, fontWeight: 700 }}>{entry.dataKey}</span>
+                <span style={{ color: "rgba(255,255,255,0.9)", fontWeight: 600, fontSize: "11.5px", marginLeft: "10px" }}>
+                  {entry.value}/100 {rawFormatted}
+                </span>
               </div>
             );
           })}
@@ -215,6 +214,29 @@ export default function ParallelCoordinatesView({ data }) {
       <p style={{ margin: "16px 0 0", fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>
         Each metric is normalized from 0–100 across displayed configurations. Latency is inverted so higher represents better performance.
       </p>
+
+      {/* Configuration Reference Bar */}
+      <div style={{
+        marginTop: "16px",
+        padding: "14px 18px",
+        background: "rgba(255, 255, 255, 0.02)",
+        borderRadius: "14px",
+        border: "1px solid rgba(255, 255, 255, 0.06)",
+      }}>
+        <div style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", marginBottom: "10px" }}>
+          Configuration Reference (Hover any badge for full specifications)
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+          {displayRows.map((r, i) => (
+            <ConfigBadge
+              key={r.config || i}
+              configName={r.config}
+              label={r.configLabel || `Config ${i + 1}`}
+              isBest={i === 0}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

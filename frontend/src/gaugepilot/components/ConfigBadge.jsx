@@ -10,26 +10,75 @@ export default function ConfigBadge({
   isBest = false,
   medal = null,
   fontSize = "13px",
+  placement = "top",
 }) {
   const [hovered, setHovered] = useState(false);
-  const [popoverPos, setPopoverPos] = useState({ top: 0, left: 0, placeAbove: true });
+  const [popoverPos, setPopoverPos] = useState({ top: 0, left: 0, placeAbove: true, maxHeight: 320 });
   const badgeRef = useRef(null);
 
   const displayLabel = label || configName || "Config";
   const details = parseConfigDetails(configName);
 
-  const handleMouseEnter = () => {
-    if (badgeRef.current) {
-      const rect = badgeRef.current.getBoundingClientRect();
-      const placeAbove = rect.top > 260; // place above if room, else below
-      setPopoverPos({
-        top: placeAbove ? rect.top - 8 : rect.bottom + 8,
-        left: rect.left + rect.width / 2,
-        placeAbove,
-      });
+  const updatePosition = () => {
+    if (!badgeRef.current) return;
+    const rect = badgeRef.current.getBoundingClientRect();
+    const popoverWidth = 320;
+
+    // If badge is off screen, hide popover
+    if (rect.bottom < 0 || rect.top > window.innerHeight) {
+      setHovered(false);
+      return;
     }
+
+    // Default to ALWAYS upward (placeAbove = true)
+    let placeAbove = true;
+    if (placement === "bottom") {
+      placeAbove = false;
+    } else if (placement === "auto") {
+      placeAbove = rect.top >= 220;
+    }
+
+    let top = 0;
+    let maxHeight = 340;
+    if (placeAbove) {
+      top = rect.top - 8;
+      maxHeight = Math.min(340, Math.max(160, rect.top - 16));
+    } else {
+      top = rect.bottom + 8;
+      maxHeight = Math.min(340, Math.max(160, window.innerHeight - rect.bottom - 16));
+    }
+
+    const idealLeft = rect.left + rect.width / 2;
+    const minLeft = popoverWidth / 2 + 16;
+    const maxLeft = window.innerWidth - popoverWidth / 2 - 16;
+    const clampedLeft = Math.max(minLeft, Math.min(maxLeft, idealLeft));
+
+    setPopoverPos({
+      top,
+      left: clampedLeft,
+      placeAbove,
+      maxHeight,
+    });
+  };
+
+  const handleMouseEnter = () => {
+    updatePosition();
     setHovered(true);
   };
+
+  useEffect(() => {
+    if (!hovered) return;
+    const handleScrollOrResize = () => {
+      updatePosition();
+    };
+
+    window.addEventListener("scroll", handleScrollOrResize, true);
+    window.addEventListener("resize", handleScrollOrResize);
+    return () => {
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+      window.removeEventListener("resize", handleScrollOrResize);
+    };
+  }, [hovered]);
 
   return (
     <div
@@ -99,7 +148,6 @@ export default function ConfigBadge({
           fontWeight: isBest ? 700 : 600,
           fontSize,
           letterSpacing: "-0.2px",
-          transition: "all 0.15s ease",
           boxShadow: hovered ? "0 4px 16px rgba(168, 85, 247, 0.2)" : "none",
         }}
       >
@@ -120,20 +168,22 @@ export default function ConfigBadge({
         <div
           style={{
             position: "fixed",
-            top: popoverPos.placeAbove ? popoverPos.top : popoverPos.top,
+            top: popoverPos.top,
             left: popoverPos.left,
             transform: popoverPos.placeAbove ? "translate(-50%, -100%)" : "translate(-50%, 0)",
             zIndex: 99999,
             width: "min(320px, calc(100vw - 32px))",
+            maxHeight: "min(320px, calc(100vh - 40px))",
+            overflowY: "auto",
             padding: "14px 16px",
             borderRadius: "16px",
-            background: "rgba(15, 20, 36, 0.96)",
+            background: "rgba(15, 20, 36, 0.98)",
             border: "1px solid rgba(168, 85, 247, 0.35)",
-            backdropFilter: "blur(20px)",
+            backdropFilter: "blur(24px)",
             boxShadow: "0 20px 40px rgba(0, 0, 0, 0.7), 0 0 20px rgba(168, 85, 247, 0.15)",
             pointerEvents: "none",
             boxSizing: "border-box",
-            animation: "fadeIn 0.15s ease-out",
+            userSelect: "none",
           }}
         >
           {/* Header */}
