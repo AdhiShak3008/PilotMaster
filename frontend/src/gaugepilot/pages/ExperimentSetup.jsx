@@ -11,16 +11,10 @@ import LoadingOverlay from "../../components/LoadingOverlay";
 const DEFAULT_MODEL_OPTIONS = [
   { value: "openai/gpt-oss-120b", label: "GPT-OSS 120B", description: "High-intelligence frontier model" },
   { value: "openai/gpt-oss-20b", label: "GPT-OSS 20B", description: "Ultra-fast & efficient RAG engine" },
-  { value: "qwen/qwen3.6-27b", label: "Qwen 3.6 27B", description: "High-precision reasoning & context" },
-  { value: "llama-3.3-70b-versatile", label: "Llama 3.3 70B", description: "Best overall benchmark accuracy" },
-  { value: "llama-3.1-8b-instant", label: "Llama 3.1 8B", description: "Ultra-fast lightweight latency" },
-  { value: "llama-3.2-3b-preview", label: "Llama 3.2 3B", description: "Compact low memory footprint" },
-  { value: "llama-3.2-1b-preview", label: "Llama 3.2 1B", description: "Edge efficiency" },
-  { value: "llama-3.2-11b-vision-preview", label: "Llama 3.2 11B Vision", description: "Multimodal and text extraction" },
-  { value: "mixtral-8x7b-32768", label: "Mixtral 8x7B", description: "32k High-speed MoE" },
-  { value: "gemma2-9b-it", label: "Gemma 2 9B", description: "Google instruction fine-tuned" },
-  { value: "deepseek-r1-distill-llama-70b", label: "DeepSeek R1 70B", description: "Step-by-step reasoning" },
+  { value: "qwen/qwen3.6-27b", label: "Qwen 3.6 27B", description: "High-precision reasoning & vision" },
+  { value: "deepseek-r1-distill-llama-70b", label: "DeepSeek R1 70B", description: "Advanced chain-of-thought reasoning" },
 ];
+
 
 
 const ENHANCEMENT_CATEGORIES = [
@@ -348,14 +342,8 @@ export default function ExperimentSetup({ onRunChange }) {
     "openai/gpt-oss-120b": "GPT-OSS 120B",
     "openai/gpt-oss-20b": "GPT-OSS 20B",
     "qwen/qwen3.6-27b": "Qwen 3.6 27B",
-    "llama-3.3-70b-versatile": "Llama 3.3 70B",
-    "llama-3.1-8b-instant": "Llama 3.1 8B",
-    "llama-3.2-3b-preview": "Llama 3.2 3B",
-    "llama-3.2-1b-preview": "Llama 3.2 1B",
-    "llama-3.2-11b-vision-preview": "Llama 3.2 11B Vision",
-    "mixtral-8x7b-32768": "Mixtral 8x7B",
-    "gemma2-9b-it": "Gemma 2 9B",
     "deepseek-r1-distill-llama-70b": "DeepSeek R1 70B",
+
     parent_child: "Parent-Child",
     recursive: "Recursive",
     fixed: "Fixed Character",

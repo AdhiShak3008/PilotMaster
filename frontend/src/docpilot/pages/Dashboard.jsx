@@ -448,7 +448,8 @@ function Dashboard({
   const [files, setFiles] = useState([]);
   const [question, setQuestion] = useState("");
   const [source, setSource] = useState("");
-  const [selectedModel, setSelectedModel] = useState("llama-3.3-70b-versatile");
+  const [selectedModel, setSelectedModel] = useState("openai/gpt-oss-120b");
+
   const [models, setModels] = useState([]);
   const [showModels, setShowModels] = useState(false);
   const [messages, setMessages] = useState([]);

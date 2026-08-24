@@ -440,8 +440,9 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
                     PilotMaster · Powered by PilotCore Kernel
                 </p>
                 <p style={{ margin: 0, fontSize: "12px", color: "var(--text-muted)" }}>
-                    llama-3.3-70b · all-mpnet-base-v2
+                    GPT-OSS 120B · all-mpnet-base-v2
                 </p>
+
             </footer>
         </div>
     );

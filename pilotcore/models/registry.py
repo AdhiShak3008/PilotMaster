@@ -16,64 +16,14 @@ MODELS = [
     {
         "id": "qwen/qwen3.6-27b",
         "label": "Qwen 3.6 27B",
-        "subtitle": "High-Precision Reasoning & Context",
+        "subtitle": "High-Precision Reasoning & Vision",
         "provider": "groq",
         "category": "general",
-    },
-    {
-        "id": "llama-3.3-70b-versatile",
-        "label": "Llama 3.3 70B",
-        "subtitle": "Best Overall & Intelligence",
-        "provider": "groq",
-        "category": "general",
-    },
-    {
-        "id": "llama-3.1-8b-instant",
-        "label": "Llama 3.1 8B",
-        "subtitle": "Ultra-fast & Efficient",
-        "provider": "groq",
-        "category": "fast",
-    },
-
-    {
-        "id": "llama-3.2-3b-preview",
-        "label": "Llama 3.2 3B",
-        "subtitle": "Compact & Fast",
-        "provider": "groq",
-        "category": "fast",
-    },
-    {
-        "id": "llama-3.2-1b-preview",
-        "label": "Llama 3.2 1B",
-        "subtitle": "Ultra-compact Edge",
-        "provider": "groq",
-        "category": "fast",
-    },
-    {
-        "id": "llama-3.2-11b-vision-preview",
-        "label": "Llama 3.2 11B Vision",
-        "subtitle": "Multimodal & Vision Capable",
-        "provider": "groq",
-        "category": "general",
-    },
-    {
-        "id": "mixtral-8x7b-32768",
-        "label": "Mixtral 8x7B",
-        "subtitle": "32k High-Speed MoE",
-        "provider": "groq",
-        "category": "general",
-    },
-    {
-        "id": "gemma2-9b-it",
-        "label": "Gemma 2 9B",
-        "subtitle": "Google Efficient Instruction",
-        "provider": "groq",
-        "category": "fast",
     },
     {
         "id": "deepseek-r1-distill-llama-70b",
         "label": "DeepSeek R1 70B",
-        "subtitle": "Advanced Reasoning",
+        "subtitle": "Advanced Chain-of-Thought Reasoning",
         "provider": "groq",
         "category": "reasoning",
     },
@@ -92,7 +42,10 @@ SUPPORTED_MODELS = {
     for model in MODELS
 }
 
-# Aliases for convenience
-SUPPORTED_MODELS["llama-3.1-8b"] = SUPPORTED_MODELS["llama-3.1-8b-instant"]
-SUPPORTED_MODELS["llama-3.3-70b"] = SUPPORTED_MODELS["llama-3.3-70b-versatile"]
+# Compatibility aliases
+SUPPORTED_MODELS["gpt-oss-120b"] = SUPPORTED_MODELS["openai/gpt-oss-120b"]
+SUPPORTED_MODELS["gpt-oss-20b"] = SUPPORTED_MODELS["openai/gpt-oss-20b"]
+SUPPORTED_MODELS["qwen-3.6-27b"] = SUPPORTED_MODELS["qwen/qwen3.6-27b"]
+SUPPORTED_MODELS["deepseek-r1"] = SUPPORTED_MODELS["deepseek-r1-distill-llama-70b"]
+
 
