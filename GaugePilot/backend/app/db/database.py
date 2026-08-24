@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -13,3 +13,10 @@ SessionLocal = sessionmaker(
 )
 
 Base = declarative_base()
+
+try:
+    with engine.connect() as conn:
+        conn.execute(text("ALTER TABLE documents ADD COLUMN IF NOT EXISTS chunks_json TEXT;"))
+        conn.commit()
+except Exception as e:
+    pass
