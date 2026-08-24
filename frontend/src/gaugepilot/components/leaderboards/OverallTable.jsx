@@ -1,4 +1,8 @@
-export default function OverallTable({ data }) {
+import { useMemo } from "react";
+import ConfigBadge from "../ConfigBadge";
+import { buildConfigLabelMap } from "../../utils/configUtils";
+
+export default function OverallTable({ data, labelMap = null }) {
   if (!data || data.length === 0) {
     return (
       <div style={{
@@ -18,9 +22,10 @@ export default function OverallTable({ data }) {
 
   const isOverall = data[0]?.metrics !== undefined;
 
-  const formatConfigName = (name) =>
-    name?.replaceAll("_", " ").replaceAll("+", " + ")
-      .replace("NoRewrite", "(No Rewrite)").replace("NoReranker", "(No Reranker)") ?? "";
+  const resolvedLabelMap = useMemo(() => {
+    if (labelMap && labelMap.size > 0) return labelMap;
+    return buildConfigLabelMap(data);
+  }, [labelMap, data]);
 
   const getMedal = (rank) => {
     if (rank === 1) return { label: "🥇", color: "#f59e0b" };
@@ -69,10 +74,11 @@ export default function OverallTable({ data }) {
     </span>
   );
 
+  // Single Metric View
   if (!isOverall) {
     return (
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", maxWidth: "600px" }}>
+      <div className="table-scroll-container" style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "460px", maxWidth: "600px" }}>
           <thead>
             <tr>
               <th style={{ ...th, width: "70px", textAlign: "center" }}>Rank</th>
@@ -83,6 +89,7 @@ export default function OverallTable({ data }) {
           <tbody>
             {data.map((row, i) => {
               const medal = getMedal(i + 1);
+              const configLabel = resolvedLabelMap.get(row.config_name) || `Config ${i + 1}`;
               return (
                 <tr
                   key={row.config_name}
@@ -100,7 +107,11 @@ export default function OverallTable({ data }) {
                     }}>{medal.label}</span>
                   </td>
                   <td style={td}>
-                    <span style={{ fontWeight: i === 0 ? 600 : 400 }}>{formatConfigName(row.config_name)}</span>
+                    <ConfigBadge
+                      configName={row.config_name}
+                      label={configLabel}
+                      isBest={i === 0}
+                    />
                   </td>
                   <td style={{ ...td, textAlign: "right" }}>
                     {metricCell(row.value)}
@@ -114,9 +125,10 @@ export default function OverallTable({ data }) {
     );
   }
 
+  // Overall Combined View
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+    <div className="table-scroll-container" style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "680px" }}>
         <thead>
           <tr>
             <th style={{ ...th, textAlign: "center", width: "60px" }}>Rank</th>
@@ -132,6 +144,7 @@ export default function OverallTable({ data }) {
         <tbody>
           {data.map((row, i) => {
             const medal = getMedal(i + 1);
+            const configLabel = resolvedLabelMap.get(row.config_name) || `Config ${i + 1}`;
             return (
               <tr
                 key={row.config_name}
@@ -149,19 +162,11 @@ export default function OverallTable({ data }) {
                   }}>{medal.label}</span>
                 </td>
                 <td style={td}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    {i === 0 && (
-                      <span style={{
-                        fontSize: "10px", fontWeight: 700, padding: "2px 6px",
-                        borderRadius: "4px", background: "rgba(245,158,11,0.15)",
-                        border: "1px solid rgba(245,158,11,0.3)", color: "#f59e0b",
-                        letterSpacing: "0.05em", textTransform: "uppercase",
-                      }}>Best</span>
-                    )}
-                    <span style={{ fontWeight: i === 0 ? 600 : 400, color: i === 0 ? "white" : "rgba(255,255,255,0.75)" }}>
-                      {formatConfigName(row.config_name)}
-                    </span>
-                  </div>
+                  <ConfigBadge
+                    configName={row.config_name}
+                    label={configLabel}
+                    isBest={i === 0}
+                  />
                 </td>
                 <td style={{ ...td, textAlign: "right" }}>
                   <span style={{ fontFamily: "'Courier New', monospace", fontWeight: 600, color: "rgba(255,255,255,0.7)" }}>

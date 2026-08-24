@@ -276,7 +276,7 @@ export default function TraceExplorer({
 
 
           {/* Action Toolbar */}
-          <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+          <div className="pill-scroll-bar" style={{ display: "flex", gap: "8px", alignItems: "center", overflowX: "auto", maxWidth: "100%", paddingBottom: "2px" }}>
             <a
               href="/home"
               onClick={(e) => {

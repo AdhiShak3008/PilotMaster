@@ -3,6 +3,7 @@ import {
   ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from "recharts";
 import ExperimentSelector from "../ExperimentSelector";
+import { parseConfigDetails } from "../../utils/configUtils";
 
 const METRICS = [
   { value: "faithfulness", label: "Faithfulness", description: "Answer accuracy" },
@@ -24,26 +25,44 @@ export default function ScatterView({ data }) {
     () =>
       (data ?? [])
         .filter((row) => row[xMetric] != null && row[yMetric] != null)
-        .map((row) => ({ config: row.config, x: row[xMetric], y: row[yMetric] })),
+        .map((row) => ({
+          config: row.config,
+          configLabel: row.configLabel || row.config,
+          configDetails: row.configDetails || parseConfigDetails(row.config),
+          x: row[xMetric],
+          y: row[yMetric],
+        })),
     [data, xMetric, yMetric]
   );
 
   const CustomTooltip = ({ active, payload }) => {
     if (!active || !payload?.length) return null;
     const p = payload[0].payload;
+    const details = p.configDetails || parseConfigDetails(p.config);
+
     return (
       <div style={{
-        background: "rgba(15,15,25,0.95)", border: "1px solid rgba(255,255,255,0.12)",
-        borderRadius: "10px", padding: "10px 14px", fontSize: "12px",
+        background: "rgba(15, 20, 36, 0.97)",
+        border: "1px solid rgba(168, 85, 247, 0.35)",
+        borderRadius: "14px",
+        padding: "12px 16px",
+        fontSize: "12px",
+        boxShadow: "0 16px 36px rgba(0,0,0,0.6)",
+        maxWidth: "300px",
       }}>
-        <div style={{ fontWeight: 700, color: "white", marginBottom: "4px" }}>
-          {p.config?.replaceAll("_", " ")}
+        <div style={{ fontWeight: 700, color: "white", fontSize: "13px", marginBottom: "6px" }}>
+          🏷️ {p.configLabel}
         </div>
-        <div style={{ color: "rgba(255,255,255,0.6)" }}>
-          {metricLabel(xMetric)}: <span style={{ color: "white" }}>{Number(p.x).toFixed(2)}</span>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "11.5px", color: "rgba(255,255,255,0.8)" }}>
+          <div>{metricLabel(xMetric)}: <strong style={{ color: "#38bdf8" }}>{Number(p.x).toFixed(2)}</strong></div>
+          <div>{metricLabel(yMetric)}: <strong style={{ color: "#c084fc" }}>{Number(p.y).toFixed(2)}</strong></div>
         </div>
-        <div style={{ color: "rgba(255,255,255,0.6)" }}>
-          {metricLabel(yMetric)}: <span style={{ color: "white" }}>{Number(p.y).toFixed(2)}</span>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "10.5px", color: "rgba(255,255,255,0.6)", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "6px", marginTop: "6px" }}>
+          <div>Model: {details.model}</div>
+          <div>Retrieval: {details.retrieval} · {details.reranker}</div>
+          <div>Enhancements: {details.enhancements?.join(", ")}</div>
         </div>
       </div>
     );

@@ -1,17 +1,7 @@
-// Normalizes the leaderboard payload (separate ranked arrays per metric —
-// overall / faithfulness / grounding / retrieval_quality / query_coverage /
-// latency, each shaped like [{ config_name, value, ... }]) into one flat row
-// per configuration:
-//
-//   { config, faithfulness, grounding, quality, coverage, latency, averageRank }
-//
-// This is the shape every visualization component consumes, so charts never
-// need to know about the underlying leaderboard structure.
-//
-// Defensive by design: if a row already carries a nested `metrics` object
-// (e.g. { config_name, metrics: { faithfulness, semantic_grounding, ... } }),
-// that takes priority over the per-category `value` field, so this keeps
-// working if the API response shape evolves either way.
+import { buildConfigLabelMap, parseConfigDetails } from "../utils/configUtils";
+
+// Normalizes the leaderboard payload into one flat row per configuration:
+//   { config, configLabel, configDetails, faithfulness, grounding, quality, coverage, latency, averageRank }
 
 const CATEGORY_TO_METRIC = {
   faithfulness: "faithfulness",
@@ -44,14 +34,21 @@ function extractValue(row, category) {
 export function useVisualizations(leaderboard) {
   if (!leaderboard) return [];
 
+  const labelMap = buildConfigLabelMap(leaderboard);
   const configMap = new Map();
+
   const ensureConfig = (name) => {
-    if (!configMap.has(name)) configMap.set(name, { config: name });
+    if (!configMap.has(name)) {
+      configMap.set(name, {
+        config: name,
+        configLabel: labelMap.get(name) || `Config ${configMap.size + 1}`,
+        configDetails: parseConfigDetails(name),
+      });
+    }
     return configMap.get(name);
   };
 
-  // Seed every config that appears anywhere in the leaderboard first, so a
-  // configuration missing one metric still shows up with the rest filled in.
+  // Seed every config that appears anywhere in the leaderboard first
   Object.values(leaderboard).forEach((rows) => {
     (rows ?? []).forEach((row) => {
       if (row?.config_name) ensureConfig(row.config_name);
@@ -66,9 +63,6 @@ export function useVisualizations(leaderboard) {
     });
   });
 
-  // Average rank lives on the "overall" array rather than as its own
-  // category — the backend has used both `average_rank` and `avg_rank`
-  // for this field at different times, so support both.
   (leaderboard.overall ?? []).forEach((row) => {
     if (!row?.config_name) return;
     const target = ensureConfig(row.config_name);

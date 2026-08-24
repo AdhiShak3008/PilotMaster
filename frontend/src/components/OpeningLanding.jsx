@@ -232,10 +232,12 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
       <header
         style={{
           width: "100%",
-          padding: "16px 36px",
+          padding: "14px clamp(16px, 4vw, 36px)",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          flexWrap: "wrap",
+          gap: "12px",
           borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
           background: "rgba(4, 7, 17, 0.85)",
           backdropFilter: "blur(20px)",
@@ -244,70 +246,71 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
           flexShrink: 0,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <div
             style={{
-              width: "34px",
-              height: "34px",
+              width: "32px",
+              height: "32px",
               borderRadius: "10px",
               background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: "18px",
+              fontSize: "16px",
               fontWeight: 800,
               boxShadow: "0 0 20px rgba(59, 130, 246, 0.4)",
+              flexShrink: 0,
             }}
           >
             ⚡
           </div>
           <div>
-            <div style={{ fontSize: "19px", fontWeight: 800, letterSpacing: "-0.5px", color: "#ffffff" }}>
+            <div style={{ fontSize: "18px", fontWeight: 800, letterSpacing: "-0.5px", color: "#ffffff" }}>
               PilotMaster
             </div>
-            <div style={{ fontSize: "11px", color: "#94a3b8", letterSpacing: "0.04em", textTransform: "uppercase", fontWeight: 600 }}>
-              Observable AI Execution Ecosystem
+            <div style={{ fontSize: "10px", color: "#94a3b8", letterSpacing: "0.04em", textTransform: "uppercase", fontWeight: 600 }}>
+              Observable AI Ecosystem
             </div>
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "8px",
-              padding: "5px 12px",
+              gap: "6px",
+              padding: "4px 10px",
               borderRadius: "9999px",
               background: "rgba(34, 197, 94, 0.08)",
               border: "1px solid rgba(34, 197, 94, 0.2)",
-              fontSize: "12px",
+              fontSize: "11px",
               color: "#4ade80",
               fontWeight: 600,
             }}
           >
             <span
               style={{
-                width: "7px",
-                height: "7px",
+                width: "6px",
+                height: "6px",
                 borderRadius: "50%",
                 background: "#22c55e",
                 boxShadow: "0 0 8px #22c55e",
               }}
             />
-            Kernel v2.0 Active
+            Kernel v2.0
           </div>
 
           <button
             onClick={handleQuickDemo}
             title="Instant one-click access with sample data and live Groq inference"
             style={{
-              padding: "7px 16px",
+              padding: "6px 14px",
               borderRadius: "9999px",
               background: "linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(168, 85, 247, 0.2))",
               border: "1px solid rgba(147, 197, 253, 0.3)",
               color: "#ffffff",
-              fontSize: "12px",
+              fontSize: "11px",
               fontWeight: 600,
               cursor: "pointer",
               transition: "all 0.2s ease",
@@ -321,29 +324,38 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
               e.currentTarget.style.transform = "translateY(0)";
             }}
           >
-            ⚡ Quick Demo Access
+            ⚡ Quick Demo
           </button>
         </div>
       </header>
 
-      {/* MAIN HERO SPLIT VIEW (BALANCED VERTICAL ALIGNMENT) */}
+      {/* MAIN HERO SPLIT VIEW (RESPONSIVE STACK ON MOBILE) */}
       <main
         style={{
           flex: 1,
-          display: "grid",
-          gridTemplateColumns: "1.25fr 0.75fr",
-          gap: "36px",
-          padding: "28px 40px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "28px",
+          padding: "clamp(16px, 3vw, 28px) clamp(16px, 4vw, 40px)",
           maxWidth: "1400px",
           margin: "0 auto",
           width: "100%",
           boxSizing: "border-box",
           zIndex: 1,
-          alignItems: "center",
+          justifyContent: "center",
         }}
       >
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 460px), 1fr))",
+            gap: "28px",
+            alignItems: "center",
+            width: "100%",
+          }}
+        >
         {/* LEFT COLUMN: ARCHITECTURE TOPOLOGY & DEEP DIVE DESCRIPTION */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "18px", width: "100%", minWidth: 0 }}>
           {/* Main Title & Ecosystem Subtitle */}
           <div>
             <div
@@ -355,10 +367,11 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                 borderRadius: "9999px",
                 background: "rgba(59, 130, 246, 0.1)",
                 border: "1px solid rgba(59, 130, 246, 0.25)",
-                fontSize: "12px",
+                fontSize: "11px",
                 color: "#93c5fd",
                 fontWeight: 600,
-                marginBottom: "10px",
+                marginBottom: "8px",
+                maxWidth: "100%",
               }}
             >
               <span>🔬 Next-Gen RAG Orchestration & Observability</span>
@@ -366,10 +379,10 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
             <h1
               style={{
                 margin: "0 0 8px",
-                fontSize: "36px",
+                fontSize: "clamp(24px, 4vw, 36px)",
                 fontWeight: 900,
                 lineHeight: 1.15,
-                letterSpacing: "-1px",
+                letterSpacing: "-0.8px",
                 background: "linear-gradient(135deg, #ffffff 40%, #93c5fd 80%, #c084fc 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
@@ -386,8 +399,10 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
               background: "rgba(11, 16, 28, 0.7)",
               border: "1px solid rgba(255, 255, 255, 0.1)",
               backdropFilter: "blur(20px)",
-              padding: "20px",
+              padding: "clamp(14px, 2.5vw, 20px)",
               boxShadow: "0 16px 40px rgba(0, 0, 0, 0.4)",
+              width: "100%",
+              boxSizing: "border-box",
             }}
           >
             {/* TOPOLOGY TAB SELECTOR */}
@@ -396,24 +411,26 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                marginBottom: "16px",
+                flexWrap: "wrap",
+                gap: "8px",
+                marginBottom: "14px",
                 borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
                 paddingBottom: "10px",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: currentDesc.badgeColor }} />
-                <span style={{ fontSize: "11px", fontWeight: 700, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: currentDesc.badgeColor, flexShrink: 0 }} />
+                <span style={{ fontSize: "11px", fontWeight: 700, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: "0.06em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {currentDesc.title}
                 </span>
               </div>
-              <div style={{ display: "flex", gap: "4px" }}>
+              <div style={{ display: "flex", gap: "4px", overflowX: "auto", maxWidth: "100%", paddingBottom: "2px" }}>
                 {["ecosystem", "docpilot", "tracepilot", "gaugepilot"].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
                     style={{
-                      padding: "4px 10px",
+                      padding: "4px 9px",
                       borderRadius: "6px",
                       background: activeTab === tab ? "rgba(255, 255, 255, 0.12)" : "transparent",
                       border: activeTab === tab ? "1px solid rgba(255, 255, 255, 0.15)" : "1px solid transparent",
@@ -423,6 +440,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                       cursor: "pointer",
                       textTransform: "capitalize",
                       transition: "all 0.15s ease",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     {tab}
@@ -431,14 +449,14 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
               </div>
             </div>
 
-            {/* TOPOLOGY NODES GRID */}
+            {/* TOPOLOGY NODES GRID (RESPONSIVE WRAP) */}
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1.2fr 1fr",
-                gap: "14px",
-                alignItems: "center",
-                marginBottom: "16px",
+                gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 140px), 1fr))",
+                gap: "10px",
+                alignItems: "stretch",
+                marginBottom: "14px",
               }}
             >
               {/* PILLAR 1: DOCPILOT */}
@@ -447,7 +465,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                 onMouseEnter={() => setHoveredNode("docpilot")}
                 onMouseLeave={() => setHoveredNode(null)}
                 style={{
-                  padding: "14px",
+                  padding: "12px",
                   borderRadius: "14px",
                   background:
                     activeTab === "docpilot" || hoveredNode === "docpilot"
@@ -463,8 +481,8 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
-                  <span style={{ fontSize: "16px" }}>📄</span>
-                  <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 800, color: "#60a5fa" }}>DocPilot</h3>
+                  <span style={{ fontSize: "15px" }}>📄</span>
+                  <h3 style={{ margin: 0, fontSize: "13px", fontWeight: 800, color: "#60a5fa" }}>DocPilot</h3>
                 </div>
                 <p style={{ margin: 0, fontSize: "11px", color: "#cbd5e1", lineHeight: 1.4 }}>
                   Document intelligence & grounded natural language synthesis.
@@ -477,8 +495,8 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                 onMouseEnter={() => setHoveredNode("pilotcore")}
                 onMouseLeave={() => setHoveredNode(null)}
                 style={{
-                  padding: "16px 12px",
-                  borderRadius: "18px",
+                  padding: "14px 10px",
+                  borderRadius: "16px",
                   background:
                     activeTab === "ecosystem" || hoveredNode === "pilotcore"
                       ? "linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95))"
@@ -489,7 +507,8 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  gap: "6px",
+                  justifyContent: "center",
+                  gap: "4px",
                   cursor: "pointer",
                   position: "relative",
                 }}
@@ -510,9 +529,9 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                 >
                   Core Kernel
                 </div>
-                <div style={{ fontSize: "20px" }}>⚡</div>
+                <div style={{ fontSize: "18px" }}>⚡</div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 900, color: "#38bdf8" }}>PilotCore</h3>
+                  <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 900, color: "#38bdf8" }}>PilotCore</h3>
                   <div style={{ fontSize: "10px", color: "#94a3b8" }}>
                     Hybrid Vector + Lexical RRF
                   </div>
@@ -585,21 +604,21 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
             {/* AUTHORITATIVE ECOSYSTEM TEXT & HIGHLIGHTS */}
             <div
               style={{
-                padding: "14px 16px",
+                padding: "12px 14px",
                 borderRadius: "14px",
                 background: "rgba(255, 255, 255, 0.02)",
                 border: "1px solid rgba(255, 255, 255, 0.06)",
               }}
             >
-              <p style={{ margin: "0 0 10px", fontSize: "12.5px", lineHeight: 1.6, color: "#cbd5e1" }}>
+              <p style={{ margin: "0 0 10px", fontSize: "12px", lineHeight: 1.6, color: "#cbd5e1" }}>
                 {currentDesc.description}
               </p>
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
                 {currentDesc.highlights.map((h, idx) => (
                   <span
                     key={idx}
                     style={{
-                      fontSize: "11px",
+                      fontSize: "10.5px",
                       padding: "3px 8px",
                       borderRadius: "6px",
                       background: "rgba(255, 255, 255, 0.05)",
@@ -616,16 +635,16 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
         </div>
 
         {/* RIGHT COLUMN: MAANG-GRADE BALANCED AUTHENTICATION CARD */}
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100%" }}>
           <div
             style={{
               width: "100%",
-              maxWidth: "400px",
+              maxWidth: "420px",
               borderRadius: "24px",
               background: "rgba(13, 19, 33, 0.85)",
               border: "1px solid rgba(255, 255, 255, 0.12)",
               backdropFilter: "blur(30px)",
-              padding: "30px 28px",
+              padding: "clamp(20px, 4vw, 30px) clamp(16px, 3.5vw, 28px)",
               boxShadow: "0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(59, 130, 246, 0.08)",
               display: "flex",
               flexDirection: "column",
@@ -954,17 +973,20 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
             )}
           </div>
         </div>
-      </main>
+      </div>
+    </main>
 
       {/* FOOTER BAR */}
       <footer
         style={{
-          padding: "16px 36px",
+          padding: "14px clamp(16px, 4vw, 36px)",
           borderTop: "1px solid rgba(255, 255, 255, 0.05)",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          fontSize: "11.5px",
+          flexWrap: "wrap",
+          gap: "10px",
+          fontSize: "11px",
           color: "#64748b",
           boxSizing: "border-box",
           zIndex: 10,
@@ -972,7 +994,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
         }}
       >
         <div>PilotMaster Intelligence Platform © 2026. Powered by PilotCore Kernel.</div>
-        <div style={{ display: "flex", gap: "18px" }}>
+        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
           <span>Dual Mode (Production & Lab)</span>
           <span>Active Groq Models</span>
           <span>PostgreSQL Observability</span>

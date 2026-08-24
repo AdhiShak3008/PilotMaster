@@ -250,25 +250,29 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
     return (
         <div
             key={experimentMode ? "exp" : "prod"}
+            className="pilot-home"
             style={{
                 background: "var(--bg-primary)",
                 color: "var(--text-primary)",
                 fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
                 width: "100vw",
-                height: "100vh",
+                minHeight: "100dvh",
                 boxSizing: "border-box",
                 display: "grid",
                 gridTemplateRows: "auto 1fr auto",
-                overflow: "hidden",
+                overflowY: "auto",
             }}
         >
             {/* TOP BAR */}
             <header
+                className="pilot-home-topbar"
                 style={{
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
                     padding: "20px 48px",
+                    flexWrap: "wrap",
+                    gap: "14px",
                 }}
             >
                 <div>
@@ -288,7 +292,7 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
                     </p>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div className="pilot-home-actions" style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
 
                     <div
                         style={{
@@ -363,7 +367,7 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
             </header>
 
             {/* CENTER */}
-            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: "32px", padding: "0 24px" }}>
+            <div className="pilot-home-center" style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: "28px", padding: "20px 24px" }}>
                 <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
                     <button
                         onClick={toggleMode}
@@ -388,7 +392,7 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
                     <h2
                         style={{
                             margin: "12px 0 0",
-                            fontSize: "36px",
+                            fontSize: "clamp(26px, 4vw, 36px)",
                             fontWeight: "700",
                             letterSpacing: "-1px",
                             color: "#ffffff",
@@ -403,7 +407,7 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
                     </p>
                 </div>
 
-                <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", justifyContent: "center" }}>
+                <div className="pilot-home-grid" style={{ display: "flex", gap: "20px", flexWrap: "wrap", justifyContent: "center", width: "100%", maxWidth: "1100px" }}>
                     <ProductCard
                         name="DocPilot"
                         description="Upload multi-format documents, ask complex questions, and receive grounded answers with citations."
@@ -435,7 +439,7 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
             </div>
 
             {/* FOOTER */}
-            <footer style={{ padding: "18px 48px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <footer className="pilot-home-footer" style={{ padding: "18px 48px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
                 <p style={{ margin: 0, fontSize: "12px", color: "var(--text-muted)" }}>
                     PilotMaster · Powered by PilotCore Kernel
                 </p>
@@ -466,8 +470,9 @@ function ProductCard({ name, icon, description, tags, href, onClick, accent }) {
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             style={{
-                width: "320px",
-                padding: "28px 24px",
+                width: "100%",
+                maxWidth: "340px",
+                padding: "26px 22px",
                 borderRadius: "24px",
                 cursor: "pointer",
                 textDecoration: "none",
@@ -484,7 +489,7 @@ function ProductCard({ name, icon, description, tags, href, onClick, accent }) {
         >
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h3 style={{ margin: 0, fontSize: "24px", fontWeight: "800", color: accent, letterSpacing: "-0.6px", transition: "color 0.15s ease" }}>
+                <h3 style={{ margin: 0, fontSize: "22px", fontWeight: "800", color: accent, letterSpacing: "-0.6px", transition: "color 0.15s ease" }}>
                     {name}
                 </h3>
                 <span style={{ fontSize: "18px", color: hovered ? "#ffffff" : accent, transition: "color 0.15s" }}>
@@ -756,26 +761,29 @@ function ForgotPassword({ goBack }) {
 function AuthShell({ children }) {
     return (
         <div
+            className="auth-shell"
             style={{
                 background: "var(--bg-primary)",
                 width: "100vw",
-                height: "100vh",
+                minHeight: "100dvh",
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
                 fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
                 boxSizing: "border-box",
-                padding: "24px",
+                padding: "clamp(16px, 4vw, 24px)",
+                overflowY: "auto",
             }}
         >
             <div
+                className="auth-panel"
                 style={{
                     width: "100%",
                     maxWidth: "420px",
                     borderRadius: "28px",
                     background: "rgba(255, 255, 255, 0.03)",
                     boxShadow: "0 24px 60px rgba(0, 0, 0, 0.4)",
-                    padding: "36px 32px",
+                    padding: "clamp(24px, 5vw, 36px) clamp(20px, 4vw, 32px)",
                     display: "flex",
                     flexDirection: "column",
                     boxSizing: "border-box",

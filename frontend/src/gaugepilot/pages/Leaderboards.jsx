@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import OverallTable from "../components/leaderboards/OverallTable";
 import ExperimentSelector from "../components/ExperimentSelector";
+import ConfigBadge from "../components/ConfigBadge";
+import { buildConfigLabelMap } from "../utils/configUtils";
 
 const METRIC_META = {
   overall:          { label: "Overall Rankings",          desc: "Combined benchmark ranking across all evaluation metrics.", icon: "🏆" },
@@ -35,6 +37,7 @@ export default function Leaderboards({ leaderboard }) {
     color, fontSize: "11px", fontWeight: 600, letterSpacing: "0.02em",
   });
 
+  const labelMap = useMemo(() => buildConfigLabelMap(leaderboard), [leaderboard]);
 
   // ── Derived KPI values ─────────────────────────────────────────────────────
   const overall = leaderboard?.overall ?? [];
@@ -44,10 +47,6 @@ export default function Leaderboards({ leaderboard }) {
   const bestConfig   = overall[0]?.config_name ?? null;
   const fastestConfig = [...latency].sort((a, b) => (a.value ?? 0) - (b.value ?? 0))[0]?.config_name ?? null;
   const topFaithfulness = faithfulness[0]?.config_name ?? null;
-
-  const formatName = (name) =>
-    name?.replaceAll("_", " ").replaceAll("+", " + ")
-      .replace("NoRewrite", "(No Rewrite)").replace("NoReranker", "(No Reranker)") ?? "—";
 
   // ── Empty state ────────────────────────────────────────────────────────────
   if (!leaderboard || overall.length === 0) {
@@ -119,14 +118,14 @@ export default function Leaderboards({ leaderboard }) {
       </div>
 
       {/* ── KPI Row ──────────────────────────────────────────────────────────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "16px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: "12px", marginBottom: "16px" }}>
         {[
-          { label: "Best Overall",      value: formatName(bestConfig),      icon: "🥇", color: "#f59e0b" },
-          { label: "Fastest Config",    value: formatName(fastestConfig),   icon: "⚡", color: "#22c55e" },
-          { label: "Top Faithfulness",  value: formatName(topFaithfulness), icon: "📋", color: accent    },
-          { label: "Configs Evaluated", value: totalConfigs,                icon: "🔬", color: "#a78bfa" },
-        ].map(({ label, value, icon, color }) => (
-          <div key={label} style={{
+          { label: "Best Overall",      configName: bestConfig,      icon: "🥇", color: "#f59e0b" },
+          { label: "Fastest Config",    configName: fastestConfig,   icon: "⚡", color: "#22c55e" },
+          { label: "Top Faithfulness",  configName: topFaithfulness, icon: "📋", color: accent    },
+          { label: "Configs Evaluated", count: totalConfigs,         icon: "🔬", color: "#a78bfa" },
+        ].map((item) => (
+          <div key={item.label} style={{
             ...card, padding: "16px 20px",
             display: "flex", alignItems: "center", gap: "14px",
             transition: "transform 0.2s, box-shadow 0.2s",
@@ -142,15 +141,23 @@ export default function Leaderboards({ leaderboard }) {
           >
             <div style={{
               width: 40, height: 40, borderRadius: "10px", flexShrink: 0,
-              background: `${color}18`, display: "flex", alignItems: "center",
+              background: `${item.color}18`, display: "flex", alignItems: "center",
               justifyContent: "center", fontSize: "18px",
-            }}>{icon}</div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{
-                fontSize: "14px", fontWeight: 700, color: "white", lineHeight: 1.2,
-                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-              }}>{value}</div>
-              <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", marginTop: "3px" }}>{label}</div>
+            }}>{item.icon}</div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              {item.configName ? (
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <ConfigBadge
+                    configName={item.configName}
+                    label={labelMap.get(item.configName) || "Config"}
+                  />
+                </div>
+              ) : (
+                <div style={{
+                  fontSize: "14px", fontWeight: 700, color: "white", lineHeight: 1.2,
+                }}>{item.count ?? "—"}</div>
+              )}
+              <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", marginTop: "4px" }}>{item.label}</div>
             </div>
           </div>
         ))}
@@ -199,7 +206,7 @@ export default function Leaderboards({ leaderboard }) {
           </div>
         </div>
 
-        <OverallTable data={leaderboard[selectedMetric]} />
+        <OverallTable data={leaderboard[selectedMetric]} labelMap={labelMap} />
       </div>
 
     </div>

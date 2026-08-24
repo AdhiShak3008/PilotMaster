@@ -65,7 +65,8 @@ function CustomSelector({ label, sublabel, open, onToggle, selectorRef, children
             position: "absolute",
             bottom: "calc(100% + 8px)",
             left: 0,
-            width: "300px",
+            width: "min(320px, calc(100vw - 28px))",
+            maxWidth: "calc(100vw - 28px)",
             maxHeight: "360px",
             overflowY: "auto",
             zIndex: 9999,
@@ -1921,10 +1922,22 @@ function Dashboard({
                 alignItems: "center",
                 justifyContent: "space-between",
                 gap: "8px",
-                flexWrap: "wrap",
+                width: "100%",
+                minWidth: 0,
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+              <div
+                className="pill-scroll-bar"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  overflowX: "auto",
+                  flex: 1,
+                  minWidth: 0,
+                  paddingBottom: "2px",
+                }}
+              >
                 {/* MODEL SELECTOR */}
                 <CustomSelector
                   label={activeModelLabel}
@@ -2213,7 +2226,8 @@ function Dashboard({
                           position: "absolute",
                           bottom: "calc(100% + 8px)",
                           left: 0,
-                          width: "350px",
+                          width: "min(340px, calc(100vw - 32px))",
+                          maxWidth: "calc(100vw - 32px)",
                           maxHeight: "440px",
                           overflowY: "auto",
                           zIndex: 9999,

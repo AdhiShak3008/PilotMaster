@@ -384,7 +384,7 @@ export default function ExperimentSetup({ onRunChange }) {
       style={{
         maxWidth: "1280px",
         margin: "0 auto",
-        padding: "32px 28px 80px",
+        padding: "clamp(16px, 3vw, 32px) clamp(14px, 3vw, 28px) 80px",
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
       }}
     >
@@ -772,7 +772,8 @@ export default function ExperimentSetup({ onRunChange }) {
                   position: "absolute",
                   top: "calc(100% + 8px)",
                   right: 0,
-                  width: "350px",
+                  width: "min(340px, calc(100vw - 32px))",
+                  maxWidth: "calc(100vw - 32px)",
                   maxHeight: "440px",
                   overflowY: "auto",
                   zIndex: 9999,
@@ -890,7 +891,7 @@ export default function ExperimentSetup({ onRunChange }) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))",
           gap: "20px",
           alignItems: "stretch",
           marginBottom: "24px",

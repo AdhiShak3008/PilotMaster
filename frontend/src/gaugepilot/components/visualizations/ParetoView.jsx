@@ -3,6 +3,7 @@ import {
   ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 import ExperimentSelector from "../ExperimentSelector";
+import { parseConfigDetails } from "../../utils/configUtils";
 
 const METRICS = [
   { value: "faithfulness", label: "Faithfulness" },
@@ -16,7 +17,6 @@ const LOWER_IS_BETTER = new Set(["latency"]);
 const metricLabel = (key) => METRICS.find((m) => m.value === key)?.label ?? key;
 
 function computeFrontier(points, xMetric, yMetric) {
-  // Orient both axes so "higher is better" for the dominance comparison.
   const oriented = points.map((p) => ({
     ...p,
     ox: LOWER_IS_BETTER.has(xMetric) ? -p.x : p.x,
@@ -42,7 +42,13 @@ export default function ParetoView({ data }) {
     () =>
       (data ?? [])
         .filter((row) => row[xMetric] != null && row[yMetric] != null)
-        .map((row) => ({ config: row.config, x: row[xMetric], y: row[yMetric] })),
+        .map((row) => ({
+          config: row.config,
+          configLabel: row.configLabel || row.config,
+          configDetails: row.configDetails || parseConfigDetails(row.config),
+          x: row[xMetric],
+          y: row[yMetric],
+        })),
     [data, xMetric, yMetric]
   );
 
@@ -56,22 +62,41 @@ export default function ParetoView({ data }) {
   const CustomTooltip = ({ active, payload }) => {
     if (!active || !payload?.length) return null;
     const p = payload[0].payload;
+    const details = p.configDetails || parseConfigDetails(p.config);
+
     return (
       <div style={{
-        background: "rgba(15,15,25,0.95)", border: "1px solid rgba(255,255,255,0.12)",
-        borderRadius: "10px", padding: "10px 14px", fontSize: "12px",
+        background: "rgba(15, 20, 36, 0.97)",
+        border: "1px solid rgba(168, 85, 247, 0.35)",
+        borderRadius: "14px",
+        padding: "12px 16px",
+        fontSize: "12px",
+        boxShadow: "0 16px 36px rgba(0,0,0,0.6)",
+        maxWidth: "300px",
       }}>
-        <div style={{ fontWeight: 700, color: "white", marginBottom: "4px" }}>
-          {p.config?.replaceAll("_", " ")}
+        <div style={{ fontWeight: 700, color: "white", fontSize: "13px", marginBottom: "6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span>🏷️ {p.configLabel}</span>
+          <span style={{
+            fontSize: "10px",
+            fontWeight: 700,
+            padding: "2px 6px",
+            borderRadius: "4px",
+            background: p.dominated ? "rgba(255,255,255,0.06)" : "rgba(34, 197, 94, 0.2)",
+            color: p.dominated ? "rgba(255,255,255,0.5)" : "#22c55e",
+          }}>
+            {p.dominated ? "Dominated" : "Pareto Optimal"}
+          </span>
         </div>
-        <div style={{ color: "rgba(255,255,255,0.6)" }}>
-          {metricLabel(xMetric)}: <span style={{ color: "white" }}>{Number(p.x).toFixed(2)}</span>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "11.5px", color: "rgba(255,255,255,0.8)" }}>
+          <div>{metricLabel(xMetric)}: <strong style={{ color: "#38bdf8" }}>{Number(p.x).toFixed(2)}</strong></div>
+          <div>{metricLabel(yMetric)}: <strong style={{ color: "#c084fc" }}>{Number(p.y).toFixed(2)}</strong></div>
         </div>
-        <div style={{ color: "rgba(255,255,255,0.6)" }}>
-          {metricLabel(yMetric)}: <span style={{ color: "white" }}>{Number(p.y).toFixed(2)}</span>
-        </div>
-        <div style={{ marginTop: "4px", fontWeight: 600, color: p.dominated ? "rgba(255,255,255,0.4)" : "#22c55e" }}>
-          {p.dominated ? "Dominated" : "Pareto optimal"}
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "10.5px", color: "rgba(255,255,255,0.6)", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "6px", marginTop: "6px" }}>
+          <div>Model: {details.model}</div>
+          <div>Retrieval: {details.retrieval} · {details.reranker}</div>
+          <div>Enhancements: {details.enhancements?.join(", ")}</div>
         </div>
       </div>
     );
@@ -108,18 +133,14 @@ export default function ParetoView({ data }) {
           <Legend
             verticalAlign="top" align="right" height={30}
             payload={[
-              { value: "Pareto optimal", type: "circle", color: accent },
+              { value: "Pareto Frontier (Optimal)", type: "circle", color: "#22c55e" },
               { value: "Dominated", type: "circle", color: muted },
             ]}
-            formatter={(value) => <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 12 }}>{value}</span>}
           />
-          <Scatter data={dominated} fill={muted} fillOpacity={0.6} />
-          <Scatter data={frontier} fill={accent} line={{ stroke: accent, strokeWidth: 1.5, strokeDasharray: "4 4" }} lineType="joint" />
+          <Scatter name="Dominated" data={dominated} fill={muted} />
+          <Scatter name="Pareto Optimal" data={frontier} fill="#22c55e" line={{ stroke: "#22c55e", strokeWidth: 1.5, strokeDasharray: "4 4" }} />
         </ScatterChart>
       </ResponsiveContainer>
-      <p style={{ margin: "14px 0 0", fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>
-        Dashed line connects Pareto-optimal configurations; dominated configurations are faded.
-      </p>
     </div>
   );
 }

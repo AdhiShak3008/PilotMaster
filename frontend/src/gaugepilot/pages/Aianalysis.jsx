@@ -521,7 +521,7 @@ export default function AIAnalysis({ selectedRun, onRunRefresh }) {
           )}
 
           {/* Report cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 420px), 1fr))", gap: "16px" }}>
             <InsightCard report={insightReport} />
             <RecommendationCard report={recommendationReport} />
           </div>
