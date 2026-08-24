@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey
 
 from sqlalchemy.sql import func
 
@@ -16,7 +16,6 @@ class Document(Base):
 
     filename = Column(String, nullable=False)
 
-
     filepath = Column(String, nullable=False)
 
     file_size = Column(Integer)
@@ -24,6 +23,8 @@ class Document(Base):
     page_count = Column(Integer)
 
     chunk_count = Column(Integer)
+
+    chunks_json = Column(Text, nullable=True)
 
     ocr_used = Column(Boolean, default=False)
 

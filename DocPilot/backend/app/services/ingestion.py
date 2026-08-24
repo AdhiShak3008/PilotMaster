@@ -742,3 +742,5 @@ def process_document(
 
     except Exception as e:
         logger.info("[TracePilot] document ingest failed: %r", e)
+
+    return all_chunks

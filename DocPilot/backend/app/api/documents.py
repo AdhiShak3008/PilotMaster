@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 import shutil
 import os
 import uuid
+import json
 
 from DocPilot.backend.app.services.ingestion import (
     process_document,
@@ -148,13 +149,16 @@ async def upload_document(
         db.refresh(document)
 
         try:
-
-            process_document(
+            chunks = process_document(
                 file_path,
                 current_user.id,
                 document.id,
                 mime_type=file.content_type,
             )
+            if chunks:
+                document.chunks_json = json.dumps(chunks)
+                document.chunk_count = len(chunks)
+                db.commit()
 
         except TextExtractionError as exc:
 

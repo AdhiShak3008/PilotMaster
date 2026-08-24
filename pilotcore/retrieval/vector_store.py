@@ -68,9 +68,43 @@ def load_user_documents(user_id: int):
     if os.path.exists(docs_path):
         try:
             with open(docs_path, "rb") as f:
-                return pickle.load(f)
+                docs = pickle.load(f)
+                if docs:
+                    return docs
         except Exception:
-            return []
+            pass
+
+    # Self-Healing Restoration: If container restarted and disk was wiped, restore chunks from database!
+    if user_id:
+        try:
+            import json
+            from DocPilot.backend.app.db.database import SessionLocal
+            from DocPilot.backend.app.models.document import Document
+            db = SessionLocal()
+            user_docs = db.query(Document).filter(Document.owner_id == user_id).all()
+            restored_chunks = []
+            for doc in user_docs:
+                chunks_raw = getattr(doc, "chunks_json", None)
+                if chunks_raw:
+                    try:
+                        parsed = json.loads(chunks_raw)
+                        if isinstance(parsed, list):
+                            restored_chunks.extend(parsed)
+                    except Exception:
+                        pass
+            db.close()
+
+            if restored_chunks:
+                try:
+                    with open(docs_path, "wb") as f:
+                        pickle.dump(restored_chunks, f)
+                    print(f"[Self-Healing] Restored {len(restored_chunks)} document chunks from database for user {user_id}")
+                except Exception:
+                    pass
+                return restored_chunks
+        except Exception as e:
+            print(f"[Self-Healing] Database restoration error: {e}")
+
     return []
 
 
