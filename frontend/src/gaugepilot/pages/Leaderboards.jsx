@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo } from "react";
 import OverallTable from "../components/leaderboards/OverallTable";
 import ExperimentSelector from "../components/ExperimentSelector";
 import ConfigBadge from "../components/ConfigBadge";
@@ -13,7 +13,7 @@ const METRIC_META = {
   latency:          { label: "Latency Rankings",          desc: "Ranked by response speed — lower is better.", icon: "⚡" },
 };
 
-export default function Leaderboards({ leaderboard }) {
+export default memo(function Leaderboards({ leaderboard }) {
   const [selectedMetric, setSelectedMetric] = useState("overall");
 
   const accent = "#a855f7";
@@ -240,4 +240,4 @@ export default function Leaderboards({ leaderboard }) {
 
     </div>
   );
-}
+});

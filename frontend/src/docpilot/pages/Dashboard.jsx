@@ -489,7 +489,7 @@ function Dashboard({
   // Experiment toggles
   const [retrievalStrategy, setRetrievalStrategy] = useState("Hybrid");
   const [showRetrieval, setShowRetrieval] = useState(false);
-  const [reranker, setReranker] = useState("minilm");
+  const [reranker, setReranker] = useState("none");
   const [showReranker, setShowReranker] = useState(false);
   const [selectedEnhancements, setSelectedEnhancements] = useState(["Default"]);
   const [showEnhancements, setShowEnhancements] = useState(false);
@@ -498,6 +498,16 @@ function Dashboard({
   const [selectedEmbeddingModel, setSelectedEmbeddingModel] = useState("all-mpnet-base-v2");
   const [showEmbeddings, setShowEmbeddings] = useState(false);
 
+  const togglePopup = (popupName) => {
+    setShowModels((curr) => (popupName === "models" ? !curr : false));
+    setShowRetrieval((curr) => (popupName === "retrieval" ? !curr : false));
+    setShowReranker((curr) => (popupName === "reranker" ? !curr : false));
+    setShowEnhancements((curr) => (popupName === "enhancements" ? !curr : false));
+    setShowDocuments((curr) => (popupName === "documents" ? !curr : false));
+    setShowChunkers((curr) => (popupName === "chunkers" ? !curr : false));
+    setShowEmbeddings((curr) => (popupName === "embeddings" ? !curr : false));
+  };
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -505,20 +515,23 @@ function Dashboard({
   // Close all popups on outside click / Escape
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (modelSelectorRef.current && !modelSelectorRef.current.contains(event.target))
+      if (
+        !modelSelectorRef.current?.contains(event.target) &&
+        !retrievalSelectorRef.current?.contains(event.target) &&
+        !enhancementSelectorRef.current?.contains(event.target) &&
+        !rerankerSelectorRef.current?.contains(event.target) &&
+        !documentSelectorRef.current?.contains(event.target) &&
+        !chunkerSelectorRef.current?.contains(event.target) &&
+        !embeddingSelectorRef.current?.contains(event.target)
+      ) {
         setShowModels(false);
-      if (retrievalSelectorRef.current && !retrievalSelectorRef.current.contains(event.target))
         setShowRetrieval(false);
-      if (enhancementSelectorRef.current && !enhancementSelectorRef.current.contains(event.target))
-        setShowEnhancements(false);
-      if (rerankerSelectorRef.current && !rerankerSelectorRef.current.contains(event.target))
         setShowReranker(false);
-      if (documentSelectorRef.current && !documentSelectorRef.current.contains(event.target))
+        setShowEnhancements(false);
         setShowDocuments(false);
-      if (chunkerSelectorRef.current && !chunkerSelectorRef.current.contains(event.target))
         setShowChunkers(false);
-      if (embeddingSelectorRef.current && !embeddingSelectorRef.current.contains(event.target))
         setShowEmbeddings(false);
+      }
     };
 
     const handleEsc = (event) => {
@@ -539,7 +552,7 @@ function Dashboard({
       document.removeEventListener("pointerdown", handleClickOutside);
       document.removeEventListener("keydown", handleEsc);
     };
-  }, [experimentMode]);
+  }, []);
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -888,7 +901,7 @@ function Dashboard({
   const activeRetrievalLabel =
     RETRIEVAL_STRATEGIES.find((r) => r.id === retrievalStrategy)?.label || retrievalStrategy;
   const activeRerankerLabel =
-    RERANKER_OPTIONS.find((r) => r.id === reranker)?.label || "MiniLM";
+    RERANKER_OPTIONS.find((r) => r.id === reranker)?.label || "None";
   const activeEnhancementLabel = buildEnhancementLabel(selectedEnhancements);
   const activeChunkerLabel =
     CHUNKER_OPTIONS.find((c) => c.id === selectedChunker)?.label || "Parent-Child";
@@ -1383,25 +1396,40 @@ function Dashboard({
             </a>
 
 
-            {documents.length > 0 && (
-              <button
-                onClick={deleteActiveDocument}
-                disabled={deletingDoc}
-                style={{
-                  padding: "6px 12px",
-                  background: "rgba(239, 68, 68, 0.1)",
-                  color: "#ef4444",
-                  border: "none",
-                  borderRadius: "9999px",
-                  cursor: deletingDoc ? "not-allowed" : "pointer",
-                  fontSize: "12px",
-                  opacity: deletingDoc ? 0.5 : 1,
-                  transition: "all 0.15s ease",
-                }}
-              >
-                {deletingDoc ? "Clearing..." : "✕ Clear Docs"}
-              </button>
-            )}
+            <button
+              onClick={deleteActiveDocument}
+              disabled={deletingDoc}
+              title="Clear all uploaded documents and reset the active vector index"
+              style={{
+                padding: "6px 14px",
+                background: "rgba(239, 68, 68, 0.1)",
+                color: "#ef4444",
+                border: "1px solid rgba(239, 68, 68, 0.2)",
+                borderRadius: "9999px",
+                cursor: deletingDoc ? "not-allowed" : "pointer",
+                fontSize: "11px",
+                fontWeight: 600,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+                opacity: deletingDoc ? 0.5 : 1,
+                transition: "all 0.15s ease",
+              }}
+              onMouseEnter={(e) => {
+                if (!deletingDoc) {
+                  e.currentTarget.style.background = "rgba(239, 68, 68, 0.2)";
+                  e.currentTarget.style.borderColor = "rgba(239, 68, 68, 0.4)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!deletingDoc) {
+                  e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)";
+                  e.currentTarget.style.borderColor = "rgba(239, 68, 68, 0.2)";
+                }
+              }}
+            >
+              {deletingDoc ? "Clearing..." : "✕ Clear Vector Index"}
+            </button>
 
             <button
               onClick={onLogout}
@@ -1905,7 +1933,7 @@ function Dashboard({
                   label={activeModelLabel}
                   sublabel="Model"
                   open={showModels}
-                  onToggle={() => setShowModels((v) => !v)}
+                  onToggle={() => togglePopup("models")}
                   selectorRef={modelSelectorRef}
                 >
                   <p style={{ margin: "4px 8px 8px", fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
@@ -1931,7 +1959,7 @@ function Dashboard({
                   sublabel="Docs"
                   badge={`${selectedDocumentIds.length}`}
                   open={showDocuments}
-                  onToggle={() => setShowDocuments((v) => !v)}
+                  onToggle={() => togglePopup("documents")}
                   selectorRef={documentSelectorRef}
                 >
                   <div style={{ display: "flex", padding: "4px", gap: "4px" }}>
@@ -2002,7 +2030,7 @@ function Dashboard({
                       label={activeChunkerLabel}
                       sublabel="Chunker"
                       open={showChunkers}
-                      onToggle={() => setShowChunkers((v) => !v)}
+                      onToggle={() => togglePopup("chunkers")}
                       selectorRef={chunkerSelectorRef}
                     >
                       <p style={{ margin: "4px 8px 8px", fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
@@ -2026,7 +2054,7 @@ function Dashboard({
                       label={activeEmbeddingLabel}
                       sublabel="Embedding"
                       open={showEmbeddings}
-                      onToggle={() => setShowEmbeddings((v) => !v)}
+                      onToggle={() => togglePopup("embeddings")}
                       selectorRef={embeddingSelectorRef}
                     >
                       <p style={{ margin: "4px 8px 8px", fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
@@ -2050,7 +2078,7 @@ function Dashboard({
                       label={activeRetrievalLabel}
                       sublabel="Retriever"
                       open={showRetrieval}
-                      onToggle={() => setShowRetrieval((v) => !v)}
+                      onToggle={() => togglePopup("retrieval")}
                       selectorRef={retrievalSelectorRef}
                     >
                       <p style={{ margin: "4px 8px 8px", fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
@@ -2074,7 +2102,7 @@ function Dashboard({
                       label={activeRerankerLabel}
                       sublabel="Reranker"
                       open={showReranker}
-                      onToggle={() => setShowReranker((v) => !v)}
+                      onToggle={() => togglePopup("reranker")}
                       selectorRef={rerankerSelectorRef}
                     >
                       <p style={{ margin: "4px 8px 8px", fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
@@ -2097,7 +2125,7 @@ function Dashboard({
                     {/* MULTI-SELECT QUERY ENHANCEMENTS SELECTOR */}
                     <div ref={enhancementSelectorRef} style={{ position: "relative", display: "inline-flex", flexDirection: "column", alignItems: "center" }}>
                       <div
-                        onClick={() => setShowEnhancements((v) => !v)}
+                        onClick={() => togglePopup("enhancements")}
                         style={{
                           display: "inline-flex",
                           alignItems: "center",

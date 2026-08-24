@@ -10,6 +10,7 @@ export function CustomSelector({
   return (
     <div
       ref={selectorRef}
+      className="custom-selector-container"
       style={{
         position: "relative",
         display: "inline-flex",

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { useVisualizations } from "../hooks/useVisualizations";
 import ScatterView from "../components/visualizations/ScatterView";
 import HeatmapView from "../components/visualizations/HeatmapView";
@@ -21,7 +22,7 @@ const SECTIONS = [
   { Component: PerformanceProfile,      title: "Performance Profile", desc: "How many metrics each configuration wins outright." },
 ];
 
-export default function Visualizations({ leaderboard }) {
+export default memo(function Visualizations({ leaderboard }) {
   const data = useVisualizations(leaderboard);
 
   const accent = "#a855f7";
@@ -106,4 +107,4 @@ export default function Visualizations({ leaderboard }) {
       </div>
     </div>
   );
-}
+});

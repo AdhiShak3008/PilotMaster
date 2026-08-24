@@ -44,29 +44,24 @@ export function useBenchmark() {
 
   const executeBenchmark = async (
     payload,
-    token,
+    passedToken,
   ) => {
     try {
       setLoading(true);
-
       setError(null);
 
+      const token = passedToken || localStorage.getItem("token");
       const data = await runBenchmark(
         payload,
         token,
       );
 
       setResults(data);
-
       return data;
     } catch (err) {
-      console.error(err);
-
-      setError(
-        err.response?.data?.detail ??
-          "Benchmark failed",
-      );
-
+      console.error("Benchmark error:", err);
+      const msg = err.response?.data?.detail ?? err.message ?? "Benchmark failed";
+      setError(msg);
       return null;
     } finally {
       setLoading(false);
@@ -78,5 +73,6 @@ export function useBenchmark() {
     results,
     error,
     executeBenchmark,
+    startBenchmark: executeBenchmark,
   };
 }

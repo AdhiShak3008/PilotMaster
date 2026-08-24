@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useBenchmark } from "../hooks/useBenchmark";
 import { getModels } from "../api";
 import Leaderboards from "./Leaderboards";
@@ -143,11 +143,12 @@ export default function ExperimentSetup({ onRunChange }) {
   const [modelOptions, setModelOptions] = useState(DEFAULT_MODEL_OPTIONS);
   const [model, setModel] = useState("openai/gpt-oss-120b");
   const [retrievalMethod, setRetrievalMethod] = useState("Hybrid");
-  const [reranker, setReranker] = useState("minilm");
+  const [reranker, setReranker] = useState("none");
   const [chunker, setChunker] = useState("parent_child");
   const [embeddingModel, setEmbeddingModel] = useState("all-mpnet-base-v2");
   const [selectedEnhancements, setSelectedEnhancements] = useState(["Default"]);
-  const [showEnhancements, setShowEnhancements] = useState(false);
+  const [openSelector, setOpenSelector] = useState(null); // 'model' | 'chunker' | 'embedding' | 'retriever' | 'reranker' | 'enhancements' | null
+  const showEnhancements = openSelector === "enhancements";
 
   const [questions, setQuestions] = useState(
     "What are the main advantages of this approach?\nHow does the system handle edge cases and failure modes?\nWhat is the expected latency and throughput tradeoff?"
@@ -165,6 +166,28 @@ export default function ExperimentSetup({ onRunChange }) {
 
   const fileInputRef = useRef(null);
   const enhancementRef = useRef(null);
+
+  // Close dropdown on click outside or Escape
+  useEffect(() => {
+    const handleGlobalClick = (e) => {
+      if (
+        openSelector &&
+        !enhancementRef.current?.contains(e.target) &&
+        !e.target.closest?.(".custom-selector-container")
+      ) {
+        setOpenSelector(null);
+      }
+    };
+    const handleEsc = (e) => {
+      if (e.key === "Escape") setOpenSelector(null);
+    };
+    document.addEventListener("mousedown", handleGlobalClick);
+    document.addEventListener("keydown", handleEsc);
+    return () => {
+      document.removeEventListener("mousedown", handleGlobalClick);
+      document.removeEventListener("keydown", handleEsc);
+    };
+  }, [openSelector]);
 
   const {
     loading,
@@ -308,10 +331,12 @@ export default function ExperimentSetup({ onRunChange }) {
     }
   };
 
-  const questionList = questions
-    .split("\n")
-    .map((q) => q.trim())
-    .filter(Boolean);
+  const questionList = useMemo(() => {
+    return questions
+      .split("\n")
+      .map((q) => q.trim())
+      .filter(Boolean);
+  }, [questions]);
 
   const canRun = questionList.length > 0 && !loading;
 
@@ -320,21 +345,21 @@ export default function ExperimentSetup({ onRunChange }) {
     try {
       const result = await startBenchmark({
         model,
-        retrievalMethod,
+        retrieval_method: retrievalMethod,
         reranker,
         chunker,
-        embeddingModel,
+        embedding_model: embeddingModel,
         enhancements: selectedEnhancements,
         document_ids: selectedDocIds.length > 0 ? selectedDocIds : null,
         questions: questionList,
-      });
+      }, token);
 
       if (result) {
         await fetchRuns();
         if (result.leaderboard) setSelectedLeaderboard(result.leaderboard);
       }
-    } catch {
-      // error handled in useBenchmark hook
+    } catch (err) {
+      console.error("handleRun error:", err);
     }
   };
 
@@ -609,6 +634,8 @@ export default function ExperimentSetup({ onRunChange }) {
             value={model}
             onChange={setModel}
             options={modelOptions}
+            open={openSelector === "model"}
+            onToggle={() => setOpenSelector((curr) => (curr === "model" ? null : "model"))}
           />
 
 
@@ -623,6 +650,8 @@ export default function ExperimentSetup({ onRunChange }) {
               { value: "token", label: "Token-Based (256t)", description: "Tokenizer boundary alignment" },
               { value: "semantic", label: "Semantic Boundary", description: "Cosine similarity topic transitions" },
             ]}
+            open={openSelector === "chunker"}
+            onToggle={() => setOpenSelector((curr) => (curr === "chunker" ? null : "chunker"))}
           />
 
           <ExperimentSelector
@@ -638,6 +667,8 @@ export default function ExperimentSetup({ onRunChange }) {
               { value: "text-embedding-3-small", label: "text-embedding-3-small", description: "OpenAI Embedding · 1536 dim" },
               { value: "text-embedding-3-large", label: "text-embedding-3-large", description: "OpenAI Embedding · 3072 dim" },
             ]}
+            open={openSelector === "embedding"}
+            onToggle={() => setOpenSelector((curr) => (curr === "embedding" ? null : "embedding"))}
           />
 
           <ExperimentSelector
@@ -649,6 +680,8 @@ export default function ExperimentSetup({ onRunChange }) {
               { value: "FAISS", label: "FAISS Vector", description: "Dense semantic nearest neighbor" },
               { value: "BM25", label: "BM25 Keyword", description: "Sparse inverted-index search" },
             ]}
+            open={openSelector === "retriever"}
+            onToggle={() => setOpenSelector((curr) => (curr === "retriever" ? null : "retriever"))}
           />
 
           <ExperimentSelector
@@ -656,18 +689,20 @@ export default function ExperimentSetup({ onRunChange }) {
             value={reranker}
             onChange={setReranker}
             options={[
-              { value: "minilm", label: "MiniLM Cross-Encoder", description: "Balanced precision reranker" },
               { value: "none", label: "None (Raw First-Stage)", description: "Disable second-stage cross-encoder" },
+              { value: "minilm", label: "MiniLM Cross-Encoder", description: "Balanced precision reranker" },
               { value: "tinybert", label: "TinyBERT", description: "Lightweight ultra-low latency" },
               { value: "bge-large", label: "BGE Large Reranker", description: "Deep semantic re-scoring" },
               { value: "bge-m3", label: "BGE M3", description: "Multi-lingual retrieval reranker" },
             ]}
+            open={openSelector === "reranker"}
+            onToggle={() => setOpenSelector((curr) => (curr === "reranker" ? null : "reranker"))}
           />
 
           {/* MULTI-SELECT QUERY ENHANCEMENTS SELECTOR */}
           <div ref={enhancementRef} style={{ position: "relative", display: "inline-flex", flexDirection: "column", alignItems: "center" }}>
             <div
-              onClick={() => setShowEnhancements((v) => !v)}
+              onClick={() => setOpenSelector((curr) => (curr === "enhancements" ? null : "enhancements"))}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -1166,14 +1201,24 @@ export default function ExperimentSetup({ onRunChange }) {
       </div>
 
       {/* ── Leaderboard Section ── */}
-      <div style={{ marginTop: "32px" }}>
-        <Leaderboards leaderboard={displayedLeaderboard} />
-      </div>
+      {useMemo(
+        () => (
+          <div style={{ marginTop: "32px" }}>
+            <Leaderboards leaderboard={displayedLeaderboard} />
+          </div>
+        ),
+        [displayedLeaderboard]
+      )}
 
       {/* ── Visualizations Section ── */}
-      <div id="visualizations" style={{ marginTop: "32px" }}>
-        <Visualizations leaderboard={displayedLeaderboard} />
-      </div>
+      {useMemo(
+        () => (
+          <div id="visualizations" style={{ marginTop: "32px" }}>
+            <Visualizations leaderboard={displayedLeaderboard} />
+          </div>
+        ),
+        [displayedLeaderboard]
+      )}
     </div>
   );
 }
