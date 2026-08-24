@@ -125,26 +125,34 @@ export default function Leaderboards({ leaderboard }) {
           { label: "Top Faithfulness",  configName: topFaithfulness, icon: "📋", color: accent    },
           { label: "Configs Evaluated", count: totalConfigs,         icon: "🔬", color: "#a78bfa" },
         ].map((item) => (
-          <div key={item.label} style={{
-            ...card, padding: "16px 20px",
-            display: "flex", alignItems: "center", gap: "14px",
-            transition: "transform 0.2s, box-shadow 0.2s",
-          }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-2px)";
-              e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.25)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "none";
-              e.currentTarget.style.boxShadow = "none";
+          <div
+            key={item.label}
+            style={{
+              ...card,
+              padding: "16px 18px",
+              display: "flex",
+              alignItems: "center",
+              gap: "14px",
+              border: "1px solid rgba(255, 255, 255, 0.06)",
             }}
           >
-            <div style={{
-              width: 40, height: 40, borderRadius: "10px", flexShrink: 0,
-              background: `${item.color}18`, display: "flex", alignItems: "center",
-              justifyContent: "center", fontSize: "18px",
-            }}>{item.icon}</div>
-            <div style={{ minWidth: 0, flex: 1 }}>
+            <div
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: "12px",
+                flexShrink: 0,
+                background: `${item.color}18`,
+                border: `1px solid ${item.color}30`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "18px",
+              }}
+            >
+              {item.icon}
+            </div>
+            <div style={{ minWidth: 0, flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
               {item.configName ? (
                 <div style={{ display: "flex", alignItems: "center" }}>
                   <ConfigBadge
@@ -154,11 +162,31 @@ export default function Leaderboards({ leaderboard }) {
                   />
                 </div>
               ) : (
-                <div style={{
-                  fontSize: "14px", fontWeight: 700, color: "white", lineHeight: 1.2,
-                }}>{item.count ?? "—"}</div>
+                <div
+                  style={{
+                    fontSize: "15px",
+                    fontWeight: 800,
+                    color: "white",
+                    lineHeight: 1.2,
+                    height: "26px",
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  {item.count ?? "—"}
+                </div>
               )}
-              <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", marginTop: "4px" }}>{item.label}</div>
+              <div
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 500,
+                  color: "rgba(255, 255, 255, 0.4)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.04em",
+                }}
+              >
+                {item.label}
+              </div>
             </div>
           </div>
         ))}

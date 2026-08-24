@@ -153,26 +153,38 @@ export default function ConfigBadge({
           display: "inline-flex",
           alignItems: "center",
           gap: "6px",
-          padding: "3px 10px",
+          padding: "4px 10px",
+          height: "26px",
           borderRadius: "8px",
-          background: hovered ? "rgba(168, 85, 247, 0.2)" : "rgba(255, 255, 255, 0.05)",
-          border: hovered ? "1px solid rgba(168, 85, 247, 0.4)" : "1px solid rgba(255, 255, 255, 0.08)",
+          background: hovered ? "rgba(168, 85, 247, 0.22)" : "rgba(255, 255, 255, 0.05)",
+          border: hovered ? "1px solid rgba(168, 85, 247, 0.45)" : "1px solid rgba(255, 255, 255, 0.08)",
           color: hovered ? "#ffffff" : "rgba(255, 255, 255, 0.9)",
           fontWeight: isBest ? 700 : 600,
           fontSize,
           letterSpacing: "-0.2px",
           boxShadow: hovered ? "0 4px 16px rgba(168, 85, 247, 0.2)" : "none",
+          boxSizing: "border-box",
         }}
       >
         <span>{displayLabel}</span>
         <span
           style={{
-            fontSize: "10px",
-            color: hovered ? "#c084fc" : "rgba(255, 255, 255, 0.4)",
-            fontWeight: 400,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "14px",
+            height: "14px",
+            borderRadius: "50%",
+            background: hovered ? "rgba(168, 85, 247, 0.4)" : "rgba(255, 255, 255, 0.12)",
+            fontSize: "9px",
+            fontWeight: 700,
+            fontFamily: "system-ui, -apple-system, sans-serif",
+            color: hovered ? "#d8b4fe" : "rgba(255, 255, 255, 0.65)",
+            lineHeight: 1,
+            flexShrink: 0,
           }}
         >
-          ℹ
+          i
         </span>
       </span>
 
