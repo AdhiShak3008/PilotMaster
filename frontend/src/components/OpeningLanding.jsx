@@ -74,8 +74,8 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
     setLoading(true);
     try {
       const data = await loginRequest(email, password);
-      if (!data.access_token) {
-        setErrorMessage("Invalid credentials. Please check your email and password.");
+      if (!data || !data.access_token) {
+        setErrorMessage(typeof data?.detail === "string" ? data.detail : "Invalid credentials. Please check your email and password.");
         return;
       }
       localStorage.setItem("token", data.access_token);
@@ -92,23 +92,24 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
     setErrorMessage("");
     setLoading(true);
     try {
-      try {
-        const data = await loginRequest("demo@pilotmaster.ai", "demo12345");
-        if (data.access_token) {
-          localStorage.setItem("token", data.access_token);
-          await onLogin();
-          return;
-        }
-      } catch {
+      let data = await loginRequest("demo@pilotmaster.ai", "demo12345");
+      if (!data || !data.access_token) {
         // Create demo account if not exists
         await apiRequest("/auth/signup", "POST", {
           username: "demo_pilot",
           email: "demo@pilotmaster.ai",
           password: "demo12345",
         });
-        const loginData = await loginRequest("demo@pilotmaster.ai", "demo12345");
-        localStorage.setItem("token", loginData.access_token);
+        data = await loginRequest("demo@pilotmaster.ai", "demo12345");
+      }
+
+      if (data && data.access_token) {
+        localStorage.setItem("token", data.access_token);
         await onLogin();
+      } else {
+        setEmail("demo@pilotmaster.ai");
+        setPassword("demo12345");
+        setErrorMessage("Demo initialized. Click 'Continue to Workspace' below to enter.");
       }
     } catch (err) {
       setEmail("demo@pilotmaster.ai");
@@ -125,16 +126,26 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
     setErrorMessage("");
     setLoading(true);
     try {
-      await apiRequest("/auth/signup", "POST", { username, email, password });
+      const res = await apiRequest("/auth/signup", "POST", { username, email, password });
+      if (res?.detail) {
+        setErrorMessage(typeof res.detail === "string" ? res.detail : "Signup failed. Username or email might already exist.");
+        return;
+      }
       const data = await loginRequest(email, password);
-      localStorage.setItem("token", data.access_token);
-      await onLogin();
+      if (data?.access_token) {
+        localStorage.setItem("token", data.access_token);
+        await onLogin();
+      } else {
+        setSuccessMessage("Account created! Please sign in.");
+        setAuthMode("login");
+      }
     } catch (err) {
       setErrorMessage("Signup failed. Username or email might already exist.");
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleGenerateResetToken = async () => {
     if (loading) return;
