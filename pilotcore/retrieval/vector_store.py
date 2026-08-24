@@ -75,7 +75,17 @@ def load_user_documents(user_id: int):
 
 
 def load_user_bm25(user_id: int):
-    return load_bm25(get_bm25_path(user_id))
+    bm25 = load_bm25(get_bm25_path(user_id))
+    if bm25 is None:
+        docs = load_user_documents(user_id)
+        if docs:
+            try:
+                bm25 = build_bm25(docs)
+                if bm25 is not None:
+                    save_bm25(bm25, get_bm25_path(user_id))
+            except Exception as e:
+                print(f"Auto-build BM25 error: {e}")
+    return bm25
 
 
 def save_index(user_id, index, documents, model_name: str | None = None):
@@ -173,6 +183,23 @@ def search_vectors(
     dimension = len(query_embedding) if hasattr(query_embedding, "__len__") else DEFAULT_DIMENSION
     index = load_user_index(user_id, dimension=dimension, model_name=embedding_model)
     documents = load_user_documents(user_id)
+
+    # If documents exist but index is missing or out of sync for this specific embedding model, build it on-the-fly!
+    if len(documents) > 0 and (index.ntotal == 0 or index.ntotal < len(documents)):
+        try:
+            texts = [doc.get("text", "") for doc in documents if doc.get("text")]
+            if texts:
+                embeddings = get_embeddings_batch(texts, embedding_model)
+                if embeddings:
+                    idx_dim = len(embeddings[0])
+                    index = faiss.IndexFlatIP(idx_dim)
+                    vectors = np.array(embeddings, dtype="float32")
+                    faiss.normalize_L2(vectors)
+                    index.add(vectors)
+                    faiss.write_index(index, get_index_path(user_id, embedding_model))
+                    print(f"[On-Demand Index] Built FAISS index with {index.ntotal} vectors for model {embedding_model}")
+        except Exception as e:
+            print(f"[On-Demand Index] Error building index: {e}")
 
     if index.ntotal == 0 or len(documents) == 0:
         return RetrievalResult(
