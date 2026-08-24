@@ -114,21 +114,20 @@ export function SelectorItem({
         padding: "8px 12px",
         borderRadius: "12px",
         cursor: "pointer",
-        background: active ? "rgba(168, 85, 247, 0.2)" : "transparent",
-        color: active ? "#ffffff" : "var(--text-secondary)",
-        transition: "all 0.15s ease",
+        background: active ? "rgba(168, 85, 247, 0.22)" : "transparent",
+        color: active ? "#ffffff" : "#f8fafc",
         marginBottom: "2px",
       }}
       onMouseEnter={(e) => {
         if (!active) {
-          e.currentTarget.style.background = "rgba(255, 255, 255, 0.06)";
+          e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
           e.currentTarget.style.color = "#ffffff";
         }
       }}
       onMouseLeave={(e) => {
         if (!active) {
           e.currentTarget.style.background = "transparent";
-          e.currentTarget.style.color = "var(--text-secondary)";
+          e.currentTarget.style.color = "#f8fafc";
         }
       }}
     >
@@ -140,8 +139,8 @@ export function SelectorItem({
                 width: "16px",
                 height: "16px",
                 borderRadius: "5px",
-                border: active ? "none" : "1.5px solid rgba(255, 255, 255, 0.2)",
-                background: active ? "#a855f7" : "transparent",
+                border: active ? "none" : "1.5px solid rgba(255, 255, 255, 0.35)",
+                background: active ? "#a855f7" : "rgba(255, 255, 255, 0.05)",
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -157,7 +156,8 @@ export function SelectorItem({
           <span
             style={{
               fontSize: "13px",
-              fontWeight: active ? "600" : "400",
+              fontWeight: active ? "700" : "600",
+              color: active ? "#ffffff" : "#f8fafc",
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
@@ -175,12 +175,11 @@ export function SelectorItem({
       {subtitle && (
         <div
           style={{
-            fontSize: "11px",
-            color: "var(--text-muted)",
-            marginTop: "2px",
+            fontSize: "11.5px",
+            color: "rgba(255, 255, 255, 0.72)",
+            marginTop: "3px",
             paddingLeft: multiSelect ? "24px" : "0",
-            lineHeight: 1.3,
-            opacity: 0.8,
+            lineHeight: 1.4,
           }}
         >
           {subtitle}

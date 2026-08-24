@@ -2179,7 +2179,7 @@ function Dashboard({
                           opacity: 0.7,
                         }}
                       >
-                        Enhance
+                        Query Enhancements
                       </span>
 
                       {showEnhancements && (

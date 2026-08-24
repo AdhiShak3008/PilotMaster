@@ -749,7 +749,7 @@ export default function ExperimentSetup({ onRunChange }) {
                 opacity: 0.7,
               }}
             >
-              Enhance
+              Query Enhancements
             </span>
 
             {showEnhancements && (
@@ -1026,7 +1026,7 @@ export default function ExperimentSetup({ onRunChange }) {
               <SummaryItem label="Embedding" value={embeddingModel} />
               <SummaryItem label="Retriever" value={labelMap[retrievalMethod] ?? retrievalMethod} />
               <SummaryItem label="Reranker" value={labelMap[reranker] ?? reranker} />
-              <SummaryItem label="Enhance" value={buildEnhancementLabel(selectedEnhancements)} />
+              <SummaryItem label="Query Enhancements" value={buildEnhancementLabel(selectedEnhancements)} />
               <SummaryItem label="Scope" value={`${selectedDocIds.length} docs selected`} />
             </div>
           </div>

@@ -10,10 +10,10 @@ export default function ConfigBadge({
   isBest = false,
   medal = null,
   fontSize = "13px",
-  placement = "top",
+  placement = "auto",
 }) {
   const [hovered, setHovered] = useState(false);
-  const [popoverPos, setPopoverPos] = useState({ top: 0, left: 0, placeAbove: true, maxHeight: 320 });
+  const [popoverPos, setPopoverPos] = useState({ top: 0, left: 0, placeAbove: false, maxHeight: 320 });
   const badgeRef = useRef(null);
 
   const displayLabel = label || configName || "Config";
@@ -22,7 +22,10 @@ export default function ConfigBadge({
   const updatePosition = () => {
     if (!badgeRef.current) return;
     const rect = badgeRef.current.getBoundingClientRect();
+    const popoverEstimatedHeight = 260;
     const popoverWidth = 320;
+    const spaceAbove = rect.top;
+    const spaceBelow = window.innerHeight - rect.bottom;
 
     // If badge is off screen, hide popover
     if (rect.bottom < 0 || rect.top > window.innerHeight) {
@@ -30,22 +33,32 @@ export default function ConfigBadge({
       return;
     }
 
-    // Default to ALWAYS upward (placeAbove = true)
-    let placeAbove = true;
-    if (placement === "bottom") {
-      placeAbove = false;
-    } else if (placement === "auto") {
-      placeAbove = rect.top >= 220;
+    let placeAbove = false;
+    if (placement === "top") {
+      placeAbove = spaceAbove >= 160;
+    } else if (placement === "bottom") {
+      placeAbove = spaceBelow < 160 && spaceAbove > spaceBelow;
+    } else {
+      // Intelligent Auto:
+      // If element is in upper viewport (< 250px from top), open below
+      // If element is in lower viewport (< 260px from bottom), open above
+      if (spaceAbove < popoverEstimatedHeight && spaceBelow >= 180) {
+        placeAbove = false;
+      } else if (spaceBelow < popoverEstimatedHeight && spaceAbove >= 180) {
+        placeAbove = true;
+      } else {
+        placeAbove = spaceAbove >= spaceBelow;
+      }
     }
 
     let top = 0;
     let maxHeight = 340;
     if (placeAbove) {
       top = rect.top - 8;
-      maxHeight = Math.min(340, Math.max(160, rect.top - 16));
+      maxHeight = Math.min(340, Math.max(140, rect.top - 16));
     } else {
       top = rect.bottom + 8;
-      maxHeight = Math.min(340, Math.max(160, window.innerHeight - rect.bottom - 16));
+      maxHeight = Math.min(340, Math.max(140, window.innerHeight - rect.bottom - 16));
     }
 
     const idealLeft = rect.left + rect.width / 2;

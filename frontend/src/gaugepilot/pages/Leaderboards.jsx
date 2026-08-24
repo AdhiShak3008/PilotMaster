@@ -150,6 +150,7 @@ export default function Leaderboards({ leaderboard }) {
                   <ConfigBadge
                     configName={item.configName}
                     label={labelMap.get(item.configName) || "Config"}
+                    placement="bottom"
                   />
                 </div>
               ) : (
