@@ -556,47 +556,12 @@ function Dashboard({
         setSessions(Array.isArray(sessionData) ? sessionData : []);
         setUsername(billingData?.username || "");
 
-        if (Array.isArray(sessionData) && sessionData.length > 0) {
-          const firstId = sessionData[0].id;
-          const [msgData, docData] = await Promise.all([
-            apiRequest(`/history/${firstId}`),
-            apiRequest(`/docs/?session_id=${firstId}`),
-          ]);
-          if (Array.isArray(msgData)) {
-            setMessages(
-              msgData.map((m) => ({
-                role: m.role,
-                content: m.content,
-                sources: m.sources,
-                timestamp: m.timestamp || m.created_at || new Date().toISOString(),
-              }))
-            );
-          }
-          if (Array.isArray(docData) && docData.length > 0) {
-            const formatted = docData.map((d, index) => ({
-              document_id: d.id ?? d.document_id ?? index,
-              filename: d.filename ?? d.name ?? `Document ${index + 1}`,
-            }));
-            setDocuments(formatted);
-            setSelectedDocumentIds(formatted.map((d) => d.document_id));
-            setSource(
-              formatted.length === 1
-                ? formatted[0].filename
-                : `${formatted.length} documents`
-            );
-          } else {
-            setDocuments([]);
-            setSelectedDocumentIds([]);
-            setSource("");
-          }
-          setCurrentSessionId(firstId);
-        } else {
-          setDocuments([]);
-          setSelectedDocumentIds([]);
-          setSource("");
-          setMessages([]);
-          setCurrentSessionId(null);
-        }
+        // Always initialize a fresh new conversation by default on load / login
+        setDocuments([]);
+        setSelectedDocumentIds([]);
+        setSource("");
+        setMessages([]);
+        setCurrentSessionId(null);
       } catch {
         // ignore
       } finally {
@@ -1923,19 +1888,16 @@ function Dashboard({
                 justifyContent: "space-between",
                 gap: "8px",
                 width: "100%",
-                minWidth: 0,
+                flexWrap: "wrap",
               }}
             >
               <div
-                className="pill-scroll-bar"
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: "6px",
-                  overflowX: "auto",
+                  flexWrap: "wrap",
                   flex: 1,
-                  minWidth: 0,
-                  paddingBottom: "2px",
                 }}
               >
                 {/* MODEL SELECTOR */}
