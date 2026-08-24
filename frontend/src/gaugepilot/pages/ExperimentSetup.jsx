@@ -5,6 +5,8 @@ import Leaderboards from "./Leaderboards";
 import Visualizations from "./Visualizations";
 import ExperimentSelector from "../components/ExperimentSelector";
 import { CustomSelector, SelectorItem } from "../components/CustomSelector";
+import LoadingOverlay from "../../components/LoadingOverlay";
+
 
 const DEFAULT_MODEL_OPTIONS = [
   { value: "openai/gpt-oss-120b", label: "GPT-OSS 120B", description: "High-intelligence frontier model" },
@@ -390,6 +392,7 @@ export default function ExperimentSetup({ onRunChange }) {
   return (
     <div
       id="experiment-setup"
+
       style={{
         maxWidth: "1280px",
         margin: "0 auto",
@@ -397,7 +400,15 @@ export default function ExperimentSetup({ onRunChange }) {
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
       }}
     >
+      {loading && (
+        <LoadingOverlay text="Evaluating benchmark experiment & AI matrix..." />
+      )}
+      {uploading && (
+        <LoadingOverlay text="Ingesting & indexing benchmark documents..." />
+      )}
+
       {/* ── Page Header (Google Cloud Vertex Evaluation Studio) ── */}
+
       <div
         style={{
           display: "flex",

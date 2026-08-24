@@ -1,5 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
+import LoadingOverlay from "../components/LoadingOverlay";
+
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL + "/tracepilot",
@@ -182,7 +184,15 @@ export default function TraceExplorer({
         overflow: "hidden",
       }}
     >
+      {loadingTraces && traces.length === 0 && (
+        <LoadingOverlay text="Loading TracePilot workspace..." />
+      )}
+      {replaying && (
+        <LoadingOverlay text="Replaying execution trace..." />
+      )}
+
       {sidebarOpen && (
+
         <button
           className="mobile-drawer-backdrop"
           aria-label="Close traces"

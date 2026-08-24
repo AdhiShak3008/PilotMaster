@@ -4,6 +4,9 @@ import DocPilotDashboard from "./docpilot/pages/Dashboard.jsx";
 import TraceExplorer from "./tracepilot/TraceExplorer.jsx";
 import { useTheme } from "./ThemeContext.jsx";
 import GaugePilot from "./gaugepilot/GaugePilot.jsx";
+import OpeningLanding from "./components/OpeningLanding.jsx";
+import LoadingOverlay from "./components/LoadingOverlay.jsx";
+
 // ─── THEME HELPER ─────────────────────────────────────────────────────────────
 // Must be called INSIDE components so it re-evaluates on every render
 function getTheme() {
@@ -139,21 +142,28 @@ export default function App() {
         navigate("/home");
     };
 
-    if (loading) return <Splash />;
+    if (loading) {
+        const loadingText = currentPath.includes("tracepilot")
+            ? "Loading TracePilot workspace..."
+            : currentPath.includes("gaugepilot")
+            ? "Loading GaugePilot workspace..."
+            : currentPath.includes("docpilot")
+            ? "Loading DocPilot workspace..."
+            : "Loading PilotMaster workspace...";
+        return <LoadingOverlay text={loadingText} />;
+    }
 
     if (!auth) {
-        if (currentPath === "/signup") return <Signup goToLogin={() => navigate("/login")} />;
-        if (currentPath === "/forgot") return <ForgotPassword goBack={() => navigate("/login")} />;
         return (
-            <Login
+            <OpeningLanding
                 onLogin={onLogin}
-                goToSignup={() => navigate("/signup")}
-                goToForgot={() => navigate("/forgot")}
+                initialMode={currentPath === "/signup" ? "signup" : currentPath === "/forgot" ? "forgot" : "login"}
             />
         );
     }
 
     const isExperimental =
+
         currentPath.includes("experimental") ||
         (experimentMode && !currentPath.includes("production"));
 
@@ -814,13 +824,10 @@ const authLinkStyle = {
 
 // ─── UTILITY COMPONENTS ───────────────────────────────────────────────────────
 
-function Splash() {
-    return (
-        <div style={{ background: "var(--bg-primary)", color: "var(--text-muted)", width: "100vw", height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", fontFamily: "'Inter', sans-serif", fontSize: "14px", gap: "10px" }}>
-            <Spinner /> Loading PilotMaster...
-        </div>
-    );
+function Splash({ text = "Loading PilotMaster workspace..." }) {
+    return <LoadingOverlay text={text} />;
 }
+
 
 function Spinner({ size = 16 }) {
     return (
