@@ -1,4 +1,9 @@
-from langchain_core.embeddings import Embeddings
+try:
+    from langchain_core.embeddings import Embeddings
+except ImportError:
+    class Embeddings:
+        pass
+
 
 from pilotcore.retrieval.embeddings import get_embedding_model
 
