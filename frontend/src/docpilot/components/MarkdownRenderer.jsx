@@ -2,6 +2,18 @@ import React, { useState, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+function extractThoughts(rawText) {
+  if (!rawText) return { thoughts: null, answer: "" };
+  const str = String(rawText);
+  const thinkMatch = str.match(/<think>([\s\S]*?)(?:<\/think>|$)/i);
+  if (thinkMatch) {
+    const thoughts = thinkMatch[1].trim();
+    const answer = str.replace(/<think>[\s\S]*?(?:<\/think>|$)/i, "").trim();
+    return { thoughts, answer };
+  }
+  return { thoughts: null, answer: str };
+}
+
 function preprocessMarkdown(text) {
   if (!text) return "";
   let processed = String(text);
@@ -20,8 +32,10 @@ function preprocessMarkdown(text) {
 
 export default function MarkdownRenderer({ content, experimentMode }) {
   const [copiedCodeId, setCopiedCodeId] = useState(null);
+  const [showThoughts, setShowThoughts] = useState(false);
 
-  const cleanContent = useMemo(() => preprocessMarkdown(content), [content]);
+  const { thoughts, answer } = useMemo(() => extractThoughts(content), [content]);
+  const cleanContent = useMemo(() => preprocessMarkdown(answer), [answer]);
 
   const copyCode = (codeText, id) => {
     navigator.clipboard.writeText(codeText);
@@ -29,10 +43,64 @@ export default function MarkdownRenderer({ content, experimentMode }) {
     setTimeout(() => setCopiedCodeId(null), 2000);
   };
 
-
   return (
     <div className="docpilot-markdown-body" style={{ color: "#e2e8f0", fontSize: "15px", lineHeight: 1.7 }}>
+      {thoughts && (
+        <div
+          style={{
+            marginBottom: "14px",
+            borderRadius: "14px",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            background: "rgba(255, 255, 255, 0.03)",
+            overflow: "hidden",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setShowThoughts((v) => !v)}
+            style={{
+              width: "100%",
+              padding: "8px 14px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--text-muted)",
+              fontSize: "12px",
+              fontWeight: 600,
+            }}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ fontSize: "14px" }}>💭</span>
+              <span style={{ color: experimentMode ? "#c084fc" : "#93c5fd" }}>Thought Process</span>
+            </span>
+            <span style={{ fontSize: "10px", color: "var(--text-muted)", transform: showThoughts ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}>
+              ▼
+            </span>
+          </button>
+          {showThoughts && (
+            <div
+              style={{
+                padding: "12px 16px",
+                borderTop: "1px solid rgba(255, 255, 255, 0.06)",
+                fontSize: "12.5px",
+                color: "rgba(255, 255, 255, 0.65)",
+                lineHeight: 1.6,
+                maxHeight: "260px",
+                overflowY: "auto",
+                whiteSpace: "pre-wrap",
+                fontFamily: "inherit",
+              }}
+            >
+              {thoughts}
+            </div>
+          )}
+        </div>
+      )}
       <ReactMarkdown
+        children={cleanContent}
         remarkPlugins={[remarkGfm]}
         components={{
           table: ({ node, ...props }) => (

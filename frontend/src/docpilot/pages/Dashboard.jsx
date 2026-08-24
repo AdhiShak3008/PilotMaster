@@ -485,6 +485,7 @@ function Dashboard({
   const documentSelectorRef = useRef(null);
   const chunkerSelectorRef = useRef(null);
   const embeddingSelectorRef = useRef(null);
+  const questionTextareaRef = useRef(null);
 
   // Experiment toggles
   const [retrievalStrategy, setRetrievalStrategy] = useState("Hybrid");
@@ -511,6 +512,14 @@ function Dashboard({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Auto-expand question textarea as content grows
+  useEffect(() => {
+    if (questionTextareaRef.current) {
+      questionTextareaRef.current.style.height = "auto";
+      questionTextareaRef.current.style.height = `${Math.min(questionTextareaRef.current.scrollHeight, 180)}px`;
+    }
+  }, [question]);
 
   // Close all popups on outside click / Escape
   useEffect(() => {
@@ -1884,10 +1893,15 @@ function Dashboard({
 
             {/* Input textarea */}
             <textarea
+              ref={questionTextareaRef}
               rows={1}
               placeholder="Ask anything about your documents..."
               value={question}
-              onChange={(e) => setQuestion(e.target.value)}
+              onChange={(e) => {
+                setQuestion(e.target.value);
+                e.target.style.height = "auto";
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 180)}px`;
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -1896,6 +1910,8 @@ function Dashboard({
               }}
               style={{
                 width: "100%",
+                minHeight: "24px",
+                maxHeight: "180px",
                 border: "none",
                 background: "transparent",
                 color: "var(--text-primary)",
@@ -1905,6 +1921,8 @@ function Dashboard({
                 fontFamily: "inherit",
                 lineHeight: 1.5,
                 boxSizing: "border-box",
+                overflowY: question.split("\n").length > 4 || question.length > 200 ? "auto" : "hidden",
+                transition: "height 0.1s ease",
               }}
             />
 
