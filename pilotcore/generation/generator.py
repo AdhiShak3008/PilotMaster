@@ -39,6 +39,7 @@ def generate_response(
                 },
             ],
             temperature=0.2,
+            max_tokens=4096,
         )
     except Exception as e:
         print(f"Warning: Model '{selected_model}' failed with error: {e}. Falling back to '{GROQ_MODEL}'.")
@@ -55,6 +56,7 @@ def generate_response(
                 },
             ],
             temperature=0.2,
+            max_tokens=4096,
         )
 
     response = completion.choices[0].message.content
