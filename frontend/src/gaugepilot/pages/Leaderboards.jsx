@@ -14,27 +14,27 @@ const METRIC_META = {
 export default function Leaderboards({ leaderboard }) {
   const [selectedMetric, setSelectedMetric] = useState("overall");
 
-  const accent = "#4f6ef7";
-  const green  = "#22c55e";
+  const accent = "#a855f7";
+  const green  = "#10b981";
 
   const card = {
-    background: "rgba(255,255,255,0.03)",
-    border: "1px solid rgba(255,255,255,0.08)",
+    background: "rgba(255, 255, 255, 0.03)",
     borderRadius: "20px",
     padding: "24px",
   };
 
   const sectionLabel = {
-    fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em",
-    textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: "14px",
+    fontSize: "11px", fontWeight: 700, letterSpacing: "0.06em",
+    textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "14px",
   };
 
   const chip = (color = accent) => ({
     display: "inline-flex", alignItems: "center", gap: "6px",
-    padding: "3px 10px", borderRadius: "999px",
-    background: `${color}22`, border: `1px solid ${color}44`,
-    color, fontSize: "11px", fontWeight: 600, letterSpacing: "0.04em",
+    padding: "4px 12px", borderRadius: "9999px",
+    background: `${color}18`,
+    color, fontSize: "11px", fontWeight: 600, letterSpacing: "0.02em",
   });
+
 
   // ── Derived KPI values ─────────────────────────────────────────────────────
   const overall = leaderboard?.overall ?? [];
@@ -56,11 +56,10 @@ export default function Leaderboards({ leaderboard }) {
 
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", marginBottom: "28px" }}>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-              <span style={{ fontSize: "30px", lineHeight: 1 }}>🏆</span>
-              <h1 style={{ margin: 0, fontSize: "34px", fontWeight: 700, letterSpacing: "-0.5px", color: "white" }}>Leaderboards</h1>
-            </div>
-            <p style={{ margin: 0, fontSize: "13px", color: "rgba(255,255,255,0.72)", lineHeight: 1.6 }}>
+            <h1 style={{ margin: 0, fontSize: "32px", fontWeight: "800", letterSpacing: "-0.8px", color: "#c084fc" }}>
+              Leaderboard Rankings
+            </h1>
+            <p style={{ margin: "4px 0 0", fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.6 }}>
               Compare benchmark performance across evaluation metrics and configurations.
             </p>
           </div>
@@ -88,14 +87,10 @@ export default function Leaderboards({ leaderboard }) {
             display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px",
           }}>🏆</div>
           <div>
-            <p style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "white" }}>No Results Yet</p>
-            <p style={{ margin: "8px 0 0", fontSize: "13px", color: "rgba(255,255,255,0.35)", maxWidth: "360px", lineHeight: 1.6 }}>
-              Run your first benchmark from Experiment Setup to populate the leaderboard with ranked results.
+            <p style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "white" }}>No Benchmark Results Yet</p>
+            <p style={{ margin: "8px 0 0", fontSize: "13px", color: "rgba(255,255,255,0.35)", maxWidth: "340px", lineHeight: 1.6 }}>
+              Run a benchmark above to populate the leaderboards with metrics.
             </p>
-          </div>
-          <div style={chip(accent)}>
-            <span style={{ width: 7, height: 7, borderRadius: "50%", background: accent, display: "inline-block" }} />
-            Ready to benchmark
           </div>
         </div>
       </div>
@@ -107,15 +102,14 @@ export default function Leaderboards({ leaderboard }) {
   return (
     <div id="leaderboards" style={{ maxWidth: "1240px", margin: "0 auto", padding: "28px 24px", fontFamily: "inherit" }}>
 
-      {/* ── Page Header ──────────────────────────────────────────────────────── */}
+      {/* ── Section Header ── */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", marginBottom: "24px" }}>
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-            <span style={{ fontSize: "30px", lineHeight: 1 }}>🏆</span>
-            <h1 style={{ margin: 0, fontSize: "34px", fontWeight: 700, letterSpacing: "-0.5px", color: "white" }}>Leaderboards</h1>
-          </div>
-          <p style={{ margin: 0, fontSize: "13px", color: "rgba(255,255,255,0.72)", lineHeight: 1.6 }}>
-            Compare benchmark performance across evaluation metrics and configurations.
+          <h1 style={{ margin: 0, fontSize: "32px", fontWeight: "800", letterSpacing: "-0.8px", color: "#c084fc" }}>
+            Leaderboard Rankings
+          </h1>
+          <p style={{ margin: "4px 0 0", fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.6 }}>
+            Rank and compare configurations across all core retrieval and generation metrics.
           </p>
         </div>
         <div style={chip(green)}>

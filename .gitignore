@@ -29,6 +29,8 @@ vector_store/
 
 # Uploaded files — user data, never commit
 temp/
+storage/
+
 
 # Node
 node_modules/

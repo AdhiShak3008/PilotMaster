@@ -6,7 +6,23 @@ const API = axios.create({
     "/gaugepilot",
 });
 
+export async function getModels(token) {
+  try {
+    const rawApi = axios.create({
+      baseURL: import.meta.env.VITE_API_BASE_URL || "",
+    });
+    const response = await rawApi.get("/models/", {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    return response.data;
+  } catch (e) {
+    console.error("Failed to fetch models in gaugepilot:", e);
+    return [];
+  }
+}
+
 export async function runBenchmark(payload, token) {
+
   const response = await API.post(
     "/benchmark/run",
     payload,
@@ -19,10 +35,12 @@ export async function runBenchmark(payload, token) {
 
   return response.data;
 }
-export async function uploadDocument(file, token) {
+export async function uploadDocument(files, token) {
   const formData = new FormData();
-
-  formData.append("file", file);
+  const fileList = Array.isArray(files) ? files : [files];
+  for (const file of fileList) {
+    formData.append("files", file);
+  }
 
   const response = await API.post(
     "/docs/upload",
@@ -37,6 +55,7 @@ export async function uploadDocument(file, token) {
 
   return response.data;
 }
+
 export async function getBenchmarkRuns(token) {
   const response = await API.get(
     "/benchmark/runs",

@@ -127,9 +127,9 @@ def retrieve(
         source = kwargs.pop("source", None)
         trace_id = kwargs.pop("trace_id")
         top_k = kwargs.pop("top_k", 7)
-        query_embedding = get_embedding(query)
-
         document_ids = kwargs.pop("document_ids", None)
+        embedding_model = getattr(experiment_config, "embedding_model", None)
+        query_embedding = get_embedding(query, embedding_model)
 
         result = search_vectors(
             user_id=user_id,
@@ -138,6 +138,7 @@ def retrieve(
             document_ids=document_ids,
             trace_id=trace_id,
             top_k=top_k,
+            embedding_model=embedding_model,
         )
         result.retrieved_chunks = apply_post_processing(
             chunks=result.retrieved_chunks,
@@ -168,52 +169,28 @@ def retrieve(
         trace_id = kwargs.pop("trace_id")
         top_k = kwargs.pop("top_k", 7)
         document_ids = kwargs.pop("document_ids", None)
-        query_variants = [query]
+        embedding_model = getattr(experiment_config, "embedding_model", None)
 
-        if experiment_config and experiment_config.multi_query:
+        query_embedding = get_embedding(query, embedding_model)
+        vector_result = search_vectors(
+            user_id=user_id,
+            query_embedding=query_embedding,
+            source=source,
+            document_ids=document_ids,
+            trace_id=trace_id,
+            top_k=top_k,
+            embedding_model=embedding_model,
+        )
 
-            query_variants = generate_queries(query)
-            print("\n===== MULTI QUERY =====")
+        lexical_result = retrieve_chunks(
+            user_id=user_id,
+            query=query,
+            source=source,
+            document_ids=document_ids,
+            trace_id=trace_id,
+            top_k=top_k,
+        )
 
-            for i, q in enumerate(query_variants, start=1):
-                print(f"{i}. {q}")
-
-            print("=======================\n")
-            if trace:
-                trace.generated_queries = query_variants
-
-        all_vector_chunks = []
-        all_lexical_chunks = []
-
-        for query_variant in query_variants:
-
-            query_embedding = get_embedding(query_variant)
-            print("RETRIEVER document_ids =", document_ids)
-            vector_result = search_vectors(
-                user_id=user_id,
-                query_embedding=query_embedding,
-                source=source,
-                document_ids=document_ids,
-                trace_id=trace_id,
-                top_k=top_k,
-            )
-
-            lexical_result = retrieve_chunks(
-                user_id=user_id,
-                query=query_variant,
-                source=source,
-                document_ids=document_ids,
-                trace_id=trace_id,
-                top_k=top_k,
-            )
-
-            all_vector_chunks.extend(vector_result.retrieved_chunks)
-
-            all_lexical_chunks.extend(lexical_result.retrieved_chunks)
-
-        vector_result.retrieved_chunks = deduplicate_chunks(all_vector_chunks)
-
-        lexical_result.retrieved_chunks = deduplicate_chunks(all_lexical_chunks)
 
         # Reciprocal Rank Fusion (RRF)
         # -----------------------------------------

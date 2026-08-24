@@ -52,16 +52,23 @@ def run_benchmark_endpoint(
         "_".join(sorted(request.enhancements)) if request.enhancements else "Default"
     )
 
+    chunker_name = request.chunker or "parent_child"
+    embed_name = request.embedding_model or "all-mpnet-base-v2"
+
     experiment_name = (
         f"{request.model}_"
         f"{request.retrieval_method}_"
         f"{request.reranker}_"
+        f"{chunker_name}_"
+        f"{embed_name}_"
         f"{enhancement_name}"
     )
 
     config = ExperimentConfig(
         experiment_name=experiment_name,
         retrieval_method=request.retrieval_method,
+        chunker=chunker_name,
+        embedding_model=embed_name,
     )
 
     # Optional model benchmarking
@@ -96,7 +103,9 @@ def run_benchmark_endpoint(
         configs=[config],
         user_id=current_user.id,
         source=None,
+        document_ids=request.document_ids,
     )
+
 
     leaderboard = generate_leaderboard(results)
     analysis = generate_deterministic_analysis(results, leaderboard)

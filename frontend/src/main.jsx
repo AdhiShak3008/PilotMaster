@@ -6,44 +6,51 @@ import { ThemeProvider } from "./ThemeContext.jsx";
 const style = document.createElement("style");
 style.textContent = `
   :root {
-  --bg-primary: #212121;
-  --bg-secondary: #171717;
-
-  --surface: #2a2a2a;
-  --surface-hover: #323232;
-  --surface-strong: #383838;
-
-  --border: #4a4a4a;
-
-  --text-primary: #ececec;
-  --text-secondary: #c7c7c7;
-  --text-muted: #9b9b9b;
-
-  --success: #22c55e;
-  --danger: #ef4444;
-  --purple: #8b5cf6;
-}
+    --bg-primary: #0e121a;
+    --bg-secondary: #131824;
+    --surface: #1a2030;
+    --surface-hover: #222b3e;
+    --surface-strong: #2a354c;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-subtle: rgba(255, 255, 255, 0.04);
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --accent: #3b82f6;
+    --accent-glow: rgba(59, 130, 246, 0.15);
+    --success: #10b981;
+    --danger: #ef4444;
+    --purple: #8b5cf6;
+  }
 
   .experimental-mode {
---bg-primary: #070b1f;
---bg-secondary: #0d1433;
-
---surface: #121c45;
---surface-hover: #1a2861;
---surface-strong: #24378c;
-
---border: #4f67d8;
-
---text-primary: #f5f7ff;
---text-secondary: #cfd8ff;
---text-muted: #8ea1ff;
-
---purple: #8b5cf6;
-}
+    --bg-primary: #080c18;
+    --bg-secondary: #0d1222;
+    --surface: #141b30;
+    --surface-hover: #1c2542;
+    --surface-strong: #253156;
+    --border: rgba(139, 92, 246, 0.15);
+    --border-subtle: rgba(255, 255, 255, 0.04);
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #7c8ba1;
+    --accent: #8b5cf6;
+    --accent-glow: rgba(139, 92, 246, 0.2);
+    --success: #10b981;
+    --danger: #ef4444;
+    --purple: #8b5cf6;
+  }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body, #root { width: 100%; height: 100%; overflow: hidden; background: var(--bg-primary); color: var(--text-primary); }
-  body { min-width: 0; font-family: Inter, system-ui, sans-serif; }
+  body { min-width: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+  button, input, textarea { font: inherit; color: inherit; }
+  
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.22); }
+
   button, input { font: inherit; color: inherit; }
   @keyframes pilot-spin { to { transform: rotate(360deg); } }
 
@@ -425,8 +432,69 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+class ErrorBoundary extends React.Component {
+
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null, errorInfo: null };
+    }
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true, error };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        console.error("PilotMaster React ErrorBoundary caught:", error, errorInfo);
+        this.setState({ errorInfo });
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div style={{
+                    width: "100vw", height: "100vh", background: "#0c112a", color: "#f5f7ff",
+                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                    padding: "32px", boxSizing: "border-box", fontFamily: "monospace", textAlign: "center"
+                }}>
+                    <h2 style={{ fontSize: "28px", color: "#ff6b6b", marginBottom: "12px" }}>⚠️ Application Error</h2>
+                    <p style={{ maxWidth: "600px", color: "rgba(255,255,255,0.7)", marginBottom: "20px", fontSize: "14px" }}>
+                        {this.state.error?.message || "An unexpected error occurred while rendering the page."}
+                    </p>
+                    <div style={{ display: "flex", gap: "12px" }}>
+                        <button
+                            onClick={() => {
+                                window.history.pushState({}, "", "/home");
+                                window.location.href = "/home";
+                            }}
+                            style={{
+                                padding: "10px 20px", background: "#4f6ef7", color: "white",
+                                border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "14px", fontWeight: 600
+                            }}
+                        >
+                            Return to Home
+                        </button>
+                        <button
+                            onClick={() => window.location.reload()}
+                            style={{
+                                padding: "10px 20px", background: "rgba(255,255,255,0.1)", color: "white",
+                                border: "1px solid rgba(255,255,255,0.2)", borderRadius: "8px", cursor: "pointer", fontSize: "14px"
+                            }}
+                        >
+                            Reload Page
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
 ReactDOM.createRoot(document.getElementById("root")).render(
-    <ThemeProvider>
-        <App />
-    </ThemeProvider>
+    <ErrorBoundary>
+        <ThemeProvider>
+            <App />
+        </ThemeProvider>
+    </ErrorBoundary>
 );
+

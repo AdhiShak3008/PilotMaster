@@ -57,29 +57,65 @@ function disabledStyle(disabled) {
 // ─── APP ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
-    const { experimentMode } = useTheme();
+    const { experimentMode, setExperimentMode } = useTheme();
     const [auth, setAuth] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [screen, setScreen] = useState("login");
+    const [currentPath, setCurrentPath] = useState(window.location.pathname || "/");
     const [username, setUsername] = useState("");
     const [plan, setPlan] = useState("free");
+
+    const navigate = (path, overrideMode = null) => {
+        if (overrideMode !== null) {
+            setExperimentMode(overrideMode);
+        } else if (path.includes("/experimental") || path.includes("/experimentalmode")) {
+            setExperimentMode(true);
+        } else if (path.includes("/production") || path.includes("/productionmode")) {
+            setExperimentMode(false);
+        }
+        window.history.pushState({}, "", path);
+        setCurrentPath(path);
+    };
+
+    useEffect(() => {
+        const onPopState = () => {
+            const path = window.location.pathname;
+            if (path.includes("/experimental") || path.includes("/experimentalmode")) {
+                setExperimentMode(true);
+            } else if (path.includes("/production") || path.includes("/productionmode")) {
+                setExperimentMode(false);
+            }
+            setCurrentPath(path);
+        };
+        window.addEventListener("popstate", onPopState);
+        return () => window.removeEventListener("popstate", onPopState);
+    }, [setExperimentMode]);
 
     useEffect(() => {
         const validate = async () => {
             const token = localStorage.getItem("token");
-            if (!token) { setLoading(false); return; }
+            if (!token) {
+                setLoading(false);
+                if (currentPath !== "/signup" && currentPath !== "/forgot") {
+                    navigate("/login");
+                }
+                return;
+            }
             try {
                 const data = await apiRequest("/auth/me");
                 if (data.email) {
                     setAuth(true);
                     setUsername(data.username);
                     setPlan(data.plan);
-                    setScreen("home");
+                    if (currentPath === "/login" || currentPath === "/signup" || currentPath === "/forgot" || currentPath === "/") {
+                        navigate("/home");
+                    }
                 } else {
                     localStorage.removeItem("token");
+                    navigate("/login");
                 }
             } catch {
                 localStorage.removeItem("token");
+                navigate("/login");
             }
             setLoading(false);
         };
@@ -88,11 +124,11 @@ export default function App() {
 
     const logout = () => {
         localStorage.removeItem("token");
-        localStorage.removeItem("pilotmaster_mode");           
+        localStorage.removeItem("pilotmaster_mode");
         document.documentElement.classList.remove("experimental-mode");
         setAuth(false);
-        setScreen("login");
         setUsername("");
+        navigate("/login");
     };
 
     const onLogin = async () => {
@@ -100,47 +136,84 @@ export default function App() {
         setUsername(data.username);
         setPlan(data.plan);
         setAuth(true);
-        setScreen("home");
+        navigate("/home");
     };
 
     if (loading) return <Splash />;
 
     if (!auth) {
-        if (screen === "signup") return <Signup goToLogin={() => setScreen("login")} />;
-        if (screen === "forgot") return <ForgotPassword goBack={() => setScreen("login")} />;
-        return <Login onLogin={onLogin} goToSignup={() => setScreen("signup")} goToForgot={() => setScreen("forgot")} />;
+        if (currentPath === "/signup") return <Signup goToLogin={() => navigate("/login")} />;
+        if (currentPath === "/forgot") return <ForgotPassword goBack={() => navigate("/login")} />;
+        return (
+            <Login
+                onLogin={onLogin}
+                goToSignup={() => navigate("/signup")}
+                goToForgot={() => navigate("/forgot")}
+            />
+        );
     }
 
-    if (screen === "docpilot") return (
-        <DocPilotDashboard
-            experimentMode={experimentMode}
-            onLogout={logout}
-            onHome={() => setScreen("home")}
-            onTracePilot={() => setScreen("tracepilot")}
-        />
-    );
+    const isExperimental =
+        currentPath.includes("experimental") ||
+        (experimentMode && !currentPath.includes("production"));
 
-    if (screen === "tracepilot") return (
-        <TraceExplorer
-            experimentMode={experimentMode}
-            onHome={() => setScreen("home")}
-            onDocPilot={() => setScreen("docpilot")}
+    // Authenticated routes
+    if (currentPath.includes("docpilot")) {
+        return (
+            <DocPilotDashboard
+                experimentMode={isExperimental}
+                onLogout={logout}
+                onHome={() => navigate("/home")}
+                onTracePilot={() => navigate(isExperimental ? "/experimentalmode/tracepilot" : "/productionmode/tracepilot")}
+                onGaugePilot={() => navigate("/experimentalmode/gaugepilot", true)}
+                onToggleMode={(exp) => navigate(exp ? "/experimentalmode/docpilot" : "/productionmode/docpilot", exp)}
+            />
+        );
+    }
+
+    if (currentPath.includes("tracepilot")) {
+        return (
+            <TraceExplorer
+                experimentMode={isExperimental}
+                onHome={() => navigate("/home")}
+                onDocPilot={() => navigate(isExperimental ? "/experimentalmode/docpilot" : "/productionmode/docpilot")}
+                onGaugePilot={() => navigate("/experimentalmode/gaugepilot", true)}
+                onToggleMode={(exp) => navigate(exp ? "/experimentalmode/tracepilot" : "/productionmode/tracepilot", exp)}
+            />
+        );
+    }
+
+
+    if (currentPath.includes("gaugepilot")) {
+        return (
+            <GaugePilot
+                onHome={() => navigate("/home")}
+                onDocPilot={() => navigate("/experimentalmode/docpilot")}
+                onTracePilot={() => navigate("/experimentalmode/tracepilot")}
+            />
+        );
+    }
+
+
+    return (
+        <PilotMasterHome
+            username={username}
+            plan={plan}
+            onOpen={(screen) => {
+                const target = experimentMode ? `/experimentalmode/${screen}` : `/productionmode/${screen}`;
+                navigate(target);
+            }}
+            onLogout={logout}
         />
     );
-   if (screen === "gaugepilot")
-    return (
-        <GaugePilot
-         onHome={() => setScreen("home")} />
-    );
-    return <PilotMasterHome username={username} plan={plan} onOpen={setScreen} onLogout={logout} />;
 }
+
+
 
 // ─── HOME ─────────────────────────────────────────────────────────────────────
 
 function PilotMasterHome({ username, plan, onOpen, onLogout }) {
     const { experimentMode, toggleMode } = useTheme();
-    const theme = getTheme();
-    const btnStyle = getBtnStyle(theme);
     const [currentPlan, setCurrentPlan] = useState(plan);
     const [planLoading, setPlanLoading] = useState(false);
 
@@ -168,9 +241,9 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
         <div
             key={experimentMode ? "exp" : "prod"}
             style={{
-                background: theme.bgPrimary,
-                color: theme.textPrimary,
-                fontFamily: "Arial",
+                background: "var(--bg-primary)",
+                color: "var(--text-primary)",
+                fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
                 width: "100vw",
                 height: "100vh",
                 boxSizing: "border-box",
@@ -180,142 +253,264 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
             }}
         >
             {/* TOP BAR */}
-            <div className="pilot-home-topbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "22px 48px", borderBottom: `1px solid ${theme.border}` }}>
+            <header
+                style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "20px 48px",
+                }}
+            >
                 <div>
-                    <h1 style={{ margin: 0, fontSize: "34px", fontFamily: "Georgia, serif", fontWeight: "600", letterSpacing: "-1.5px", color: "white" }}>PilotMaster</h1>
-                    <p style={{ margin: "3px 0 0", fontSize: "12px", color: "#999", letterSpacing: "0.05em" }}>observable AI execution ecosystem</p>
+                    <h1
+                        style={{
+                            margin: 0,
+                            fontSize: "30px",
+                            fontWeight: "800",
+                            letterSpacing: "-0.8px",
+                            color: experimentMode ? "#c084fc" : "#60a5fa",
+                        }}
+                    >
+                        PilotMaster
+                    </h1>
+                    <p style={{ margin: "2px 0 0", fontSize: "11px", color: "var(--text-muted)", letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 600 }}>
+                        Observable AI Execution Ecosystem
+                    </p>
                 </div>
-                <div className="pilot-home-actions" style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-                    <div style={{ textAlign: "right" }}>
-                        <p style={{ margin: 0, fontSize: "14px", color: theme.textSecondary }}>{username}</p>
-                        <p style={{ margin: "2px 0 0", fontSize: "11px", color: theme.textMuted, textTransform: "uppercase", letterSpacing: "0.08em" }}>{currentPlan}</p>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+
+                    <div
+                        style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            padding: "6px 14px",
+                            borderRadius: "9999px",
+                            background: "rgba(255, 255, 255, 0.04)",
+                            fontSize: "12px",
+                        }}
+                    >
+                        <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>@{username}</span>
+                        <span style={{ color: "var(--text-muted)" }}>·</span>
+                        <span style={{ color: currentPlan === "pro" ? "#34d399" : "#60a5fa", fontWeight: 700, textTransform: "uppercase", fontSize: "10px" }}>
+                            {currentPlan}
+                        </span>
                     </div>
+
                     {currentPlan === "free" ? (
-                        <button onClick={upgradePlan} disabled={planLoading} style={{ ...btnStyle, color: "#ccc", borderColor: "#555", ...disabledStyle(planLoading) }}>
-                            {planLoading ? <ButtonContent text="Loading..." /> : "Upgrade to Pro"}
+                        <button
+                            onClick={upgradePlan}
+                            disabled={planLoading}
+                            style={{
+                                padding: "7px 16px",
+                                borderRadius: "9999px",
+                                background: "rgba(255, 255, 255, 0.08)",
+                                color: "var(--text-primary)",
+                                border: "none",
+                                cursor: "pointer",
+                                fontSize: "12px",
+                                fontWeight: 600,
+                                transition: "all 0.15s ease",
+                            }}
+                        >
+                            {planLoading ? <ButtonContent text="Upgrading..." /> : "Upgrade to Pro"}
                         </button>
                     ) : (
-                        <button onClick={downgradePlan} disabled={planLoading} style={{ ...btnStyle, color: "#888", ...disabledStyle(planLoading) }}>
-                            {planLoading ? <ButtonContent text="Loading..." /> : "Downgrade"}
+                        <button
+                            onClick={downgradePlan}
+                            disabled={planLoading}
+                            style={{
+                                padding: "7px 16px",
+                                borderRadius: "9999px",
+                                background: "rgba(255, 255, 255, 0.05)",
+                                color: "var(--text-muted)",
+                                border: "none",
+                                cursor: "pointer",
+                                fontSize: "12px",
+                                fontWeight: 500,
+                            }}
+                        >
+                            {planLoading ? <ButtonContent text="Downgrading..." /> : "Downgrade"}
                         </button>
                     )}
-                    <button onClick={onLogout} style={btnStyle}>Logout</button>
+
+                    <button
+                        onClick={onLogout}
+                        style={{
+                            padding: "7px 16px",
+                            borderRadius: "9999px",
+                            background: "transparent",
+                            color: "var(--text-muted)",
+                            border: "none",
+                            cursor: "pointer",
+                            fontSize: "12px",
+                        }}
+                    >
+                        Logout
+                    </button>
                 </div>
-            </div>
+            </header>
 
             {/* CENTER */}
-            <div className="pilot-home-center" style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: "28px" }}>
-                <button
-                    onClick={toggleMode}
-                    style={{
-                        padding: "12px 24px",
-                        borderRadius: "10px",
-                        border: experimentMode ? "1px solid #ff7b72" : "1px solid #7c3aed",
-                        background: theme.surface,
-                        color: experimentMode ? "#ff7b72" : "#a78bfa",
-                        cursor: "pointer",
-                        fontSize: "13px",
-                        fontWeight: "600",
-                    }}
-                >
-                    {experimentMode ? "← Return to Production Mode" : "🧪 Enter Experimentation Mode"}
-                </button>
+            <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: "32px", padding: "0 24px" }}>
+                <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+                    <button
+                        onClick={toggleMode}
+                        style={{
+                            padding: "8px 20px",
+                            borderRadius: "9999px",
+                            border: "none",
+                            background: experimentMode ? "rgba(168, 85, 247, 0.18)" : "rgba(66, 133, 244, 0.14)",
+                            color: experimentMode ? "#c084fc" : "#60a5fa",
+                            cursor: "pointer",
+                            fontSize: "13px",
+                            fontWeight: "600",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            transition: "all 0.18s ease",
+                        }}
+                    >
+                        {experimentMode ? "← Return to Production Mode" : "🧪 Enter Experimentation Mode"}
+                    </button>
 
-                <p style={{ margin: 0, fontSize: "11px", color: theme.textMuted, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-                    {experimentMode ? "experimental workspace" : "select a workspace"}
-                </p>
+                    <h2
+                        style={{
+                            margin: "12px 0 0",
+                            fontSize: "36px",
+                            fontWeight: "700",
+                            letterSpacing: "-1px",
+                            color: "#ffffff",
+                        }}
+                    >
+                        Select a Workspace
+                    </h2>
+                    <p style={{ margin: 0, fontSize: "14px", color: "var(--text-secondary)", maxWidth: "480px" }}>
+                        {experimentMode
+                            ? "Advanced RAG laboratory with configurable chunking, embeddings, and benchmarking."
+                            : "Production-grade document Q&A, knowledge search, and real-time execution observability."}
+                    </p>
+                </div>
 
-                <div className="pilot-home-grid" style={{ display: "flex", gap: "20px" }}>
+                <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", justifyContent: "center" }}>
                     <ProductCard
                         name="DocPilot"
-                        description="Upload documents. Chat with them. Manage your knowledge base."
-                        tags={["RAG", "Chat", "Documents", "Auth"]}
+                        description="Upload multi-format documents, ask complex questions, and receive grounded answers with citations."
+                        tags={["RAG", "Chat", "Document Indexing"]}
+                        href={experimentMode ? "/experimentalmode/docpilot" : "/productionmode/docpilot"}
                         onClick={() => onOpen("docpilot")}
-                        accent="#cccccc"
+                        accent={experimentMode ? "#c084fc" : "#60a5fa"}
                     />
                     <ProductCard
                         name="TracePilot"
-                        description="Observe every execution. Inspect traces, chunks, evaluation scores and spans."
-                        tags={["Traces", "Evaluation", "Observability", "Re-Run Traces"]}
+                        description="Inspect full execution lifecycles, chunk relevance logits, grounding confidence, and replay traces."
+                        tags={["Observability", "Telemetry", "Spans", "Replay"]}
+                        href={experimentMode ? "/experimentalmode/tracepilot" : "/productionmode/tracepilot"}
                         onClick={() => onOpen("tracepilot")}
-                        accent="#cccccc"
+                        accent={experimentMode ? "#c084fc" : "#60a5fa"}
                     />
                     {experimentMode && (
-    <ProductCard
-        name="GaugePilot"
-        description="Benchmark RAG pipelines. Compare retrievers, rerankers and enhancements."
-        tags={[
-            "Benchmarking",
-            "Leaderboards",
-            "Experiments",
-            "Insights",
-        ]}
-       onClick={() => {
-    console.log("OPENING GAUGEPILOT");
-    onOpen("gaugepilot");
-}}
-        accent="#cccccc"
-    />
-)}
+                        <ProductCard
+                            name="GaugePilot"
+                            description="Benchmark end-to-end RAG pipelines against custom evaluation questions and rank models."
+                            tags={["Benchmarking", "Leaderboards", "AI Insights"]}
+                            href="/experimentalmode/gaugepilot"
+                            onClick={() => onOpen("gaugepilot")}
+                            accent="#c084fc"
+                        />
+                    )}
                 </div>
+
             </div>
 
             {/* FOOTER */}
-            <div className="pilot-home-footer" style={{ padding: "14px 48px", borderTop: `1px solid ${theme.border}`, display: "flex", justifyContent: "space-between" }}>
-                <p style={{ margin: 0, fontSize: "11px", color: theme.textMuted }}>PilotMaster · execution kernel: PilotCore</p>
-                <p style={{ margin: 0, fontSize: "11px", color: theme.textMuted }}>llama-3.1-8b-instant · all-mpnet-base-v2</p>
-            </div>
+            <footer style={{ padding: "18px 48px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <p style={{ margin: 0, fontSize: "12px", color: "var(--text-muted)" }}>
+                    PilotMaster · Powered by PilotCore Kernel
+                </p>
+                <p style={{ margin: 0, fontSize: "12px", color: "var(--text-muted)" }}>
+                    llama-3.3-70b · all-mpnet-base-v2
+                </p>
+            </footer>
         </div>
     );
 }
 
-// ─── PRODUCT CARD ─────────────────────────────────────────────────────────────
+// ─── PRODUCT CARD (Google Material 3 Elevation Style) ─────────────────────────
 
-function ProductCard({ name, description, tags, onClick, accent }) {
-    const theme = getTheme(); // re-evaluates when parent re-renders after theme toggle
+function ProductCard({ name, icon, description, tags, href, onClick, accent }) {
     const [hovered, setHovered] = useState(false);
 
     return (
-        <div
+        <a
+            href={href}
             className="pilot-product-card"
-            onClick={onClick}
+            onClick={(e) => {
+                if (!e.metaKey && !e.ctrlKey && !e.shiftKey && e.button === 0) {
+                    e.preventDefault();
+                    onClick();
+                }
+            }}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             style={{
-                width: "320px", padding: "28px", borderRadius: "14px", cursor: "pointer",
-                background: hovered ? theme.surfaceHover : theme.surface,
-                border: `1px solid ${hovered ? "#323c4e" : theme.border}`,
-                transition: "all 0.15s ease",
-                display: "flex", flexDirection: "column", gap: "14px",
+                width: "320px",
+                padding: "28px 24px",
+                borderRadius: "24px",
+                cursor: "pointer",
+                textDecoration: "none",
+                color: "inherit",
+                background: hovered ? "rgba(255, 255, 255, 0.06)" : "rgba(255, 255, 255, 0.03)",
+                boxShadow: hovered ? "0 16px 40px rgba(0, 0, 0, 0.3)" : "none",
+                transform: hovered ? "translateY(-4px)" : "translateY(0)",
+                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "14px",
                 boxSizing: "border-box",
             }}
         >
+
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h2 style={{ margin: 0, fontSize: "26px", fontFamily: "Georgia, serif", fontWeight: "600", letterSpacing: "-1px", color: theme.textPrimary }}>{name}</h2>
-                <span style={{ fontSize: "18px", color: hovered ? accent : theme.textMuted, transition: "color 0.15s" }}>→</span>
+                <h3 style={{ margin: 0, fontSize: "24px", fontWeight: "800", color: accent, letterSpacing: "-0.6px", transition: "color 0.15s ease" }}>
+                    {name}
+                </h3>
+                <span style={{ fontSize: "18px", color: hovered ? "#ffffff" : accent, transition: "color 0.15s" }}>
+                    →
+                </span>
             </div>
-            <p style={{ margin: 0, fontSize: "13px", color: "#bbb", lineHeight: 1.6 }}>{description}</p>
-            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                {tags.map(tag => (
-                    <span key={tag} style={{
-                        fontSize: "10px", padding: "3px 8px", borderRadius: "4px",
-                        background: accent + "15", color: accent, border: `1px solid ${accent}25`,
-                        letterSpacing: "0.05em", textTransform: "uppercase",
-                    }}>{tag}</span>
+
+
+            <p style={{ margin: 0, fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.6 }}>
+                {description}
+            </p>
+
+            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "auto" }}>
+                {tags.map((tag) => (
+                    <span
+                        key={tag}
+                        style={{
+                            fontSize: "10px",
+                            padding: "3px 10px",
+                            borderRadius: "9999px",
+                            background: "rgba(255, 255, 255, 0.04)",
+                            color: "var(--text-muted)",
+                            fontWeight: 600,
+                            letterSpacing: "0.02em",
+                        }}
+                    >
+                        {tag}
+                    </span>
                 ))}
             </div>
-        </div>
+        </a>
     );
 }
 
-// ─── AUTH ─────────────────────────────────────────────────────────────────────
+// ─── AUTH (Google Account Style) ──────────────────────────────────────────────
 
 function Login({ onLogin, goToSignup, goToForgot }) {
-    const theme = getTheme();
-    const inputStyle = getInputStyle(theme);
-    const primaryBtnStyle = getPrimaryBtnStyle(theme);
-    const linkStyle = getLinkStyle(theme);
-
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
@@ -334,26 +529,55 @@ function Login({ onLogin, goToSignup, goToForgot }) {
 
     return (
         <AuthShell>
-            <h1 className="auth-title" style={authTitleStyle}>PilotMaster</h1>
-            <p style={{ margin: "0 0 36px", color: theme.textMuted, fontSize: "14px", textAlign: "center" }}>observable AI execution ecosystem</p>
-            <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
-            <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && login()} style={inputStyle} />
-            <button onClick={login} disabled={loading} style={{ ...primaryBtnStyle, ...disabledStyle(loading) }}>
-                {loading ? <ButtonContent text="Loading..." /> : "Login"}
-            </button>
-            <p onClick={goToSignup} style={linkStyle}>Don't have an account? Sign up</p>
-            <p onClick={goToForgot} style={{ ...linkStyle, color: theme.textSecondary, marginTop: "10px" }}>Forgot password?</p>
+            <div style={{ textAlign: "center", marginBottom: "28px" }}>
+                <h1 style={{ margin: 0, fontSize: "36px", fontWeight: "800", color: "#60a5fa", letterSpacing: "-0.8px" }}>
+                    PilotMaster
+                </h1>
+                <p style={{ margin: "8px 0 2px", fontSize: "16px", fontWeight: "600", color: "#ffffff" }}>
+                    Sign in
+                </p>
+                <p style={{ margin: "2px 0 0", color: "var(--text-muted)", fontSize: "12px", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                    Observable AI Execution Ecosystem
+                </p>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%" }}>
+                <input
+                    placeholder="Email address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    style={authInputStyle}
+                />
+                <input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && login()}
+                    style={authInputStyle}
+                />
+                <button
+                    onClick={login}
+                    disabled={loading}
+                    style={authButtonStyle}
+                >
+                    {loading ? <ButtonContent text="Signing in..." /> : "Continue"}
+                </button>
+            </div>
+
+            <div style={{ marginTop: "24px", textAlign: "center", display: "flex", flexDirection: "column", gap: "8px" }}>
+                <p onClick={goToSignup} style={authLinkStyle}>
+                    Don't have an account? <span style={{ color: "#60a5fa", fontWeight: 600 }}>Create account</span>
+                </p>
+                <p onClick={goToForgot} style={{ ...authLinkStyle, fontSize: "12px", opacity: 0.7 }}>
+                    Forgot password?
+                </p>
+            </div>
         </AuthShell>
     );
 }
 
 function Signup({ goToLogin }) {
-    const theme = getTheme();
-    const inputStyle = getInputStyle(theme);
-    const primaryBtnStyle = getPrimaryBtnStyle(theme);
-    const linkStyle = getLinkStyle(theme);
-
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -364,7 +588,7 @@ function Signup({ goToLogin }) {
         setLoading(true);
         try {
             await apiRequest("/auth/signup", "POST", { username, email, password });
-            alert("Account created. Please login.");
+            alert("Account created. Please sign in.");
             goToLogin();
         } catch { alert("Signup failed"); }
         finally { setLoading(false); }
@@ -372,25 +596,57 @@ function Signup({ goToLogin }) {
 
     return (
         <AuthShell>
-            <h1 className="auth-title" style={authTitleStyle}>PilotMaster</h1>
-            <p style={{ margin: "0 0 36px", color: theme.textMuted, fontSize: "14px", textAlign: "center" }}>create your account</p>
-            <input placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} style={inputStyle} />
-            <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
-            <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} style={inputStyle} />
-            <button onClick={signup} disabled={loading} style={{ ...primaryBtnStyle, ...disabledStyle(loading) }}>
-                {loading ? <ButtonContent text="Loading..." /> : "Sign Up"}
-            </button>
-            <p onClick={goToLogin} style={linkStyle}>Already have an account? Login</p>
+            <div style={{ textAlign: "center", marginBottom: "28px" }}>
+                <h1 style={{ margin: 0, fontSize: "36px", fontWeight: "800", color: "#60a5fa", letterSpacing: "-0.8px" }}>
+                    PilotMaster
+                </h1>
+                <p style={{ margin: "8px 0 2px", fontSize: "16px", fontWeight: "600", color: "#ffffff" }}>
+                    Create account
+                </p>
+                <p style={{ margin: "2px 0 0", color: "var(--text-muted)", fontSize: "12px", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                    Get started with PilotMaster AI
+                </p>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%" }}>
+                <input
+                    placeholder="Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    style={authInputStyle}
+                />
+                <input
+                    placeholder="Email address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    style={authInputStyle}
+                />
+                <input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    style={authInputStyle}
+                />
+                <button
+                    onClick={signup}
+                    disabled={loading}
+                    style={authButtonStyle}
+                >
+                    {loading ? <ButtonContent text="Creating account..." /> : "Sign Up"}
+                </button>
+            </div>
+
+            <div style={{ marginTop: "24px", textAlign: "center" }}>
+                <p onClick={goToLogin} style={authLinkStyle}>
+                    Already have an account? <span style={{ color: "#60a5fa", fontWeight: 600 }}>Sign in</span>
+                </p>
+            </div>
         </AuthShell>
     );
 }
 
 function ForgotPassword({ goBack }) {
-    const theme = getTheme();
-    const inputStyle = getInputStyle(theme);
-    const primaryBtnStyle = getPrimaryBtnStyle(theme);
-    const linkStyle = getLinkStyle(theme);
-
     const [email, setEmail] = useState("");
     const [token, setToken] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -413,7 +669,7 @@ function ForgotPassword({ goBack }) {
         setResetLoading(true);
         try {
             await apiRequest("/auth/reset-password", "POST", { token, new_password: newPassword });
-            alert("Password reset");
+            alert("Password successfully reset.");
             goBack();
         } catch { alert("Invalid token"); }
         finally { setResetLoading(false); }
@@ -421,44 +677,147 @@ function ForgotPassword({ goBack }) {
 
     return (
         <AuthShell>
-            <h1 className="auth-title" style={{ ...authTitleStyle, fontSize: "42px", marginBottom: "32px" }}>Reset Password</h1>
-            <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} />
-            <button onClick={generateResetToken} disabled={tokenLoading} style={{ ...primaryBtnStyle, ...disabledStyle(tokenLoading) }}>
-                {tokenLoading ? <ButtonContent text="Loading..." /> : "Generate Reset Token"}
-            </button>
-            {generatedToken && (
-                <div style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: "10px", padding: "12px", fontSize: "12px", color: theme.textSecondary, wordBreak: "break-all", marginBottom: "14px" }}>
-                    Token: {generatedToken}
-                </div>
-            )}
-            <input placeholder="Paste Token" value={token} onChange={e => setToken(e.target.value)} style={inputStyle} />
-            <input type="password" placeholder="New Password" value={newPassword} onChange={e => setNewPassword(e.target.value)} style={inputStyle} />
-            <button onClick={resetPassword} disabled={resetLoading} style={{ ...primaryBtnStyle, ...disabledStyle(resetLoading) }}>
-                {resetLoading ? <ButtonContent text="Loading..." /> : "Reset Password"}
-            </button>
-            <p onClick={goBack} style={linkStyle}>Back to Login</p>
+            <div style={{ textAlign: "center", marginBottom: "28px" }}>
+                <h1 style={{ margin: 0, fontSize: "36px", fontWeight: "800", color: "#60a5fa", letterSpacing: "-0.8px" }}>
+                    PilotMaster
+                </h1>
+                <p style={{ margin: "8px 0 2px", fontSize: "16px", fontWeight: "600", color: "#ffffff" }}>
+                    Reset password
+                </p>
+                <p style={{ margin: "2px 0 0", color: "var(--text-muted)", fontSize: "12px", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                    Enter your email to generate a reset token
+                </p>
+            </div>
+
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%" }}>
+                <input
+                    placeholder="Email address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    style={authInputStyle}
+                />
+                <button
+                    onClick={generateResetToken}
+                    disabled={tokenLoading}
+                    style={{ ...authButtonStyle, background: "rgba(255, 255, 255, 0.08)" }}
+                >
+                    {tokenLoading ? <ButtonContent text="Generating token..." /> : "Generate Reset Token"}
+                </button>
+
+                {generatedToken && (
+                    <div style={{ background: "rgba(99, 102, 241, 0.15)", borderRadius: "14px", padding: "12px 16px", fontSize: "12px", color: "#c7d2fe", wordBreak: "break-all" }}>
+                        Token: {generatedToken}
+                    </div>
+                )}
+
+                <input
+                    placeholder="Paste Reset Token"
+                    value={token}
+                    onChange={(e) => setToken(e.target.value)}
+                    style={authInputStyle}
+                />
+                <input
+                    type="password"
+                    placeholder="New Password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    style={authInputStyle}
+                />
+                <button
+                    onClick={resetPassword}
+                    disabled={resetLoading}
+                    style={authButtonStyle}
+                >
+                    {resetLoading ? <ButtonContent text="Resetting..." /> : "Update Password"}
+                </button>
+            </div>
+
+            <div style={{ marginTop: "24px", textAlign: "center" }}>
+                <p onClick={goBack} style={authLinkStyle}>
+                    ← Back to Sign in
+                </p>
+            </div>
         </AuthShell>
     );
 }
 
 function AuthShell({ children }) {
-    const theme = getTheme();
     return (
-        <div className="auth-shell" style={{ background: theme.bgPrimary, width: "100vw", height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", fontFamily: "Arial", boxSizing: "border-box", overflow: "hidden" }}>
-            <div className="auth-panel" style={{ width: "500px", display: "flex", flexDirection: "column" }}>
+        <div
+            style={{
+                background: "var(--bg-primary)",
+                width: "100vw",
+                height: "100vh",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+                boxSizing: "border-box",
+                padding: "24px",
+            }}
+        >
+            <div
+                style={{
+                    width: "100%",
+                    maxWidth: "420px",
+                    borderRadius: "28px",
+                    background: "rgba(255, 255, 255, 0.03)",
+                    boxShadow: "0 24px 60px rgba(0, 0, 0, 0.4)",
+                    padding: "36px 32px",
+                    display: "flex",
+                    flexDirection: "column",
+                    boxSizing: "border-box",
+                }}
+            >
                 {children}
             </div>
         </div>
     );
 }
 
+const authInputStyle = {
+    width: "100%",
+    padding: "12px 18px",
+    background: "rgba(255, 255, 255, 0.04)",
+    border: "none",
+    borderRadius: "9999px",
+    color: "var(--text-primary)",
+    fontSize: "14px",
+    outline: "none",
+    boxSizing: "border-box",
+    transition: "all 0.15s ease",
+};
+
+const authButtonStyle = {
+    width: "100%",
+    padding: "12px",
+    background: "linear-gradient(135deg, #3b82f6, #6366f1)",
+    color: "white",
+    border: "none",
+    borderRadius: "9999px",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: "600",
+    marginTop: "4px",
+    boxShadow: "0 4px 16px rgba(59, 130, 246, 0.3)",
+    transition: "all 0.15s ease",
+};
+
+const authLinkStyle = {
+    margin: 0,
+    fontSize: "13px",
+    color: "var(--text-muted)",
+    cursor: "pointer",
+    transition: "color 0.15s ease",
+};
+
 // ─── UTILITY COMPONENTS ───────────────────────────────────────────────────────
 
 function Splash() {
-    const theme = getTheme();
     return (
-        <div style={{ background: theme.bgPrimary, color: theme.textMuted, width: "100vw", height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", fontFamily: "Arial", fontSize: "14px", gap: "10px" }}>
-            <Spinner /> Loading...
+        <div style={{ background: "var(--bg-primary)", color: "var(--text-muted)", width: "100vw", height: "100vh", display: "flex", justifyContent: "center", alignItems: "center", fontFamily: "'Inter', sans-serif", fontSize: "14px", gap: "10px" }}>
+            <Spinner /> Loading PilotMaster...
         </div>
     );
 }
@@ -467,7 +826,7 @@ function Spinner({ size = 16 }) {
     return (
         <span style={{
             width: `${size}px`, height: `${size}px`, border: "2px solid currentColor",
-            borderTopColor: "transparent", borderRadius: "999px", display: "inline-block",
+            borderTopColor: "transparent", borderRadius: "9999px", display: "inline-block",
             animation: "pilot-spin 0.8s linear infinite",
         }} />
     );
@@ -480,3 +839,4 @@ function ButtonContent({ text }) {
         </span>
     );
 }
+

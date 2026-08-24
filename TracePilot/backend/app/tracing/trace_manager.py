@@ -47,7 +47,11 @@ def save_trace(trace: Trace):
             trace.prompt_version,
             trace.retriever_version,
             trace.mode,
-            json.dumps(trace.pipeline_config or {}),
+            json.dumps({
+                **(trace.pipeline_config or {}),
+                "transformation_state": trace.transformation_state or (trace.pipeline_config or {}).get("transformation_state"),
+                "generated_queries": trace.generated_queries or (trace.pipeline_config or {}).get("generated_queries", []),
+            }),
         ),
     )
 
@@ -56,10 +60,13 @@ def save_trace(trace: Trace):
 
 
 def _row_to_trace(row) -> Trace:
+    p_config = json.loads(row["pipeline_config"] or "{}")
     return Trace(
         trace_id=row["trace_id"],
         query=row["query"],
         rewritten_query=row["rewritten_query"],
+        generated_queries=p_config.get("generated_queries", []),
+        transformation_state=p_config.get("transformation_state"),
         retrieved_chunks=[
             RetrievedChunk(**chunk) for chunk in json.loads(row["retrieved_chunks"])
         ],
@@ -85,8 +92,9 @@ def _row_to_trace(row) -> Trace:
         prompt_version=row["prompt_version"] or "1.0",
         retriever_version=row["retriever_version"] or "vector_v1",
         mode=row["mode"] or "production",
-        pipeline_config=json.loads(row["pipeline_config"] or "{}"),
+        pipeline_config=p_config,
     )
+
 
 
 def get_traces(

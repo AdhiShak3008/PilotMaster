@@ -1,25 +1,12 @@
-from pilotcore.retrieval.embeddings import get_embedding
-from pilotcore.retrieval.vector_store import add_vector
+from pilotcore.retrieval.vector_store import add_chunks_batch
 from pilotcore.runtime.pipeline import run_pipeline
 from pilotcore.benchmarking.config_builder import (
     build_experiment_config,
 )
 
 
-def add_chunks(chunks, user_id):
-    for chunk in chunks:
-        embedding = get_embedding(chunk["text"])
-
-        add_vector(
-            user_id=user_id,
-            embedding=embedding,
-            text=chunk["text"],
-            source=chunk["source"],
-            page=chunk["page"],
-            chunk_id=chunk["chunk_id"],
-            document_id=chunk["document_id"],
-            metadata=chunk.get("metadata"),
-        )
+def add_chunks(chunks, user_id, embedding_model=None):
+    add_chunks_batch(user_id=user_id, chunks=chunks, embedding_model=embedding_model)
 
 
 def ask_question(
@@ -32,18 +19,25 @@ def ask_question(
     reranker=None,
     enhancements=None,
     mode="production",
+    chunker=None,
+    embedding_model=None,
 ):
     print("RAG document_ids =", document_ids)
     print("\n===== FRONTEND VALUES =====")
     print("mode =", mode)
     print("enhancements =", enhancements)
+    print("chunker =", chunker)
+    print("embedding_model =", embedding_model)
     print("===========================\n")
     config = build_experiment_config(
         retrieval_strategy=retrieval_strategy,
         reranker=reranker,
         enhancements=enhancements,
         mode=mode,
+        chunker=chunker,
+        embedding_model=embedding_model,
     )
+
 
     print("\n===== EXPERIMENT CONFIG =====")
     print("mode               =", config.mode)

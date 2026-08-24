@@ -6,10 +6,10 @@ import os
 import re
 import shutil  # <-- Added for dynamic binary lookup
 import time
-from docling.document_converter import DocumentConverter
 import pandas as pd
 import pytesseract
 from pilotcore.chunking.runtime import ChunkingRuntime
+
 
 # --- FIX START ---
 # Dynamically locate the executable for both Linux/Docker and Windows local testing
@@ -305,6 +305,8 @@ def extract_pdf_text_pypdf(file_path):
 
 def extract_pdf_docling(file_path):
     try:
+        from docling.document_converter import DocumentConverter
+
         converter = DocumentConverter()
 
         result = converter.convert(file_path)
@@ -320,6 +322,7 @@ def extract_pdf_docling(file_path):
                 metadata={"extractor": "docling", "element_type": "document"},
             )
         ]
+
 
     except Exception as e:
         logger.exception(
@@ -655,6 +658,8 @@ def process_document(
     user_id,
     document_id,
     mime_type=None,
+    chunking_strategy="parent_child",
+    embedding_model=None,
 ):
     from DocPilot.backend.app.services.rag import add_chunks
 
@@ -662,10 +667,14 @@ def process_document(
 
     sections = extract_text_sections(file_path, mime_type)
 
+    strategy_key = (chunking_strategy or "parent_child").lower().replace("-", "_")
+    if strategy_key not in ["fixed", "recursive", "token", "semantic", "parent_child"]:
+        strategy_key = "parent_child"
+
     all_chunks = []
     source_file = os.path.basename(file_path)
     extension, _ = detect_type(file_path, mime_type)
-    chunk_id = 0
+    chunk_index = 0
 
     for section in sections:
         metadata = {
@@ -678,10 +687,11 @@ def process_document(
 
         chunks = ChunkingRuntime.chunk(
             text=section.text,
-            strategy="parent_child",
+            strategy=strategy_key,
         )
 
         for chunk in chunks:
+            chunk_unique_id = f"{document_id}_{chunk_index}"
             all_chunks.append(
                 {
                     "document_id": document_id,
@@ -690,26 +700,22 @@ def process_document(
                     "source_file": source_file,
                     "file_type": extension.lstrip("."),
                     "page": page,
-                    "chunk_id": chunk_id,
+                    "chunk_id": chunk_unique_id,
                     "metadata": {
                         **metadata,
-                        **chunk["metadata"],
+                        **chunk.get("metadata", {}),
                     },
                 }
             )
-            chunk_id += 1
+            chunk_index += 1
 
-    logger.info("Chunk count: %s", len(all_chunks))
+    logger.info("Chunk count: %s using strategy %s", len(all_chunks), strategy_key)
 
     if not all_chunks:
         raise TextExtractionError("Could not extract enough text from document")
-    print("\n===== CHUNKS TO EMBED =====")
-    for chunk in all_chunks:
-        print("DOC:", chunk["document_id"])
-        print("SOURCE:", chunk["source"])
-        print("TEXT:", chunk["text"][:200])
-        print("------------------------")
-    add_chunks(all_chunks, user_id)
+
+    add_chunks(all_chunks, user_id, embedding_model=embedding_model)
+
 
     logger.info("Embedded %s chunks successfully", len(all_chunks))
 

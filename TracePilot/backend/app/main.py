@@ -69,9 +69,13 @@ class IngestChunk(BaseModel):
     source_file: Optional[str] = None
     page: Optional[int] = None
     section_title: Optional[str] = None
+    document_id: Optional[str] = None
+    file_type: Optional[str] = None
 
 
 class PipelineConfig(BaseModel):
+    chunker: Optional[str] = None
+    embedding_model: Optional[str] = None
     retrieval_strategy: Optional[str] = None
     reranker_model: Optional[str] = None
 
@@ -87,6 +91,7 @@ class PipelineConfig(BaseModel):
     graph_rag: bool = False
 
     context_compression: bool = False
+
 
 
 class IngestRequest(BaseModel):
@@ -115,6 +120,8 @@ class IngestRequest(BaseModel):
     retriever_version: Optional[str] = "vector_v1"
     retrieval_consensus: Optional[str] = None
     rewritten_query: Optional[str] = None
+    generated_queries: List[str] = []
+    transformation_state: Optional[dict] = None
     mode: str = "production"
     pipeline_config: Optional[PipelineConfig] = None
 
@@ -198,6 +205,8 @@ def ingest_trace(request: IngestRequest):
         trace_id=request.trace_id,
         query=request.query,
         rewritten_query=request.rewritten_query,
+        generated_queries=request.generated_queries,
+        transformation_state=request.transformation_state,
         retrieved_chunks=[RetrievedChunk(**c.dict()) for c in request.retrieved_chunks],
         prompt=request.prompt,
         response=request.response,
@@ -225,6 +234,7 @@ def ingest_trace(request: IngestRequest):
             request.pipeline_config.model_dump() if request.pipeline_config else None
         ),
     )
+
 
     save_trace(trace)
 

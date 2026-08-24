@@ -12,7 +12,10 @@ class Document(Base):
 
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
+    session_id = Column(Integer, ForeignKey("chat_sessions.id"), nullable=True, index=True)
+
     filename = Column(String, nullable=False)
+
 
     filepath = Column(String, nullable=False)
 

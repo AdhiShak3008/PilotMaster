@@ -23,6 +23,9 @@ class RetrievedChunk(BaseModel):
     source_file: Optional[str] = None
     page: Optional[int] = None
     section_title: Optional[str] = None
+    document_id: Optional[str] = None
+    file_type: Optional[str] = None
+
 
 
 class Trace(BaseModel):
@@ -53,8 +56,10 @@ class Trace(BaseModel):
     retrieval_consensus: str | None = None
     rewritten_query: Optional[str] = None
     generated_queries: List[str] = Field(default_factory=list)
+    transformation_state: Optional[dict] = None
     mode: str = "production"
     pipeline_config: Optional[dict] = None
+
 
     @staticmethod
     def create_id():

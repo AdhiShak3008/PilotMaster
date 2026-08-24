@@ -11,7 +11,9 @@ load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+GROQ_FAST_MODEL = os.getenv("GROQ_FAST_MODEL", "openai/gpt-oss-20b")
+
 
 # =========================
 # Database

@@ -15,7 +15,10 @@ class Trace(BaseModel):
 
     generated_queries: List[str] = Field(default_factory=list)
 
+    transformation_state: Optional[dict] = None
+
     retrieval_result: Optional[RetrievalResult] = None
+
 
     final_response: Optional[str] = None
 

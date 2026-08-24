@@ -40,6 +40,7 @@ router = APIRouter()
 @router.post("/upload")
 async def upload_document(
     files: list[UploadFile] = File(...),
+    session_id: int | None = None,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -136,6 +137,7 @@ async def upload_document(
 
         document = Document(
             owner_id=current_user.id,
+            session_id=session_id,
             filename=file.filename,
             filepath=file_path,
             file_size=os.path.getsize(file_path),
@@ -193,17 +195,24 @@ async def upload_document(
     response_model=list[DocumentResponse],
 )
 def get_documents(
+    session_id: int | None = None,
+    all_docs: bool = False,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
 
-    documents = (
-        db.query(Document)
-        .filter(Document.owner_id == current_user.id)
-        .all()
-    )
+    query = db.query(Document).filter(Document.owner_id == current_user.id)
+
+    if not all_docs:
+        if session_id is not None:
+            query = query.filter(Document.session_id == session_id)
+        else:
+            query = query.filter(Document.session_id.is_(None))
+
+    documents = query.order_by(Document.id.desc()).all()
 
     return documents
+
 
 
 @router.delete("/reset")

@@ -65,9 +65,9 @@ function BoxColumn({ label, values }) {
         <line x1={boxX} x2={boxX + boxWidth} y1={y(median)} y2={y(median)} stroke={accent} strokeWidth={2.5} />
       </svg>
       <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
-        <div>max {max.toFixed(2)}</div>
-        <div style={{ color: accent, fontWeight: 700 }}>med {median.toFixed(2)}</div>
-        <div>min {min.toFixed(2)}</div>
+        <div>max {max != null ? Number(max).toFixed(2) : "—"}</div>
+        <div style={{ color: accent, fontWeight: 700 }}>med {median != null ? Number(median).toFixed(2) : "—"}</div>
+        <div>min {min != null ? Number(min).toFixed(2) : "—"}</div>
       </div>
       <p style={{ margin: "6px 0 0", fontSize: "11px", color: "rgba(255,255,255,0.6)", fontWeight: 600 }}>{label}</p>
     </div>

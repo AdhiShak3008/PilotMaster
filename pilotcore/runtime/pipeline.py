@@ -15,9 +15,11 @@ from pilotcore.generation.prompt_builder import build_prompt
 from pilotcore.evaluation.evaluator import run_evaluation
 from pilotcore.retrieval.query_rewriter import rewrite_query
 from pilotcore.runtime.experiment_config import ExperimentConfig
+from pilotcore.enhancements.orchestrator import EnhancementOrchestrator
 from pilotcore.retrieval.multi_query import (
     generate_queries,
 )
+
 
 
 def run_pipeline(
@@ -41,41 +43,67 @@ def run_pipeline(
         trace_id=trace_id,
         user_query=query,
     )
-    retrieval_query = query
 
-    if experiment_config.query_rewrite:
-        retrieval_query = rewrite_query(query)
+    # ─────────────────────────────────────────────────────────────
+    # Run Centralized Query Enhancement Orchestrator
+    # ─────────────────────────────────────────────────────────────
+    active_enh_list = getattr(experiment_config, "enhancements", [])
+    if not active_enh_list and getattr(experiment_config, "query_rewrite", False):
+        active_enh_list = ["query_rewrite"]
 
-    trace.rewritten_query = retrieval_query
-    generated_queries = [retrieval_query]
+    transform_state = EnhancementOrchestrator.execute(
+        query=query,
+        enhancements=active_enh_list,
+    )
+    trace.transformation_state = transform_state.model_dump()
+    trace.rewritten_query = transform_state.rewritten_query or transform_state.current_query
 
-    if experiment_config.multi_query:
+    # Determine query variants for retrieval
+    query_variants_to_search = []
+    if transform_state.sub_queries:
+        query_variants_to_search.extend(transform_state.sub_queries)
+    elif transform_state.expanded_queries:
+        query_variants_to_search.extend(transform_state.expanded_queries)
+    else:
+        query_variants_to_search.append(transform_state.current_query)
 
-        generated_queries = generate_queries(retrieval_query)
+    if transform_state.step_back_query and transform_state.step_back_query not in query_variants_to_search:
+        query_variants_to_search.append(transform_state.step_back_query)
 
-    trace.generated_queries = generated_queries
+    # Clean duplicates while preserving order
+    unique_search_queries = []
+    for q_item in query_variants_to_search:
+        if q_item and q_item.strip() and q_item not in unique_search_queries:
+            unique_search_queries.append(q_item)
 
-    print("\n===== QUERY REWRITE =====")
-    print("ORIGINAL :", query)
-    print("REWRITTEN:", retrieval_query)
-    print("=========================\n")
-    print("STRATEGY:", experiment_config.retrieval_method)
+    if not unique_search_queries:
+        unique_search_queries = [query]
 
-    print("\n===== MULTI QUERY =====")
+    trace.generated_queries = unique_search_queries
 
-    for i, q in enumerate(generated_queries):
-        print(f"{i + 1}. {q}")
-
-    print("=======================\n")
+    print("\n===== ENHANCEMENT ORCHESTRATION =====")
+    print("ORIGINAL QUERY   :", query)
+    print("ACTIVE ENHANCED  :", transform_state.active_enhancements)
+    print("TRANSFORMED QUERY:", transform_state.current_query)
+    print("SEARCH VARIANTS  :", unique_search_queries)
+    if transform_state.metadata_filters:
+        print("METADATA FILTERS :", transform_state.metadata_filters)
+    if transform_state.route:
+        print("QUERY ROUTE      :", transform_state.route)
+    print("=====================================\n")
 
     all_chunks = []
     retrieval_result = None
 
-    for query_variant in generated_queries:
+    for query_variant in unique_search_queries:
+        # If HyDE is active and we are on primary query, we can use hypothetical doc for vector search
+        search_text = query_variant
+        if transform_state.hypothetical_document and query_variant == transform_state.current_query:
+            search_text = transform_state.hypothetical_document
 
         result = retrieve(
             strategy=experiment_config.retrieval_method,
-            query=query_variant,
+            query=search_text,
             user_id=user_id,
             source=source,
             document_ids=document_ids,
@@ -85,29 +113,29 @@ def run_pipeline(
         )
 
         if result:
-
             if retrieval_result is None:
                 retrieval_result = result
-
             all_chunks.extend(result.retrieved_chunks)
 
     seen = set()
     deduped_chunks = []
 
     for chunk in all_chunks:
+        chunk_key = (
+            str(getattr(chunk.chunk, "document_id", "")),
+            str(getattr(chunk.chunk, "chunk_id", "")),
+            str(getattr(chunk.chunk, "text", ""))[:200],
+        )
 
-        chunk_id = chunk.chunk.chunk_id
-
-        if chunk_id not in seen:
-
-            seen.add(chunk_id)
-
+        if chunk_key not in seen:
+            seen.add(chunk_key)
             deduped_chunks.append(chunk)
 
     if retrieval_result:
         retrieval_result.retrieved_chunks = deduped_chunks
 
     trace.retrieval_result = retrieval_result
+
 
     # ===== Retrieval debug =====
     print("\n===== RETRIEVAL DEBUG =====")
@@ -183,33 +211,16 @@ def _emit_trace(
     )
     chunks = trace.retrieval_result.retrieved_chunks if trace.retrieval_result else []
 
-    active_enhancements = []
-
-    if experiment_config:
-
+    active_enhancements = list(getattr(experiment_config, "enhancements", [])) if experiment_config else []
+    if not active_enhancements and experiment_config:
         if experiment_config.query_rewrite:
-            active_enhancements.append("Query Rewrite")
-
+            active_enhancements.append("query_rewrite")
         if experiment_config.hyde:
-            active_enhancements.append("HyDE")
-
+            active_enhancements.append("hyde")
         if experiment_config.multi_query:
-            active_enhancements.append("Multi Query")
-
+            active_enhancements.append("multi_query")
         if experiment_config.query_expansion:
-            active_enhancements.append("Query Expansion")
-
-        if experiment_config.parent_child:
-            active_enhancements.append("Parent Child")
-
-        if experiment_config.contextual_retrieval:
-            active_enhancements.append("Contextual Retrieval")
-
-        if experiment_config.graph_rag:
-            active_enhancements.append("Graph RAG")
-
-        if experiment_config.context_compression:
-            active_enhancements.append("Context Compression")
+            active_enhancements.append("keyword_expansion")
 
     payload = {
         "trace_id": trace.trace_id,
@@ -220,10 +231,12 @@ def _emit_trace(
             "generated_queries",
             [],
         ),
+        "transformation_state": getattr(trace, "transformation_state", None),
         "response": trace.final_response or "",
         "prompt": build_prompt(trace),
         "latency": round(latency_ms, 2),
         "model_name": model_name or GROQ_MODEL,
+
         "retrieved_chunks": [
             {
                 "chunk_id": str(c.chunk.chunk_id),
@@ -241,9 +254,22 @@ def _emit_trace(
                 "final_rank": c.final_rank,
                 "reranker_margin": getattr(c, "reranker_margin", None),
                 "retrieval_sources": c.retrieval_sources,
-                "source_file": getattr(c.chunk, "metadata", {}).get("source_file"),
-                "page": getattr(c.chunk, "metadata", {}).get("page"),
+                "source_file": (
+                    getattr(c.chunk, "source", None)
+                    or getattr(c.chunk, "metadata", {}).get("source_file")
+                    or getattr(c.chunk, "metadata", {}).get("source")
+                    or source
+                ),
+                "page": (
+                    getattr(c.chunk, "page_number", None)
+                    or getattr(c.chunk, "metadata", {}).get("page")
+                    or getattr(c.chunk, "metadata", {}).get("page_number")
+                    or getattr(c.chunk, "metadata", {}).get("slide")
+                    or getattr(c.chunk, "metadata", {}).get("row")
+                ),
                 "section_title": getattr(c.chunk, "metadata", {}).get("section_title"),
+                "document_id": str(getattr(c.chunk, "document_id", "")),
+                "file_type": getattr(c.chunk, "metadata", {}).get("file_type"),
             }
             for i, c in enumerate(chunks)
         ],
@@ -271,6 +297,8 @@ def _emit_trace(
         ],
         "mode": (experiment_config.mode if experiment_config else "production"),
         "pipeline_config": {
+            "chunker": getattr(experiment_config, "chunker", None),
+            "embedding_model": getattr(experiment_config, "embedding_model", None),
             "retrieval_strategy": (
                 experiment_config.retrieval_method if experiment_config else "hybrid"
             ),
@@ -310,6 +338,7 @@ def _emit_trace(
                 experiment_config.context_compression if experiment_config else False
             ),
         },
+
     }
     print("\n===== PIPELINE CONFIG =====")
     print(payload["pipeline_config"])

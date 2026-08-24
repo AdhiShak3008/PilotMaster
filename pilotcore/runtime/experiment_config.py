@@ -1,38 +1,55 @@
-from pydantic import BaseModel
-from typing import Literal
+from pydantic import BaseModel, Field
+from typing import Literal, List, Optional
 
 
 class ExperimentConfig(BaseModel):
 
     mode: str = "production"
-    model_name: str | None = None
+    model_name: Optional[str] = None
     retrieval_method: Literal[
         "vector",
         "lexical",
         "hybrid",
     ] = "hybrid"
 
-    query_rewrite: bool = True
+    # Multi-Select Query Enhancements Array
+    enhancements: List[str] = Field(default_factory=list)
 
+    # Context Enhancements
+    query_condensation: bool = False
+    coreference_resolution: bool = False
+    query_rewrite: bool = False
+
+    # Structuring & Routing Enhancements
+    sub_query_generation: bool = False
+    metadata_filter_extraction: bool = False
+    query_routing: bool = False
+
+    # Transformation & Expansion Enhancements
+    step_back: bool = False
+    keyword_expansion: bool = False
+    query_expansion: bool = False
+    multi_query: bool = False
+    hyde: bool = False
+    rag_fusion: bool = False
+
+    # Fusion & Reranking
     rrf: bool = True
-
     reranker: bool = True
     reranker_model: str = "minilm"
-
     deduplication: bool = True
-
-    # Query Enhancements
-    hyde: bool = False
-    multi_query: bool = False
-    query_expansion: bool = False
 
     # Retrieval Enhancements
     parent_child: bool = False
     contextual_retrieval: bool = False
     graph_rag: bool = False
-
-    # Context Enhancements
     context_compression: bool = False
+
+    # Chunking & Embeddings
+    chunker: str = "parent_child"
+    embedding_model: str = "all-mpnet-base-v2"
 
     experiment_name: str = "default"
     emit_trace: bool = True
+
+

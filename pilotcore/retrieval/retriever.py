@@ -10,13 +10,13 @@ from pilotcore.tracing.telemetry import emit_event
 from pilotcore.retrieval.bm25 import tokenize
 
 
-def retrieve_chunks(user_id, query, trace_id, source=None, document_ids=None, top_k=3, **_):
+def retrieve_chunks(user_id, query, trace_id, source=None, document_ids=None, top_k=7, **_):
     start_time = time.perf_counter()
 
     documents = load_user_documents(user_id)
     bm25 = load_user_bm25(user_id)
 
-    if bm25 is None:
+    if bm25 is None or not documents:
         return RetrievalResult(
             trace_id=trace_id,
             query=query,
@@ -26,28 +26,30 @@ def retrieve_chunks(user_id, query, trace_id, source=None, document_ids=None, to
         )
 
     tokenized_query = tokenize(query)
-
     scores = bm25.get_scores(tokenized_query)
-
     matches = []
 
-    for idx, score in enumerate(scores):
+    doc_id_set = {str(d) for d in document_ids} if document_ids else None
 
+    for idx, score in enumerate(scores):
         if idx >= len(documents):
             continue
 
         doc = documents[idx]
-        if (
-            document_ids 
-            and doc["document_id"] not in document_ids
-        ):
+        doc_id = str(doc.get("document_id", ""))
+
+        if doc_id_set and doc_id not in doc_id_set:
             continue
+
         if (
             source
-            and not document_ids
+            and not doc_id_set
+            and not source.endswith("documents")
+            and source != "All Documents"
             and source != doc.get("source")
         ):
             continue
+
         if score == 0:
             continue
 
@@ -57,6 +59,7 @@ def retrieve_chunks(user_id, query, trace_id, source=None, document_ids=None, to
         key=lambda item: item[0],
         reverse=True,
     )
+
 
     retrieved_chunks = [
         RetrievedChunk(

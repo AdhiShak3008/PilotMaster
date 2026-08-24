@@ -9,7 +9,7 @@ CHUNKERS = {
     "recursive": RecursiveCharacterChunker,
     "token": TokenChunker,
     "semantic": SemanticTextChunker,
-    "parent_child": ParentChildChunker(),
+    "parent_child": ParentChildChunker,
 }
 
 
@@ -18,3 +18,16 @@ def get_chunker(strategy: str):
         return CHUNKERS[strategy]
     except KeyError:
         raise ValueError(f"Unknown chunking strategy: {strategy}")
+
+
+def get_runtime():
+    from pilotcore.chunking.runtime import ChunkingRuntime
+    return ChunkingRuntime
+
+
+try:
+    from pilotcore.chunking.runtime import ChunkingRuntime
+except ImportError:
+    pass
+
+

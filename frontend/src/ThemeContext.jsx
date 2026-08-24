@@ -15,10 +15,11 @@ export function ThemeProvider({ children }) {
     const toggleMode = () => setExperimentMode(prev => !prev);
 
     return (
-        <ThemeContext.Provider value={{ experimentMode, toggleMode }}>
+        <ThemeContext.Provider value={{ experimentMode, toggleMode, setExperimentMode }}>
             {children}
         </ThemeContext.Provider>
     );
 }
+
 
 export const useTheme = () => useContext(ThemeContext);

@@ -37,26 +37,22 @@ router = APIRouter()
 
 @router.post("/upload")
 async def upload_document(
-    file: UploadFile = File(...),
+    files: list[UploadFile] = File(...),
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-
     document_count = (
         db.query(Document).filter(Document.owner_id == current_user.id).count()
     )
 
-    if current_user.plan == "free" and document_count >= 3:
-
+    if current_user.plan == "free" and document_count + len(files) > 3:
         raise HTTPException(
             status_code=403,
             detail="Free plan upload limit reached.",
         )
 
-    os.makedirs(
-        "temp",
-        exist_ok=True,
-    )
+    upload_dir = os.path.join("storage", f"user_{current_user.id}")
+    os.makedirs(upload_dir, exist_ok=True)
 
     allowed_extensions = [
         ".pdf",
@@ -70,7 +66,6 @@ async def upload_document(
         ".jpg",
         ".jpeg",
         ".webp",
-        # treated as plain-text/code-like content
         ".py",
         ".js",
         ".jsx",
@@ -90,64 +85,64 @@ async def upload_document(
         ".html",
     ]
 
-    file_ext = os.path.splitext(file.filename)[1].lower()
+    uploaded_documents = []
+    failed_documents = []
 
-    if file_ext not in allowed_extensions:
+    for file in files:
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        if file_ext not in allowed_extensions:
+            failed_documents.append(
+                {"filename": file.filename, "detail": "Unsupported file type."}
+            )
+            continue
 
-        raise HTTPException(
-            status_code=400,
-            detail="Unsupported file type.",
+        file_path = os.path.join(upload_dir, file.filename)
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        document = Document(
+            owner_id=current_user.id,
+            filename=file.filename,
+            filepath=file_path,
+            file_size=os.path.getsize(file_path),
         )
 
-    file_path = f"temp/{file.filename}"
-
-    with open(
-        file_path,
-        "wb",
-    ) as buffer:
-
-        shutil.copyfileobj(
-            file.file,
-            buffer,
-        )
-
-    document = Document(
-        owner_id=current_user.id,
-        filename=file.filename,
-        filepath=file_path,
-        file_size=os.path.getsize(file_path),
-    )
-
-    db.add(document)
-
-    db.commit()
-
-    db.refresh(document)
-
-    try:
-
-        process_document(
-            file_path,
-            current_user.id,
-            document.id,
-            mime_type=file.content_type,
-        )
-
-    except TextExtractionError as exc:
-
-        db.delete(document)
-
+        db.add(document)
         db.commit()
+        db.refresh(document)
 
-        raise HTTPException(
-            status_code=422,
-            detail=str(exc),
-        ) from exc
+        try:
+            process_document(
+                file_path,
+                current_user.id,
+                document.id,
+                mime_type=file.content_type,
+            )
+        except TextExtractionError as exc:
+            db.delete(document)
+            db.commit()
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            failed_documents.append(
+                {"filename": file.filename, "detail": str(exc)}
+            )
+            continue
+
+        uploaded_documents.append(
+            {
+                "document_id": document.id,
+                "filename": document.filename,
+            }
+        )
 
     return {
-        "message": "Document uploaded",
-        "document_id": document.id,
+        "message": f"{len(uploaded_documents)} document(s) uploaded, {len(failed_documents)} failed.",
+        "uploaded": uploaded_documents,
+        "failed": failed_documents,
+        # For single-file backwards compatibility
+        "document_id": uploaded_documents[0]["document_id"] if uploaded_documents else None,
     }
+
 
 
 @router.get(

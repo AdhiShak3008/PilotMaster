@@ -1,3 +1,0 @@
-Alice reports to Bob.
-Bob reports to Carol.
-Carol is VP Engineering.

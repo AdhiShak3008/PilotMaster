@@ -12,8 +12,11 @@ def tokenize(text):
 
 
 def build_bm25(chunks):
-    tokenized_chunks = [tokenize(chunk["text"]) for chunk in chunks]
-
+    if not chunks:
+        return None
+    tokenized_chunks = [tokenize(chunk["text"]) for chunk in chunks if chunk.get("text")]
+    if not tokenized_chunks:
+        return None
     return BM25Okapi(tokenized_chunks)
 
 

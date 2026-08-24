@@ -11,8 +11,7 @@ const red         = "#ef4444";
 
 // ── Base styles ────────────────────────────────────────────────────────────
 const card = {
-  background: "rgba(255,255,255,0.03)",
-  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(255, 255, 255, 0.03)",
   borderRadius: "20px",
   padding: "28px",
 };
@@ -20,9 +19,9 @@ const card = {
 const sectionLabel = {
   fontSize: "11px",
   fontWeight: 700,
-  letterSpacing: "0.12em",
+  letterSpacing: "0.06em",
   textTransform: "uppercase",
-  color: "rgba(255,255,255,0.35)",
+  color: "var(--text-muted)",
   marginBottom: "10px",
 };
 
@@ -30,15 +29,15 @@ const chip = (color = accent) => ({
   display: "inline-flex",
   alignItems: "center",
   gap: "6px",
-  padding: "3px 10px",
-  borderRadius: "999px",
-  background: `${color}22`,
-  border: `1px solid ${color}44`,
+  padding: "4px 12px",
+  borderRadius: "9999px",
+  background: `${color}18`,
   color,
   fontSize: "11px",
   fontWeight: 600,
-  letterSpacing: "0.04em",
+  letterSpacing: "0.02em",
 });
+
 
 // ── Dot indicator ──────────────────────────────────────────────────────────
 function Dot({ color, glow = false }) {
@@ -343,14 +342,11 @@ export default function AIAnalysis({ selectedRun, onRunRefresh }) {
         marginBottom: "28px",
       }}>
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-            <span style={{ fontSize: "30px", lineHeight: 1 }}>🤖</span>
-            <h1 style={{ margin: 0, fontSize: "34px", fontWeight: 700, letterSpacing: "-0.5px", color: "white" }}>
-              AI Analysis
-            </h1>
-          </div>
-          <p style={{ margin: 0, fontSize: "13px", color: "rgba(255,255,255,0.72)", lineHeight: 1.6 }}>
-            AI-generated engineering insights and recommendations based on your benchmark results.
+          <h1 style={{ margin: 0, fontSize: "32px", fontWeight: "800", letterSpacing: "-0.8px", color: "#c084fc" }}>
+            AI Benchmark Synthesis &amp; Engineering Reports
+          </h1>
+          <p style={{ margin: "4px 0 0", fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.6 }}>
+            AI-generated engineering insights and architectural recommendations based on benchmark evaluation.
           </p>
         </div>
         <div style={chip(statusColor)}>
@@ -358,6 +354,7 @@ export default function AIAnalysis({ selectedRun, onRunRefresh }) {
           {statusLabel}
         </div>
       </div>
+
 
       {/* ── No run selected ───────────────────────────────────────────────── */}
       {!hasRun && (

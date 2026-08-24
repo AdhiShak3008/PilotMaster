@@ -1,13 +1,13 @@
 from groq import Groq
-from pilotcore.config import GROQ_API_KEY
+from pilotcore.config import GROQ_API_KEY, GROQ_FAST_MODEL
 
 client = Groq(api_key=GROQ_API_KEY)
 
 
-def generate_queries(query: str):
+def generate_queries(query: str, count: int = 3):
 
     completion = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
+        model=GROQ_FAST_MODEL,
         temperature=0,
         messages=[
             {

@@ -24,6 +24,7 @@ from DocPilot.backend.app.models.chat import (
     ChatSession,
     ChatMessage,
 )
+from DocPilot.backend.app.models.document import Document
 
 router = APIRouter()
 
@@ -46,12 +47,26 @@ def ask(
         )
 
         db.add(session)
-
         db.commit()
-
         db.refresh(session)
 
         session_id = session.id
+
+        # Associate documents uploaded during this new conversation staging to the created session
+        if query.document_ids:
+            db.query(Document).filter(
+                Document.id.in_(query.document_ids),
+                Document.owner_id == current_user.id,
+                Document.session_id.is_(None),
+            ).update({"session_id": session_id}, synchronize_session=False)
+            db.commit()
+        else:
+            db.query(Document).filter(
+                Document.owner_id == current_user.id,
+                Document.session_id.is_(None),
+            ).update({"session_id": session_id}, synchronize_session=False)
+            db.commit()
+
 
     user_message = ChatMessage(
         session_id=session_id,
@@ -74,7 +89,10 @@ def ask(
             reranker=query.reranker,
             enhancements=query.enhancements,
             mode=query.mode,
+            chunker=query.chunker,
+            embedding_model=query.embedding_model,
         )
+
     except AuthenticationError as exc:
         raise HTTPException(
             status_code=502,

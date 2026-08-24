@@ -1,48 +1,101 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { apiRequest } from "../api";
 import { useDropzone } from "react-dropzone";
+import MarkdownRenderer from "../components/MarkdownRenderer";
+
 
 // ─────────────────────────────────────────────
-// Shared custom popup selector
+// Shared custom popup selector (Google Pill Style)
 // ─────────────────────────────────────────────
-function CustomSelector({ label, sublabel, items, open, onToggle, selectorRef, children }) {
+function CustomSelector({ label, sublabel, open, onToggle, selectorRef, children, badge = null }) {
   return (
-    <div style={{ position: "relative", display: "flex", flexDirection: "column" }} ref={selectorRef}>
+    <div
+      style={{
+        position: "relative",
+        display: "inline-flex",
+        flexDirection: "column",
+      }}
+      ref={selectorRef}
+    >
       <button
+        type="button"
         onClick={onToggle}
         style={{
-          background: "transparent",
-          border: "none",
+          background: open ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.05)",
+          border: open ? "1px solid rgba(255, 255, 255, 0.2)" : "1px solid transparent",
           color: "var(--text-primary)",
           cursor: "pointer",
-          padding: 0,
-          fontSize: "14px",
+          padding: "6px 12px",
+          borderRadius: "9999px",
+          fontSize: "12px",
+          fontWeight: "500",
           textAlign: "left",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+          transition: "all 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+          backdropFilter: "blur(8px)",
         }}
       >
-        {label} ▼
+        <span style={{ maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {label}
+        </span>
+        {badge && (
+          <span
+            style={{
+              padding: "1px 6px",
+              borderRadius: "9999px",
+              background: "rgba(99, 102, 241, 0.25)",
+              color: "#c7d2fe",
+              fontSize: "10px",
+              fontWeight: 700,
+            }}
+          >
+            {badge}
+          </span>
+        )}
+        <span style={{ fontSize: "9px", color: "var(--text-muted)", opacity: 0.7 }}>
+          {open ? "▲" : "▼"}
+        </span>
       </button>
 
       {open && (
         <div
           style={{
             position: "absolute",
-            bottom: "100%",
+            bottom: "calc(100% + 8px)",
             left: 0,
-            marginBottom: "10px",
-            width: "320px",
+            width: "300px",
+            maxHeight: "360px",
+            overflowY: "auto",
             zIndex: 9999,
             borderRadius: "18px",
-            border: "1px solid var(--border)",
-            background: "var(--surface)",
-            overflow: "hidden",
+            background: "rgba(22, 27, 46, 0.95)",
+            boxShadow: "0 20px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1)",
+            backdropFilter: "blur(24px)",
+            padding: "8px",
+            boxSizing: "border-box",
           }}
         >
           {children}
         </div>
       )}
 
-      <span style={{ fontSize: "11px", color: "#777", marginTop: "4px" }}>{sublabel}</span>
+      {sublabel && (
+        <span
+          style={{
+            fontSize: "9px",
+            color: "var(--text-muted)",
+            marginTop: "2px",
+            textAlign: "center",
+            letterSpacing: "0.04em",
+            textTransform: "uppercase",
+            opacity: 0.7,
+          }}
+        >
+          {sublabel}
+        </span>
+      )}
     </div>
   );
 }
@@ -52,43 +105,78 @@ function SelectorItem({ label, subtitle, active, onClick, multiSelect }) {
     <div
       onClick={onClick}
       style={{
-        padding: "8px",
+        padding: "8px 12px",
+        borderRadius: "12px",
         cursor: "pointer",
-        background: active ? "var(--surface-hover)" : "transparent",
-        transition: "background 0.12s",
+        background: active ? "rgba(99, 102, 241, 0.18)" : "transparent",
+        color: active ? "#ffffff" : "var(--text-secondary)",
+        transition: "all 0.15s ease",
+        marginBottom: "2px",
       }}
       onMouseEnter={(e) => {
-        if (!active) e.currentTarget.style.background = "var(--surface-hover)";
+        if (!active) {
+          e.currentTarget.style.background = "rgba(255, 255, 255, 0.06)";
+          e.currentTarget.style.color = "#ffffff";
+        }
       }}
       onMouseLeave={(e) => {
-        if (!active) e.currentTarget.style.background = "transparent";
+        if (!active) {
+          e.currentTarget.style.background = "transparent";
+          e.currentTarget.style.color = "var(--text-secondary)";
+        }
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-        {multiSelect ? (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1, minWidth: 0 }}>
+          {multiSelect && (
+            <span
+              style={{
+                width: "16px",
+                height: "16px",
+                borderRadius: "5px",
+                border: active ? "none" : "1.5px solid rgba(255, 255, 255, 0.2)",
+                background: active ? "#6366f1" : "transparent",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "11px",
+                fontWeight: "bold",
+                color: "white",
+                flexShrink: 0,
+              }}
+            >
+              {active ? "✓" : ""}
+            </span>
+          )}
           <span
             style={{
-              width: "14px",
-              height: "14px",
-              border: "1px solid var(--border)",
-              borderRadius: "3px",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "10px",
-              background: active ? "var(--surface-hover)" : "transparent",
-              flexShrink: 0,
+              fontSize: "13px",
+              fontWeight: active ? "600" : "400",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
             }}
           >
-            {active ? "✓" : ""}
+            {label}
           </span>
-        ) : (
-          <span style={{ width: "16px", fontSize: "13px" }}>{active ? "✓" : ""}</span>
+        </div>
+
+        {!multiSelect && active && (
+          <span style={{ fontSize: "12px", color: "#818cf8", fontWeight: "bold" }}>✓</span>
         )}
-        <span>{label}</span>
       </div>
+
       {subtitle && (
-        <div style={{ fontSize: "12px", color: "#888", marginTop: "4px", paddingLeft: multiSelect ? "20px" : "16px" }}>
+        <div
+          style={{
+            fontSize: "11px",
+            color: "var(--text-muted)",
+            marginTop: "2px",
+            paddingLeft: multiSelect ? "24px" : "0",
+            lineHeight: 1.3,
+            opacity: 0.8,
+          }}
+        >
           {subtitle}
         </div>
       )}
@@ -102,142 +190,265 @@ function SelectorItem({ label, subtitle, active, onClick, multiSelect }) {
 const RETRIEVAL_STRATEGIES = [
   {
     id: "FAISS",
-    label: "FAISS",
-    subtitle: "Dense vector retrieval",
+    label: "FAISS Vector",
+    subtitle: "Dense embeddings nearest-neighbor search",
   },
-
   {
     id: "BM25",
-    label: "BM25",
-    subtitle: "Sparse keyword retrieval",
+    label: "BM25 Keyword",
+    subtitle: "Lexical inverted-index keyword matching",
   },
-
   {
     id: "Hybrid",
-    label: "Hybrid",
-    subtitle: "Dense + sparse retrieval",
+    label: "Hybrid (Dense + BM25)",
+    subtitle: "Reciprocal Rank Fusion (RRF) ensemble",
   },
 ];
 
 // ─────────────────────────────────────────────
 // Reranker model selections
 // ─────────────────────────────────────────────
-
 const RERANKER_OPTIONS = [
   {
     id: "none",
     label: "None",
-    subtitle: "No reranking",
+    subtitle: "Raw first-stage retrieval rankings",
   },
   {
     id: "minilm",
-    label: "MiniLM",
-    subtitle: "Fast balanced baseline",
+    label: "MiniLM Cross-Encoder",
+    subtitle: "Fast balanced baseline reranker",
   },
   {
     id: "tinybert",
     label: "TinyBERT",
-    subtitle: "Ultra-fast lightweight",
+    subtitle: "Ultra-low latency lightweight reranker",
   },
   {
     id: "bge-large",
-    label: "BGE Large",
-    subtitle: "High-quality semantic ranking",
+    label: "BGE Large Reranker",
+    subtitle: "High precision semantic re-scoring",
   },
   {
     id: "bge-m3",
     label: "BGE M3",
-    subtitle: "Modern retrieval-focused reranker",
-  },
-];
-// ─────────────────────────────────────────────
-// Enhancements config
-// ─────────────────────────────────────────────
-const ENHANCEMENT_OPTIONS = [
-  {
-    id: "Default",
-    label: "Default",
-    subtitle:
-      "Run the normal retrieval pipeline without any additional enhancement techniques.",
-  },
-  {
-  id: "Query Rewrite",
-  label: "Query Rewrite",
-  subtitle: "Rewrite the user's question into a retrieval-optimized query."
-  },
-  {
-    id: "HyDE",
-    label: "HyDE",
-    subtitle: "Generate a hypothetical answer and retrieve using its embeddings.",
-  },
-  {
-    id: "Multi Query",
-    label: "Multi Query",
-    subtitle: "Generate multiple query variants and merge retrieval results.",
-  },
-  {
-    id: "Query Expansion",
-    label: "Query Expansion",
-    subtitle: "Expand the query with related concepts and keywords.",
-  },
-  {
-    id: "All",
-    label: "All",
-    subtitle: "Enable every enhancement technique.",
+    subtitle: "Multi-lingual retrieval reranker",
   },
 ];
 
-const ALL_ENHANCEMENT_IDS = [
-  "Query Rewrite",
-  "HyDE",
-  "Multi Query",
-  "Query Expansion",
+// ─────────────────────────────────────────────
+// Enhancements multi-select categorized config
+// ─────────────────────────────────────────────
+const ENHANCEMENT_CATEGORIES = [
+  {
+    category: "Context Preparation",
+    items: [
+      {
+        id: "query_condensation",
+        label: "Query Condensation",
+        subtitle: "Convert conversational/follow-up query into a standalone question",
+      },
+      {
+        id: "coreference_resolution",
+        label: "Coreference Resolution",
+        subtitle: "Resolve pronouns (it, they, that company) into explicit entity names",
+      },
+      {
+        id: "query_rewrite",
+        label: "Query Rewrite",
+        subtitle: "Rewrite query into clearer retrieval-optimized search terms",
+      },
+    ],
+  },
+  {
+    category: "Structuring & Routing",
+    items: [
+      {
+        id: "sub_query_generation",
+        label: "Sub-Query Generation",
+        subtitle: "Break complex multi-part questions into independent sub-queries",
+      },
+      {
+        id: "metadata_filter_extraction",
+        label: "Metadata Filter Extraction",
+        subtitle: "Extract structured filters (dates, authors, departments, categories)",
+      },
+      {
+        id: "query_routing",
+        label: "Query Routing",
+        subtitle: "Determine appropriate retrieval index and domain route",
+      },
+    ],
+  },
+  {
+    category: "Expansion & Transformation",
+    items: [
+      {
+        id: "hyde",
+        label: "HyDE",
+        subtitle: "Generate hypothetical document and use its embedding for retrieval",
+      },
+      {
+        id: "multi_query",
+        label: "Multi-Query Expansion",
+        subtitle: "Generate multiple semantic formulations and retrieve against each",
+      },
+      {
+        id: "rag_fusion",
+        label: "RAG-Fusion",
+        subtitle: "Generate query variants, retrieve each, and combine with RRF",
+      },
+      {
+        id: "step_back",
+        label: "Step-Back Prompting",
+        subtitle: "Generate broader conceptual query to retrieve foundational context",
+      },
+      {
+        id: "keyword_expansion",
+        label: "Query Keyword Expansion",
+        subtitle: "Expand query with relevant domain terminology, synonyms, keywords",
+      },
+    ],
+  },
 ];
+
+const ALL_ENHANCEMENT_ITEMS = ENHANCEMENT_CATEGORIES.flatMap((c) => c.items);
+const ALL_ENHANCEMENT_IDS = ALL_ENHANCEMENT_ITEMS.map((item) => item.id);
+
+function getEnhancementLabel(id) {
+  return ALL_ENHANCEMENT_ITEMS.find((item) => item.id === id)?.label || id;
+}
+
 function buildEnhancementLabel(selected) {
-  if (selected.includes("Default") || selected.length === 0) return "Default";
+  if (!selected || selected.includes("Default") || selected.length === 0) return "Default (Baseline)";
   if (
     ALL_ENHANCEMENT_IDS.every((id) => selected.includes(id)) &&
     selected.length === ALL_ENHANCEMENT_IDS.length
   )
-    return "All";
-  return selected.join(" + ");
+    return "All Enhancements (11)";
+  if (selected.length === 1) return getEnhancementLabel(selected[0]);
+  return `${selected.length} Enhancements`;
 }
 
 function toggleEnhancement(current, id) {
+
   if (id === "Default") return ["Default"];
+  if (id === "All") return [...ALL_ENHANCEMENT_IDS];
 
-  if (id === "All") {
-    // Select all individual enhancements
-    return [...ALL_ENHANCEMENT_IDS];
-  }
-
-  // Remove Default if present
   let next = current.filter((e) => e !== "Default");
-
   if (next.includes(id)) {
     next = next.filter((e) => e !== id);
   } else {
     next = [...next, id];
   }
-
   if (next.length === 0) return ["Default"];
   return next;
 }
 
+function removeEnhancementPill(current, id, e) {
+  if (e) e.stopPropagation();
+  const next = current.filter((item) => item !== id && item !== "Default");
+  return next.length === 0 ? ["Default"] : next;
+}
+
 function isEnhancementActive(selected, id) {
+  if (id === "Default") return selected.includes("Default") || selected.length === 0;
   if (id === "All")
-    return ALL_ENHANCEMENT_IDS.every((e) => selected.includes(e)) && selected.length === ALL_ENHANCEMENT_IDS.length;
+    return (
+      ALL_ENHANCEMENT_IDS.every((e) => selected.includes(e)) &&
+      selected.length === ALL_ENHANCEMENT_IDS.length
+    );
   return selected.includes(id);
 }
+
+
+// ─────────────────────────────────────────────
+// Chunker config
+// ─────────────────────────────────────────────
+const CHUNKER_OPTIONS = [
+  {
+    id: "parent_child",
+    label: "Parent-Child (1200 / 300)",
+    subtitle: "Small child chunks for retrieval, large parent for context",
+  },
+  {
+    id: "recursive",
+    label: "Recursive Character",
+    subtitle: "Hierarchical splitting by paragraph, sentence, and word",
+  },
+  {
+    id: "fixed",
+    label: "Fixed Window (500c)",
+    subtitle: "Uniform chunk length with standard 50c overlap",
+  },
+  {
+    id: "token",
+    label: "Token-Based (256t)",
+    subtitle: "Exact tokenizer boundary alignment",
+  },
+  {
+    id: "semantic",
+    label: "Semantic Similarity",
+    subtitle: "Splits text at natural cosine-similarity topic shifts",
+  },
+];
+
+// ─────────────────────────────────────────────
+// Embedding Model config
+// ─────────────────────────────────────────────
+const EMBEDDING_OPTIONS = [
+  {
+    id: "all-mpnet-base-v2",
+    label: "all-mpnet-base-v2",
+    subtitle: "Sentence Transformers · 768 dim",
+  },
+  {
+    id: "all-MiniLM-L6-v2",
+    label: "all-MiniLM-L6-v2",
+    subtitle: "Sentence Transformers · 384 dim",
+  },
+  {
+    id: "all-MiniLM-L12-v2",
+    label: "all-MiniLM-L12-v2",
+    subtitle: "Sentence Transformers · 384 dim",
+  },
+  {
+    id: "bge-large-en-v1.5",
+    label: "bge-large-en-v1.5",
+    subtitle: "BAAI BGE Large · 1024 dim",
+  },
+  {
+    id: "gte-large",
+    label: "gte-large",
+    subtitle: "Thenlper GTE Large · 1024 dim",
+  },
+  {
+    id: "text-embedding-3-small",
+    label: "text-embedding-3-small",
+    subtitle: "OpenAI Embedding · 1536 dim",
+  },
+  {
+    id: "text-embedding-3-large",
+    label: "text-embedding-3-large",
+    subtitle: "OpenAI Embedding · 3072 dim",
+  },
+];
 
 // ─────────────────────────────────────────────
 // Main Dashboard
 // ─────────────────────────────────────────────
-function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
+function Dashboard({
+  experimentMode,
+  onLogout,
+  onHome,
+  onTracePilot,
+  onGaugePilot,
+  onToggleMode,
+}) {
   const [files, setFiles] = useState([]);
   const [question, setQuestion] = useState("");
   const [source, setSource] = useState("");
-  const [selectedModel, setSelectedModel] = useState("llama-3.1-8b-instant");
+  const [selectedModel, setSelectedModel] = useState("llama-3.3-70b-versatile");
   const [models, setModels] = useState([]);
   const [showModels, setShowModels] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -253,11 +464,13 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
   const [deletingDoc, setDeletingDoc] = useState(false);
   const [clearingSessions, setClearingSessions] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState(null);
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [editPromptText, setEditPromptText] = useState("");
+  const [sessionSearch, setSessionSearch] = useState("");
 
-  // ── Document-scoped retrieval state (NEW) ──
-  // `documents` holds every document the backend knows about for this
-  // user/session: [{ document_id, filename }]. `selectedDocumentIds` holds
-  // the subset the user wants retrieval scoped to.
+
+  // Document-scoped retrieval state
   const [documents, setDocuments] = useState([]);
   const [selectedDocumentIds, setSelectedDocumentIds] = useState([]);
   const [showDocuments, setShowDocuments] = useState(false);
@@ -267,16 +480,21 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
   const retrievalSelectorRef = useRef(null);
   const rerankerSelectorRef = useRef(null);
   const enhancementSelectorRef = useRef(null);
-  const documentSelectorRef = useRef(null); // NEW
+  const documentSelectorRef = useRef(null);
+  const chunkerSelectorRef = useRef(null);
+  const embeddingSelectorRef = useRef(null);
 
   // Experiment toggles
   const [retrievalStrategy, setRetrievalStrategy] = useState("Hybrid");
   const [showRetrieval, setShowRetrieval] = useState(false);
-
   const [reranker, setReranker] = useState("minilm");
   const [showReranker, setShowReranker] = useState(false);
   const [selectedEnhancements, setSelectedEnhancements] = useState(["Default"]);
   const [showEnhancements, setShowEnhancements] = useState(false);
+  const [selectedChunker, setSelectedChunker] = useState("parent_child");
+  const [showChunkers, setShowChunkers] = useState(false);
+  const [selectedEmbeddingModel, setSelectedEmbeddingModel] = useState("all-mpnet-base-v2");
+  const [showEmbeddings, setShowEmbeddings] = useState(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -293,8 +511,12 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
         setShowEnhancements(false);
       if (rerankerSelectorRef.current && !rerankerSelectorRef.current.contains(event.target))
         setShowReranker(false);
-      if (documentSelectorRef.current && !documentSelectorRef.current.contains(event.target)) // NEW
+      if (documentSelectorRef.current && !documentSelectorRef.current.contains(event.target))
         setShowDocuments(false);
+      if (chunkerSelectorRef.current && !chunkerSelectorRef.current.contains(event.target))
+        setShowChunkers(false);
+      if (embeddingSelectorRef.current && !embeddingSelectorRef.current.contains(event.target))
+        setShowEmbeddings(false);
     };
 
     const handleEsc = (event) => {
@@ -303,7 +525,9 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
         setShowRetrieval(false);
         setShowReranker(false);
         setShowEnhancements(false);
-        setShowDocuments(false); // NEW
+        setShowDocuments(false);
+        setShowChunkers(false);
+        setShowEmbeddings(false);
       }
     };
 
@@ -321,13 +545,56 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
       try {
         const [sessionData, billingData] = await Promise.all([
           apiRequest(
-         `/history/sessions?mode=${
-          experimentMode ? "experimental" : "production"
-          }`),
+            `/history/sessions?mode=${
+              experimentMode ? "experimental" : "production"
+            }`
+          ),
           apiRequest("/billing/me"),
         ]);
-        setSessions(sessionData);
-        setUsername(billingData.username);
+        setSessions(Array.isArray(sessionData) ? sessionData : []);
+        setUsername(billingData?.username || "");
+
+        if (Array.isArray(sessionData) && sessionData.length > 0) {
+          const firstId = sessionData[0].id;
+          const [msgData, docData] = await Promise.all([
+            apiRequest(`/history/${firstId}`),
+            apiRequest(`/docs/?session_id=${firstId}`),
+          ]);
+          if (Array.isArray(msgData)) {
+            setMessages(
+              msgData.map((m) => ({
+                role: m.role,
+                content: m.content,
+                sources: m.sources,
+                timestamp: m.timestamp || m.created_at || new Date().toISOString(),
+              }))
+            );
+          }
+          if (Array.isArray(docData) && docData.length > 0) {
+            const formatted = docData.map((d, index) => ({
+              document_id: d.id ?? d.document_id ?? index,
+              filename: d.filename ?? d.name ?? `Document ${index + 1}`,
+            }));
+            setDocuments(formatted);
+            setSelectedDocumentIds(formatted.map((d) => d.document_id));
+            setSource(
+              formatted.length === 1
+                ? formatted[0].filename
+                : `${formatted.length} documents`
+            );
+          } else {
+            setDocuments([]);
+            setSelectedDocumentIds([]);
+            setSource("");
+          }
+          setCurrentSessionId(firstId);
+        } else {
+          setDocuments([]);
+          setSelectedDocumentIds([]);
+          setSource("");
+          setMessages([]);
+          setCurrentSessionId(null);
+        }
       } catch {
         // ignore
       } finally {
@@ -335,13 +602,15 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
       }
     };
     loadDashboard();
-  }, []);
+  }, [experimentMode]);
 
   useEffect(() => {
     apiRequest("/models/")
       .then((data) => {
-        setModels(data);
-        if (data.length > 0 && !selectedModel) setSelectedModel(data[0].id);
+        if (Array.isArray(data)) {
+          setModels(data);
+          if (data.length > 0 && !selectedModel) setSelectedModel(data[0].id);
+        }
       })
       .catch(console.error);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -351,11 +620,11 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
     setLoadingSessions(true);
     try {
       const data = await apiRequest(
-  `/history/sessions?mode=${
-    experimentMode ? "experimental" : "production"
-  }`
-);
-      setSessions(data);
+        `/history/sessions?mode=${
+          experimentMode ? "experimental" : "production"
+        }`
+      );
+      setSessions(Array.isArray(data) ? data : []);
     } catch {
       // ignore
     } finally {
@@ -367,15 +636,37 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
     if (loadingSessionId || deletingSessionId) return;
     setLoadingSessionId(sessionId);
     try {
-      const data = await apiRequest(`/history/${sessionId}`);
-      setMessages(
-        data.map((m) => ({
-          role: m.role,
-          content: m.content,
-          sources: m.sources,
-          timestamp: m.timestamp || m.created_at || new Date().toISOString(),
-        }))
-      );
+      const [msgData, docData] = await Promise.all([
+        apiRequest(`/history/${sessionId}`),
+        apiRequest(`/docs/?session_id=${sessionId}`),
+      ]);
+      if (Array.isArray(msgData)) {
+        setMessages(
+          msgData.map((m) => ({
+            role: m.role,
+            content: m.content,
+            sources: m.sources,
+            timestamp: m.timestamp || m.created_at || new Date().toISOString(),
+          }))
+        );
+      }
+      if (Array.isArray(docData) && docData.length > 0) {
+        const formatted = docData.map((d, index) => ({
+          document_id: d.id ?? d.document_id ?? index,
+          filename: d.filename ?? d.name ?? `Document ${index + 1}`,
+        }));
+        setDocuments(formatted);
+        setSelectedDocumentIds(formatted.map((d) => d.document_id));
+        setSource(
+          formatted.length === 1
+            ? formatted[0].filename
+            : `${formatted.length} documents`
+        );
+      } else {
+        setDocuments([]);
+        setSelectedDocumentIds([]);
+        setSource("");
+      }
       setCurrentSessionId(sessionId);
       setSidebarOpen(false);
     } finally {
@@ -383,24 +674,44 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
     }
   };
 
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     multiple: true,
     onDrop: (acceptedFiles) => {
-    if (acceptedFiles.length > 0) {
+      if (acceptedFiles.length > 0) {
         setFiles(acceptedFiles);
-    }
-},
+      }
+    },
     accept: {
       "application/pdf": [".pdf"],
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
       "application/vnd.openxmlformats-officedocument.presentationml.presentation": [".pptx"],
-      "text/plain": [".txt", ".md", ".py", ".js", ".jsx", ".ts", ".tsx", ".java", ".cpp", ".c", ".h", ".go", ".rs", ".json", ".yaml", ".yml", ".sql", ".css", ".html"],
+      "text/plain": [
+        ".txt",
+        ".md",
+        ".py",
+        ".js",
+        ".jsx",
+        ".ts",
+        ".tsx",
+        ".java",
+        ".cpp",
+        ".c",
+        ".h",
+        ".go",
+        ".rs",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".sql",
+        ".css",
+        ".html",
+      ],
       "text/csv": [".csv"],
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
       "image/png": [".png"],
       "image/jpeg": [".jpg", ".jpeg"],
       "image/webp": [".webp"],
-      
     },
   });
 
@@ -413,27 +724,27 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
         formData.append("files", file);
       }
 
-      const data = await apiRequest("/docs/upload", "POST", formData);
+      const url = currentSessionId ? `/docs/upload?session_id=${currentSessionId}` : "/docs/upload";
+      const data = await apiRequest(url, "POST", formData);
       const uploaded = data.uploaded || [];
       if (data.detail) {
         alert(data.detail);
       } else {
-        setSource(`${uploaded.length} documents`);
         setFiles([]);
-        // ── NEW: capture per-document metadata from the upload response ──
-        // Expected shape: { documents: [{ document_id, filename }, ...] }
-        // Adjust this line if the backend's actual response key/shape differs.
-        
 
         if (uploaded.length > 0) {
           setDocuments((prev) => {
             const existingIds = new Set(prev.map((d) => d.document_id));
             const newOnes = uploaded.filter((d) => !existingIds.has(d.document_id));
-            return [...prev, ...newOnes];
+            const updated = [...prev, ...newOnes];
+            setSource(
+              updated.length === 1
+                ? updated[0].filename
+                : `${updated.length} documents`
+            );
+            return updated;
           });
 
-          // Auto-select the newly uploaded documents, keeping any
-          // previously selected documents selected as well.
           setSelectedDocumentIds((prev) => {
             const merged = new Set([...prev, ...uploaded.map((d) => d.document_id)]);
             return Array.from(merged);
@@ -447,33 +758,55 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
     }
   };
 
-  const askQuestion = async () => {
-    if (!question || asking) return;
-    const q = question;
+
+  const copyToClipboard = (text, index) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedIndex(index);
+    setTimeout(() => {
+      setCopiedIndex(null);
+    }, 2000);
+  };
+
+  const executeQuery = async (queryText, replaceFromIndex = null) => {
+    const q = (queryText || "").trim();
+    if (!q || asking) return;
+
+    setEditingIndex(null);
     setQuestion("");
 
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", content: q, timestamp: new Date().toISOString() },
-      { role: "assistant", content: "Thinking...", loading: true, timestamp: new Date().toISOString() },
-    ]);
+    setMessages((prev) => {
+      let baseMessages = prev;
+      if (replaceFromIndex !== null) {
+        baseMessages = prev.slice(0, replaceFromIndex);
+      }
+      return [
+        ...baseMessages,
+        { role: "user", content: q, timestamp: new Date().toISOString() },
+        { role: "assistant", content: "Thinking...", loading: true, timestamp: new Date().toISOString() },
+      ];
+    });
 
     setAsking(true);
     try {
       const payload = {
         question: q,
-        source,
         session_id: currentSessionId,
         model_name: selectedModel,
         mode: experimentMode ? "experimental" : "production",
-        document_ids: selectedDocumentIds, // NEW: scope retrieval to selected documents
+        document_ids:
+          selectedDocumentIds && selectedDocumentIds.length > 0
+            ? selectedDocumentIds
+            : null,
       };
 
       if (experimentMode) {
-  payload.retrieval_strategy = retrievalStrategy;
-  payload.reranker = reranker;
-  payload.enhancements = selectedEnhancements;
-}
+        payload.retrieval_strategy = retrievalStrategy;
+        payload.reranker = reranker;
+        payload.enhancements = selectedEnhancements;
+        payload.chunker = selectedChunker;
+        payload.embedding_model = selectedEmbeddingModel;
+      }
 
       const data = await apiRequest("/chat/ask", "POST", payload);
 
@@ -497,7 +830,7 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
         const u = [...prev];
         u[u.length - 1] = {
           role: "assistant",
-          content: "Something went wrong.",
+          content: "I encountered an error connecting to the retrieval engine.",
           timestamp: new Date().toISOString(),
         };
         return u;
@@ -507,9 +840,33 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
     }
   };
 
+  const askQuestion = () => executeQuery(question);
+
+  const handleEditSubmit = (index, newQuery) => {
+    if (!newQuery || !newQuery.trim()) return;
+    executeQuery(newQuery, index);
+  };
+
+  const handleTryAgain = (assistantIndex) => {
+    let userQuery = "";
+    let userIdx = -1;
+    for (let j = assistantIndex - 1; j >= 0; j--) {
+      if (messages[j]?.role === "user") {
+        userQuery = messages[j].content;
+        userIdx = j;
+        break;
+      }
+    }
+    if (userQuery && userIdx >= 0) {
+      executeQuery(userQuery, userIdx);
+    }
+  };
+
+
   const deleteActiveDocument = async () => {
     if (deletingDoc) return;
-    if (!window.confirm("Delete all documents and clear the vector store?")) return;
+    if (!window.confirm("Clear all documents and reset the active vector index?"))
+      return;
     setDeletingDoc(true);
     try {
       await apiRequest("/docs/reset", "DELETE");
@@ -517,11 +874,11 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
       setFiles([]);
       setMessages([]);
       setCurrentSessionId(null);
-      setDocuments([]); // NEW: backend vector store is wiped, so drop local doc list too
-      setSelectedDocumentIds([]); // NEW
+      setDocuments([]);
+      setSelectedDocumentIds([]);
       fetchSessions();
     } catch {
-      alert("Failed to delete documents.");
+      alert("Failed to reset documents.");
     } finally {
       setDeletingDoc(false);
     }
@@ -530,7 +887,7 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
   const clearAllSessions = async () => {
     if (clearingSessions) return;
     const mode = experimentMode ? "experimental" : "production";
-    if (!window.confirm(`Delete all ${mode} conversations?`)) return;
+    if (!window.confirm(`Delete all ${mode} conversation histories?`)) return;
     setClearingSessions(true);
     try {
       await apiRequest(`/history/sessions/reset?mode=${mode}`, "DELETE");
@@ -544,33 +901,60 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
     }
   };
 
-  const activeModelLabel =
-    models.length === 0 ? "Loading models..." : models.find((m) => m.id === selectedModel)?.label || selectedModel;
+  const copyMessage = (text, idx) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIndex(idx);
+    setTimeout(() => setCopiedIndex(null), 2000);
+  };
 
-  const activeRetrievalLabel = retrievalStrategy;
+  const filteredSessions = useMemo(() => {
+    if (!sessionSearch.trim()) return sessions;
+    const q = sessionSearch.toLowerCase();
+    return sessions.filter((s) => (s.title || `Chat #${s.id}`).toLowerCase().includes(q));
+  }, [sessions, sessionSearch]);
+
+  const activeModelLabel =
+    models.length === 0
+      ? "Loading models..."
+      : models.find((m) => m.id === selectedModel)?.label || selectedModel;
+
+  const activeRetrievalLabel =
+    RETRIEVAL_STRATEGIES.find((r) => r.id === retrievalStrategy)?.label || retrievalStrategy;
   const activeRerankerLabel =
     RERANKER_OPTIONS.find((r) => r.id === reranker)?.label || "MiniLM";
   const activeEnhancementLabel = buildEnhancementLabel(selectedEnhancements);
+  const activeChunkerLabel =
+    CHUNKER_OPTIONS.find((c) => c.id === selectedChunker)?.label || "Parent-Child";
+  const activeEmbeddingLabel =
+    EMBEDDING_OPTIONS.find((e) => e.id === selectedEmbeddingModel)?.label || "all-mpnet-base-v2";
   const activeDocumentsLabel =
-    selectedDocumentIds.length === documents.length
-        ? "All Documents"
-        : `${selectedDocumentIds.length} Documents`;
+    selectedDocumentIds.length === 0
+      ? "No Docs Selected"
+      : selectedDocumentIds.length === documents.length
+      ? `All ${documents.length} Docs`
+      : `${selectedDocumentIds.length} of ${documents.length} Docs`;
+
+  const starterPrompts = [
+    "Summarize the key takeaways and core concepts from the uploaded documents.",
+    "Extract all action items, dates, and critical requirements from the text.",
+    "Compare and contrast the primary findings across the knowledge base.",
+  ];
 
   return (
     <div
       className="docpilot-root"
       style={{
         display: "flex",
-        width: "100%",
-        height: "100%",
+        width: "100vw",
+        height: "100vh",
         background: "var(--bg-primary)",
         color: "var(--text-primary)",
-        fontFamily: "Arial",
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
         overflow: "hidden",
       }}
     >
       {(initialLoading || uploading) && (
-        <LoadingOverlay text={uploading ? "Uploading document..." : "Loading dashboard..."} />
+        <LoadingOverlay text={uploading ? "Ingesting & indexing documents..." : "Loading DocPilot workspace..."} />
       )}
 
       {sidebarOpen && (
@@ -581,499 +965,1121 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
         />
       )}
 
-      {/* SIDEBAR */}
-      <div
+      {/* SIDEBAR (Google Gemini seamless left drawer) */}
+      <aside
         className={`docpilot-sidebar ${sidebarOpen ? "is-open" : ""}`}
         style={{
           width: "280px",
           flexShrink: 0,
           background: "var(--bg-secondary)",
-          borderRight: "1px solid var(--border)",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
+          padding: "16px 14px",
+          gap: "14px",
+          boxSizing: "border-box",
         }}
       >
-        <div style={{ padding: "24px 24px 16px", flexShrink: 0 }}>
-          <h1
-            style={{
-              margin: 0,
-              fontSize: "44px",
-              fontFamily: "Georgia, serif",
-              fontWeight: "600",
-              letterSpacing: "-2px",
-              color: "white",
-              lineHeight: 1,
-            }}
-          >
-            DocPilot
-          </h1>
-          <p style={{ margin: "8px 0 0", color: "#555", fontSize: "14px" }}>{username}</p>
-        </div>
-
-        {/* UPLOAD */}
-        <div style={{ padding: "0 16px 16px", flexShrink: 0, borderBottom: "1px solid #1a1a1a" }}>
-          <div
-            {...getRootProps()}
-            style={{
-              border: "1px dashed var(--border)",
-              borderRadius: "12px",
-              padding: "20px 16px",
-              textAlign: "center",
-              background: isDragActive ? "var(--surface-hover)" : "var(--surface)",
-              cursor: "pointer",
-              color: "var(--text-secondary)",
-              fontSize: "13px",
-              marginBottom: "10px",
-            }}
-          >
-            <input {...getInputProps()} />
-            {isDragActive ? (
-              <p style={{ margin: 0 }}>Drop here...</p>
-            ) : (
-              <p style={{ margin: 0 }}>Drag &amp; drop or click to upload</p>
-            )}
-            {files.length > 0 && (
-              <p style={{ margin: "8px 0 0", color: "#888", fontSize: "12px" }}>
-                {files.length} files selected
-              </p>
-            )}
+        {/* BRAND & USER */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 8px 4px" }}>
+          <div>
+            <h1
+              style={{
+                margin: 0,
+                fontSize: "26px",
+                fontWeight: "800",
+                letterSpacing: "-0.7px",
+                color: experimentMode ? "#c084fc" : "#60a5fa",
+              }}
+            >
+              DocPilot
+            </h1>
+            <span style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: 500 }}>
+              {username ? `@${username}` : "AI Workspace"}
+            </span>
           </div>
 
+          <span
+            style={{
+              fontSize: "10px",
+              fontWeight: 700,
+              padding: "3px 8px",
+              borderRadius: "9999px",
+              background: experimentMode ? "rgba(168, 85, 247, 0.15)" : "rgba(66, 133, 244, 0.12)",
+              color: experimentMode ? "#c084fc" : "#60a5fa",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+            }}
+          >
+            {experimentMode ? "Lab" : "Production"}
+          </span>
+        </div>
+
+
+        {/* NEW CHAT PILL */}
+        <button
+          onClick={() => {
+            setMessages([]);
+            setCurrentSessionId(null);
+            setDocuments([]);
+            setSelectedDocumentIds([]);
+            setSource("");
+            setFiles([]);
+            setSidebarOpen(false);
+          }}
+
+          style={{
+            width: "100%",
+            padding: "11px 16px",
+            background: "rgba(255, 255, 255, 0.06)",
+            color: "var(--text-primary)",
+            border: "none",
+            borderRadius: "9999px",
+            cursor: "pointer",
+            fontSize: "13px",
+            fontWeight: "600",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            transition: "all 0.18s ease",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.06)")}
+        >
+          <span style={{ fontSize: "16px", color: experimentMode ? "#c084fc" : "#60a5fa" }}>+</span>
+          <span>New Conversation</span>
+        </button>
+
+        {/* COMPACT UPLOAD DROPZONE */}
+        <div
+          {...getRootProps()}
+          style={{
+            padding: "12px",
+            borderRadius: "14px",
+            background: isDragActive ? "rgba(99, 102, 241, 0.15)" : "rgba(255, 255, 255, 0.03)",
+            cursor: "pointer",
+            textAlign: "center",
+            transition: "all 0.18s ease",
+          }}
+        >
+          <input {...getInputProps()} />
+          <div style={{ fontSize: "16px", marginBottom: "4px" }}>
+            {isDragActive ? "📥" : "📄"}
+          </div>
+          <p style={{ margin: 0, fontSize: "12px", color: "var(--text-secondary)", fontWeight: 500 }}>
+            {isDragActive ? "Drop documents here" : "Upload source files"}
+          </p>
+          {files.length > 0 && (
+            <p style={{ margin: "4px 0 0", color: "#818cf8", fontSize: "11px", fontWeight: 600 }}>
+              {files.length} staged · click Upload below
+            </p>
+          )}
+        </div>
+
+        {files.length > 0 && (
           <button
             onClick={uploadFile}
-            disabled={uploading || files.length === 0}
+            disabled={uploading}
             style={{
               width: "100%",
-              padding: "11px",
-              background: "var(--surface)",
-              color: uploading ? "var(--text-muted)" : "var(--text-primary)",
-              border: "1px solid var(--border)",
-              borderRadius: "10px",
-              cursor: uploading || files.length === 0 ? "not-allowed" : "pointer",
-              fontSize: "14px",
-              opacity: uploading || files.length === 0 ? 0.75 : 1,
-              transition: "opacity 0.15s",
+              padding: "8px",
+              background: experimentMode ? "#9333ea" : "#2563eb",
+              color: "white",
+              border: "none",
+              borderRadius: "9999px",
+              cursor: uploading ? "not-allowed" : "pointer",
+              fontSize: "12px",
+              fontWeight: 600,
+              transition: "all 0.15s ease",
             }}
           >
-            {uploading ? <ButtonContent text="Uploading..." /> : "Upload"}
+            {uploading ? <ButtonContent text="Ingesting..." /> : `Index ${files.length} Document${files.length !== 1 ? "s" : ""}`}
           </button>
-        </div>
+        )}
 
-        {/* NEW CHAT */}
-        <div style={{ padding: "12px 16px", flexShrink: 0 }}>
-          <button
-            onClick={() => {
-              setMessages([]);
-              setCurrentSessionId(null);
-            }}
-            style={{
-              width: "100%",
-              padding: "12px",
-              background: "var(--surface)",
-              color: "var(--text-primary)",
-              border: "1px solid var(--border)",
-              borderRadius: "10px",
-              cursor: "pointer",
-              fontSize: "14px",
-            }}
-          >
-            + New Chat
-          </button>
-        </div>
-
-        {/* SESSIONS */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 16px" }}>
+        {/* CONVERSATION SESSIONS (Google Pill List) */}
+        <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "3px" }}>
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              marginBottom: "10px",
+              padding: "4px 8px 6px",
             }}
           >
-            <p
+            <span
               style={{
-                margin: 0,
                 fontSize: "11px",
-                color: "#777",
+                fontWeight: 600,
+                color: "var(--text-muted)",
+                letterSpacing: "0.06em",
                 textTransform: "uppercase",
-                letterSpacing: "0.08em",
               }}
             >
-              Conversations
-            </p>
-            <button
-              onClick={clearAllSessions}
-              disabled={clearingSessions}
-              style={{
-                background: "transparent",
-                border: "none",
-                color: "#ef4444",
-                cursor: clearingSessions ? "not-allowed" : "pointer",
-                fontSize: "11px",
-                padding: 0,
-              }}
-            >
-              {clearingSessions ? "Clearing..." : "Clear All"}
-            </button>
+              Recent Chats
+            </span>
+            {sessions.length > 0 && (
+              <button
+                onClick={clearAllSessions}
+                disabled={clearingSessions}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#ef4444",
+                  cursor: clearingSessions ? "not-allowed" : "pointer",
+                  fontSize: "11px",
+                  padding: 0,
+                  opacity: 0.75,
+                }}
+              >
+                {clearingSessions ? "Clearing..." : "Clear"}
+              </button>
+            )}
           </div>
 
+          {sessions.length > 6 && (
+            <input
+              type="text"
+              placeholder="Search..."
+              value={sessionSearch}
+              onChange={(e) => setSessionSearch(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "6px 12px",
+                background: "rgba(255, 255, 255, 0.04)",
+                border: "none",
+                borderRadius: "9999px",
+                color: "var(--text-primary)",
+                fontSize: "11px",
+                outline: "none",
+                marginBottom: "4px",
+                boxSizing: "border-box",
+              }}
+            />
+          )}
+
           {loadingSessions && sessions.length === 0 && (
-            <p style={{ color: "#777", fontSize: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
-              <Spinner /> Loading...
+            <p style={{ color: "var(--text-muted)", fontSize: "12px", padding: "12px", textAlign: "center" }}>
+              <Spinner size={12} />
             </p>
           )}
 
-          {sessions.map((session) => (
-            <div
-              key={session.id}
-              onClick={() => loadSession(session.id)}
+          {!loadingSessions && filteredSessions.length === 0 && (
+            <p style={{ color: "var(--text-muted)", fontSize: "12px", padding: "16px 8px", textAlign: "center" }}>
+              No chats yet.
+            </p>
+          )}
+
+          {filteredSessions.map((session) => {
+            const isSelected = currentSessionId === session.id;
+            return (
+              <div
+                key={session.id}
+                onClick={() => loadSession(session.id)}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "9999px",
+                  background: isSelected ? "rgba(99, 102, 241, 0.18)" : "transparent",
+                  color: isSelected ? "#ffffff" : "var(--text-secondary)",
+                  cursor: loadingSessionId || deletingSessionId ? "not-allowed" : "pointer",
+                  fontSize: "12px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  transition: "all 0.15s ease",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected) {
+                    e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)";
+                    e.currentTarget.style.color = "#ffffff";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected) {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = "var(--text-secondary)";
+                  }
+                }}
+              >
+                <span
+                  style={{
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    flex: 1,
+                    fontWeight: isSelected ? "600" : "400",
+                  }}
+                >
+                  {session.title || `Chat #${session.id}`}
+                </span>
+
+                {deletingSessionId === session.id ? (
+                  <Spinner size={11} />
+                ) : (
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (deletingSessionId) return;
+                      setDeletingSessionId(session.id);
+                      try {
+                        await apiRequest(`/history/${session.id}`, "DELETE");
+                        if (currentSessionId === session.id) {
+                          setMessages([]);
+                          setCurrentSessionId(null);
+                        }
+                        fetchSessions();
+                      } finally {
+                        setDeletingSessionId(null);
+                      }
+                    }}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "var(--text-muted)",
+                      cursor: "pointer",
+                      fontSize: "12px",
+                      padding: "0 0 0 6px",
+                      opacity: 0.5,
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.5")}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </aside>
+
+      {/* MAIN CHAT WORKSPACE */}
+      <main
+        className="docpilot-main"
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+          background: "var(--bg-primary)",
+        }}
+      >
+        {/* TOPBAR (Seamless Google Pill Bar) */}
+        <header
+          className="docpilot-topbar"
+          style={{
+            padding: "12px 24px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "12px",
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <button
+              className="mobile-menu-button"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open conversations"
               style={{
-                padding: "12px 14px",
-                marginBottom: "6px",
-                borderRadius: "10px",
-                background: currentSessionId === session.id ? "var(--surface-hover)" : "var(--surface)",
-                border: "1px solid var(--border)",
-                cursor: loadingSessionId || deletingSessionId ? "not-allowed" : "pointer",
-                fontSize: "13px",
-                display: "flex",
-                justifyContent: "space-between",
+                color: "var(--text-primary)",
+                background: "rgba(255, 255, 255, 0.06)",
+                border: "none",
+                borderRadius: "9999px",
+                padding: "6px 12px",
+                cursor: "pointer",
+              }}
+            >
+              ☰
+            </button>
+
+            <div
+              style={{
+                display: "inline-flex",
                 alignItems: "center",
-                opacity: loadingSessionId && loadingSessionId !== session.id ? 0.7 : 1,
-                transition: "opacity 0.15s",
+                gap: "8px",
+                padding: "5px 14px",
+                background: "rgba(255, 255, 255, 0.04)",
+                borderRadius: "9999px",
+                fontSize: "12px",
               }}
             >
               <span
                 style={{
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  flex: 1,
-                  color: "var(--text-primary)",
+                  width: "7px",
+                  height: "7px",
+                  borderRadius: "50%",
+                  background: documents.length > 0 ? "#10b981" : "#64748b",
                 }}
-              >
-                {session.title || `Chat #${session.id}`}
+              />
+              <span style={{ color: "var(--text-muted)" }}>Scope:</span>
+              <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                {source || "No Documents Loaded"}
               </span>
+            </div>
+          </div>
 
-              {deletingSessionId === session.id && (
-                <span style={{ color: "#999", marginLeft: "8px", display: "inline-flex" }}>
-                  <Spinner size={12} />
-                </span>
-              )}
+          {/* Navigation Actions */}
+          <div className="docpilot-actions" style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+            <a
+              href="/home"
+              onClick={(e) => {
+                if (!e.metaKey && !e.ctrlKey && !e.shiftKey && e.button === 0) {
+                  e.preventDefault();
+                  onHome();
+                }
+              }}
+              style={{
+                padding: "6px 14px",
+                background: "rgba(255, 255, 255, 0.05)",
+                color: "var(--text-secondary)",
+                textDecoration: "none",
+                borderRadius: "9999px",
+                cursor: "pointer",
+                fontSize: "12px",
+                fontWeight: 500,
+                transition: "all 0.15s ease",
+              }}
+            >
+              Home
+            </a>
 
-              <button
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  if (deletingSessionId) return;
-                  setDeletingSessionId(session.id);
-                  try {
-                    await apiRequest(`/history/${session.id}`, "DELETE");
-                    if (currentSessionId === session.id) {
-                      setMessages([]);
-                      setCurrentSessionId(null);
-                    }
-                    fetchSessions();
-                  } finally {
-                    setDeletingSessionId(null);
+            <a
+              href={experimentMode ? "/experimentalmode/tracepilot" : "/productionmode/tracepilot"}
+              onClick={(e) => {
+                if (!e.metaKey && !e.ctrlKey && !e.shiftKey && e.button === 0) {
+                  e.preventDefault();
+                  onTracePilot();
+                }
+              }}
+              style={{
+                padding: "6px 14px",
+                background: "rgba(56, 189, 248, 0.1)",
+                color: "#38bdf8",
+                textDecoration: "none",
+                borderRadius: "9999px",
+                cursor: "pointer",
+                fontSize: "12px",
+                fontWeight: 500,
+                transition: "all 0.15s ease",
+              }}
+            >
+              TracePilot
+            </a>
+
+            {experimentMode && onGaugePilot && (
+              <a
+                href="/experimentalmode/gaugepilot"
+                onClick={(e) => {
+                  if (!e.metaKey && !e.ctrlKey && !e.shiftKey && e.button === 0) {
+                    e.preventDefault();
+                    onGaugePilot();
                   }
                 }}
                 style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#aaa",
+                  padding: "6px 14px",
+                  background: "rgba(168, 85, 247, 0.12)",
+                  color: "#c084fc",
+                  textDecoration: "none",
+                  borderRadius: "9999px",
                   cursor: "pointer",
-                  fontSize: "14px",
-                  marginLeft: "8px",
-                  flexShrink: 0,
+                  fontSize: "12px",
+                  fontWeight: 500,
+                  transition: "all 0.15s ease",
                 }}
               >
-                ✕
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
+                GaugePilot
+              </a>
+            )}
 
-      {/* MAIN */}
-      <div
-        className="docpilot-main"
-        style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "var(--bg-primary)" }}
-      >
-        {/* TOPBAR */}
-        <div
-          className="docpilot-topbar"
-          style={{
-            padding: "12px 24px",
-            borderBottom: `1px solid var(--border)`,
-            flexShrink: 0,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <button
-            className="mobile-menu-button"
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Open conversations"
-            style={{
-              color: "var(--text-primary)",
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-              borderRadius: "10px",
-              padding: "8px 12px",
-              cursor: "pointer",
-            }}
-          >
-            ☰
-          </button>
+            <a
+              href={experimentMode ? "/productionmode/docpilot" : "/experimentalmode/docpilot"}
+              onClick={(e) => {
+                if (!e.metaKey && !e.ctrlKey && !e.shiftKey && e.button === 0) {
+                  e.preventDefault();
+                  onToggleMode && onToggleMode(!experimentMode);
+                }
+              }}
+              style={{
+                padding: "6px 14px",
+                background: experimentMode ? "rgba(168, 85, 247, 0.18)" : "rgba(66, 133, 244, 0.14)",
+                color: experimentMode ? "#c084fc" : "#60a5fa",
+                textDecoration: "none",
+                borderRadius: "9999px",
+                cursor: "pointer",
+                fontSize: "12px",
+                fontWeight: 600,
+                transition: "all 0.15s ease",
+              }}
+            >
+              {experimentMode ? "← Production" : "🧪 Experimental"}
+            </a>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <p className="docpilot-active-document" style={{ margin: 0, fontSize: "13px", color: "#ccc" }}>
-              Active Document: <span style={{ color: source ? "#ddd" : "#888" }}>{source || "None"}</span>
-            </p>
-          </div>
 
-          <div className="docpilot-actions" style={{ display: "flex", gap: "8px" }}>
-            {[
-              { label: "← Home", onClick: onHome, color: "#ddd" },
-              { label: "TracePilot →", onClick: onTracePilot, color: "#ddd" },
-              { label: deletingDoc ? "Deleting..." : "✕ Delete Doc Data", onClick: deleteActiveDocument, color: "#ef4444", disabled: deletingDoc },
-              { label: "Logout", onClick: onLogout, color: "#ddd" },
-            ].map((btn) => (
+            {documents.length > 0 && (
               <button
-                key={String(btn.label)}
-                onClick={btn.onClick}
-                disabled={btn.disabled}
+                onClick={deleteActiveDocument}
+                disabled={deletingDoc}
                 style={{
-                  padding: "8px 14px",
-                  background: "var(--surface)",
-                  color: btn.color,
-                  border: `1px solid var(--border)`,
-                  borderRadius: "8px",
-                  cursor: btn.disabled ? "not-allowed" : "pointer",
-                  fontSize: "13px",
-                  opacity: btn.disabled ? 0.75 : 1,
-                  transition: "opacity 0.15s, transform 0.15s",
+                  padding: "6px 12px",
+                  background: "rgba(239, 68, 68, 0.1)",
+                  color: "#ef4444",
+                  border: "none",
+                  borderRadius: "9999px",
+                  cursor: deletingDoc ? "not-allowed" : "pointer",
+                  fontSize: "12px",
+                  opacity: deletingDoc ? 0.5 : 1,
+                  transition: "all 0.15s ease",
                 }}
               >
-                {btn.label}
+                {deletingDoc ? "Clearing..." : "✕ Clear Docs"}
               </button>
-            ))}
-          </div>
-        </div>
+            )}
 
-        {/* CHAT AREA */}
+            <button
+              onClick={onLogout}
+              style={{
+                padding: "6px 12px",
+                background: "transparent",
+                color: "var(--text-muted)",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "12px",
+              }}
+            >
+              Logout
+            </button>
+          </div>
+        </header>
+
+        {/* CHAT FEED */}
         <div
           className="docpilot-chat-area"
-          style={{ flex: 1, overflowY: "auto", padding: "32px 60px", background: "var(--bg-primary)" }}
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: "20px 32px 140px",
+            display: "flex",
+            flexDirection: "column",
+          }}
         >
-          {messages.length === 0 && (
-            <p style={{ color: "var(--text-muted)", fontSize: "16px" }}>Ask questions about your document...</p>
-          )}
+          {messages.length === 0 ? (
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                maxWidth: "720px",
+                margin: "0 auto",
+                textAlign: "center",
+                gap: "28px",
+              }}
+            >
+              <div>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: "32px",
+                    fontWeight: "700",
+                    letterSpacing: "-0.6px",
+                    color: "#ffffff",
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {experimentMode ? (
+                    <span>
+                      Experimental <span style={{ color: "#c084fc" }}>RAG Studio</span>
+                    </span>
+                  ) : (
+                    <span>
+                      How can I <span style={{ color: "#60a5fa" }}>assist you</span> today?
+                    </span>
+                  )}
+                </h2>
+                <p
+                  style={{
+                    margin: "10px 0 0",
+                    color: "#94a3b8",
+                    fontSize: "15px",
+                    lineHeight: 1.6,
+                  }}
+                >
 
-          {messages
-            .slice()
-            .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
-            .map((msg, i) => (
-              <div
-                key={i}
-                style={{ marginBottom: "28px", display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}
-              >
-                {msg.role === "user" ? (
-                  <div
-                    className="docpilot-message-user text-wrap-safe"
-                    style={{
-                      background: "var(--surface)",
-                      padding: "14px 20px",
-                      borderRadius: "18px",
-                      maxWidth: "65%",
-                      fontSize: "16px",
-                      lineHeight: 1.6,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    {msg.content}
-                  </div>
-                ) : (
-                  <div
-                    className="docpilot-message-assistant text-wrap-safe"
-                    style={{ maxWidth: "80%", fontSize: "16px", lineHeight: 1.8, color: "var(--text-secondary)" }}
-                  >
-                    <div>{msg.content}</div>
-                    {msg.sources && msg.sources.length > 0 && (
-                      <div style={{ marginTop: "16px", paddingLeft: "4px", fontSize: "12px", color: "#aaa" }}>
-                        <p
+                  {documents.length > 0
+                    ? `Ready to query and synthesize across ${documents.length} indexed document${documents.length !== 1 ? "s" : ""}.`
+                    : "Upload your PDFs, documents, or data files in the sidebar to begin searching and chatting."}
+                </p>
+              </div>
+
+              {documents.length > 0 && (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "12px", width: "100%" }}>
+                  {starterPrompts.map((promptText, i) => (
+                    <div
+                      key={i}
+                      onClick={() => setQuestion(promptText)}
+                      style={{
+                        padding: "16px",
+                        borderRadius: "18px",
+                        background: "rgba(255, 255, 255, 0.03)",
+                        cursor: "pointer",
+                        fontSize: "13px",
+                        color: "var(--text-secondary)",
+                        textAlign: "left",
+                        lineHeight: 1.5,
+                        transition: "all 0.18s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
+                        e.currentTarget.style.transform = "translateY(0)";
+                      }}
+                    >
+                      {promptText}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ maxWidth: "760px", width: "100%", margin: "0 auto" }}>
+              {messages.map((msg, i) => (
+                <div
+                  key={i}
+                  style={{
+                    marginBottom: "28px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: msg.role === "user" ? "flex-end" : "flex-start",
+                  }}
+                >
+                  {msg.role === "user" ? (
+                    editingIndex === i ? (
+                      <div
+                        style={{
+                          width: "100%",
+                          maxWidth: "85%",
+                          background: "rgba(255, 255, 255, 0.05)",
+                          border: experimentMode
+                            ? "1px solid rgba(168, 85, 247, 0.3)"
+                            : "1px solid rgba(96, 165, 250, 0.3)",
+                          borderRadius: "20px",
+                          padding: "14px 16px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "10px",
+                          boxShadow: "0 8px 30px rgba(0, 0, 0, 0.3)",
+                        }}
+                      >
+                        <textarea
+                          value={editPromptText}
+                          onChange={(e) => setEditPromptText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault();
+                              handleEditSubmit(i, editPromptText);
+                            }
+                          }}
+                          rows={Math.min(6, Math.max(2, editPromptText.split("\n").length))}
                           style={{
-                            margin: "0 0 6px",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.06em",
-                            fontSize: "10px",
-                            color: "#ccc",
-                            fontWeight: "bold",
+                            width: "100%",
+                            background: "transparent",
+                            border: "none",
+                            outline: "none",
+                            color: "var(--text-primary)",
+                            fontSize: "15px",
+                            lineHeight: 1.6,
+                            resize: "vertical",
+                            fontFamily: "inherit",
+                            boxSizing: "border-box",
+                          }}
+                          autoFocus
+                        />
+                        <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+                          <button
+                            onClick={() => setEditingIndex(null)}
+                            style={{
+                              padding: "6px 14px",
+                              borderRadius: "9999px",
+                              background: "rgba(255, 255, 255, 0.06)",
+                              color: "var(--text-secondary)",
+                              border: "none",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                              fontWeight: 500,
+                              transition: "all 0.15s ease",
+                            }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => handleEditSubmit(i, editPromptText)}
+                            disabled={!editPromptText.trim() || asking}
+                            style={{
+                              padding: "6px 16px",
+                              borderRadius: "9999px",
+                              background: experimentMode
+                                ? "linear-gradient(135deg, #a855f7, #7c3aed)"
+                                : "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+                              color: "#ffffff",
+                              border: "none",
+                              cursor: !editPromptText.trim() || asking ? "not-allowed" : "pointer",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              opacity: !editPromptText.trim() || asking ? 0.5 : 1,
+                              transition: "all 0.15s ease",
+                            }}
+                          >
+                            Send
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px", maxWidth: "80%" }}>
+                        <div
+                          style={{
+                            background: experimentMode
+                              ? "linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(126, 34, 206, 0.35))"
+                              : "linear-gradient(135deg, rgba(37, 99, 235, 0.35), rgba(29, 78, 216, 0.45))",
+                            padding: "12px 18px",
+                            borderRadius: "20px 20px 4px 20px",
+                            fontSize: "15px",
+                            lineHeight: 1.6,
+                            color: "#ffffff",
+                            wordBreak: "break-word",
+                            border: experimentMode
+                              ? "1px solid rgba(168, 85, 247, 0.2)"
+                              : "1px solid rgba(59, 130, 246, 0.2)",
                           }}
                         >
-                          Sources
-                        </p>
-                        {msg.sources.map((s, idx) => (
-                          <div key={idx} style={{ color: "#bbb", marginBottom: "2px" }}>
-                            📁 <span style={{ color: "#ddd" }}>{s.source || s.file_name}</span> ·{" "}
-                            <span style={{ fontStyle: "italic" }}>Page {s.page || s.page_number}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
+                          {msg.content}
+                        </div>
 
-          <div ref={messagesEndRef} />
+                        {/* User action bar: Copy & Edit */}
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            paddingTop: "2px",
+                          }}
+                        >
+                          <button
+                            onClick={() => copyToClipboard(msg.content, `user-${i}`)}
+                            title="Copy message"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              background: "transparent",
+                              border: "none",
+                              color: "var(--text-muted)",
+                              cursor: "pointer",
+                              fontSize: "11px",
+                              padding: "4px 6px",
+                              borderRadius: "6px",
+                              transition: "all 0.15s ease",
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary)")}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+                          >
+                            {copiedIndex === `user-${i}` ? (
+                              <>
+                                <span style={{ color: "#22c55e", fontWeight: 600 }}>✓</span>
+                                <span style={{ color: "#22c55e" }}>Copied</span>
+                              </>
+                            ) : (
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                              </svg>
+                            )}
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setEditingIndex(i);
+                              setEditPromptText(msg.content);
+                            }}
+                            title="Edit query"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              background: "transparent",
+                              border: "none",
+                              color: "var(--text-muted)",
+                              cursor: "pointer",
+                              fontSize: "11px",
+                              padding: "4px 6px",
+                              borderRadius: "6px",
+                              transition: "all 0.15s ease",
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary)")}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+                          >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M12 20h9"></path>
+                              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  ) : (
+                    <div
+                      style={{
+                        width: "100%",
+                        fontSize: "15px",
+                        lineHeight: 1.75,
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      {msg.loading ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "var(--text-muted)", padding: "12px 0" }}>
+                          <Spinner size={14} />
+                          <span>Synthesizing answer...</span>
+                        </div>
+                      ) : (
+                        <div>
+                          <MarkdownRenderer content={msg.content} experimentMode={experimentMode} />
+
+
+                          {/* Sources citation pills */}
+                          {msg.sources && msg.sources.length > 0 && (
+                            <div style={{ marginTop: "14px", display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                              {msg.sources.map((s, idx) => (
+                                <div
+                                  key={idx}
+                                  style={{
+                                    padding: "3px 10px",
+                                    background: "rgba(255, 255, 255, 0.04)",
+                                    borderRadius: "9999px",
+                                    fontSize: "11px",
+                                    color: "var(--text-muted)",
+                                  }}
+                                >
+                                  📄 {s.source || s.file_name || "Document"}{" "}
+                                  {(s.page || s.page_number) != null && (
+                                    <span style={{ opacity: 0.7 }}>· p. {s.page || s.page_number}</span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Assistant Action Bar: Copy & Try Again */}
+                          <div style={{ marginTop: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+                            <button
+                              onClick={() => copyToClipboard(msg.content, `assistant-${i}`)}
+                              title="Copy response"
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                background: "rgba(255, 255, 255, 0.04)",
+                                border: "none",
+                                color: "var(--text-muted)",
+                                cursor: "pointer",
+                                fontSize: "11px",
+                                padding: "4px 9px",
+                                borderRadius: "8px",
+                                transition: "all 0.15s ease",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
+                                e.currentTarget.style.color = "var(--text-primary)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)";
+                                e.currentTarget.style.color = "var(--text-muted)";
+                              }}
+                            >
+                              {copiedIndex === `assistant-${i}` ? (
+                                <>
+                                  <span style={{ color: "#22c55e", fontWeight: 600 }}>✓</span>
+                                  <span style={{ color: "#22c55e" }}>Copied</span>
+                                </>
+                              ) : (
+                                <>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                  </svg>
+                                  <span>Copy</span>
+                                </>
+                              )}
+                            </button>
+
+                            <button
+                              onClick={() => handleTryAgain(i)}
+                              disabled={asking}
+                              title="Try again (Regenerate answer)"
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                background: "rgba(255, 255, 255, 0.04)",
+                                border: "none",
+                                color: "var(--text-muted)",
+                                cursor: asking ? "not-allowed" : "pointer",
+                                fontSize: "11px",
+                                padding: "4px 9px",
+                                borderRadius: "8px",
+                                opacity: asking ? 0.5 : 1,
+                                transition: "all 0.15s ease",
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!asking) {
+                                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
+                                  e.currentTarget.style.color = "var(--text-primary)";
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)";
+                                e.currentTarget.style.color = "var(--text-muted)";
+                              }}
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                              </svg>
+                              <span>Try again</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
         </div>
 
-        {/* INPUT */}
+        {/* COMPOSER CAPSULE (Google Gemini flagship bar) */}
         <div
-          className="docpilot-input-bar"
           style={{
-            padding: "16px 24px",
-            borderTop: "1px solid var(--border)",
+            padding: "0 24px 20px",
+            display: "flex",
+            justifyContent: "center",
             flexShrink: 0,
-            background: "var(--surface)",
           }}
         >
           <div
-            className="composer"
             style={{
+              width: "100%",
+              maxWidth: "760px",
+              borderRadius: "28px",
+              background: "rgba(255, 255, 255, 0.05)",
+              boxShadow: "0 16px 40px rgba(0, 0, 0, 0.35)",
+              backdropFilter: "blur(20px)",
+              padding: "12px 18px 10px",
               display: "flex",
               flexDirection: "column",
-              borderRadius: "24px",
-              padding: "16px",
-              border: "1px solid var(--border)",
-              background: "var(--surface)",
-              gap: "12px",
+              gap: "8px",
             }}
           >
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <input
-                type="text"
-                placeholder="Ask something..."
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && askQuestion()}
-                style={{
-                  border: "none",
-                  background: "transparent",
-                  color: "var(--text-primary)",
-                  fontSize: "18px",
-                  outline: "none",
-                  padding: "6px 4px",
-                }}
-              />
-            </div>
 
-            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: "12px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+            {/* Input textarea */}
+            <textarea
+              rows={1}
+              placeholder="Ask anything about your documents..."
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  askQuestion();
+                }
+              }}
+              style={{
+                width: "100%",
+                border: "none",
+                background: "transparent",
+                color: "var(--text-primary)",
+                fontSize: "15px",
+                outline: "none",
+                resize: "none",
+                fontFamily: "inherit",
+                lineHeight: 1.5,
+                boxSizing: "border-box",
+              }}
+            />
 
+            {/* Bottom action pills */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "8px",
+                flexWrap: "wrap",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
                 {/* MODEL SELECTOR */}
                 <CustomSelector
                   label={activeModelLabel}
-                  sublabel="Active model"
+                  sublabel="Model"
                   open={showModels}
                   onToggle={() => setShowModels((v) => !v)}
                   selectorRef={modelSelectorRef}
                 >
-                  {models.length > 0 &&
-                    models.map((model) => (
-                      <SelectorItem
-                        key={model.id}
-                        label={model.label}
-                        subtitle={model.subtitle}
-                        active={selectedModel === model.id}
-                        onClick={() => {
-                          setSelectedModel(model.id);
-                          setShowModels(false);
-                        }}
-                      />
-                    ))}
+                  <p style={{ margin: "4px 8px 8px", fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
+                    Select LLM Provider
+                  </p>
+                  {models.map((model) => (
+                    <SelectorItem
+                      key={model.id}
+                      label={model.label}
+                      subtitle={model.subtitle}
+                      active={selectedModel === model.id}
+                      onClick={() => {
+                        setSelectedModel(model.id);
+                        setShowModels(false);
+                      }}
+                    />
+                  ))}
                 </CustomSelector>
 
-                {/* DOCUMENTS SELECTOR (NEW) — always visible, independent of experimentMode */}
+                {/* DOCUMENTS SELECTOR */}
                 <CustomSelector
                   label={activeDocumentsLabel}
-                  sublabel="Documents"
+                  sublabel="Docs"
+                  badge={`${selectedDocumentIds.length}`}
                   open={showDocuments}
                   onToggle={() => setShowDocuments((v) => !v)}
                   selectorRef={documentSelectorRef}
                 >
-                  <div
-                    style={{
-                      display: "flex",
-                      borderBottom: "1px solid var(--border)",
-                    }}
-                  >
+                  <div style={{ display: "flex", padding: "4px", gap: "4px" }}>
                     <button
+                      type="button"
                       onClick={() => setSelectedDocumentIds(documents.map((d) => d.document_id))}
                       style={{
                         flex: 1,
-                        padding: "10px 8px",
-                        background: "transparent",
+                        padding: "6px 8px",
+                        background: "rgba(99, 102, 241, 0.15)",
                         border: "none",
-                        color: "var(--text-primary)",
+                        borderRadius: "8px",
+                        color: "#c7d2fe",
                         cursor: "pointer",
-                        fontSize: "13px",
+                        fontSize: "11px",
+                        fontWeight: 600,
                       }}
                     >
                       Select All
                     </button>
                     <button
+                      type="button"
                       onClick={() => setSelectedDocumentIds([])}
                       style={{
                         flex: 1,
-                        padding: "10px 8px",
-                        background: "transparent",
+                        padding: "6px 8px",
+                        background: "rgba(255, 255, 255, 0.06)",
                         border: "none",
-                        color: "var(--text-primary)",
+                        borderRadius: "8px",
+                        color: "var(--text-muted)",
                         cursor: "pointer",
-                        fontSize: "13px",
+                        fontSize: "11px",
                       }}
                     >
                       Clear All
                     </button>
                   </div>
 
-                  {documents.length === 0 && (
-                    <div style={{ padding: "12px", fontSize: "12px", color: "#888" }}>
-                      No documents uploaded yet
+                  {documents.length === 0 ? (
+                    <div style={{ padding: "12px", fontSize: "12px", color: "var(--text-muted)", textAlign: "center" }}>
+                      No documents ingested yet
+                    </div>
+                  ) : (
+                    <div style={{ maxHeight: "220px", overflowY: "auto", padding: "4px" }}>
+                      {documents.map((doc) => (
+                        <SelectorItem
+                          key={doc.document_id}
+                          label={doc.filename}
+                          active={selectedDocumentIds.includes(doc.document_id)}
+                          multiSelect
+                          onClick={() => {
+                            setSelectedDocumentIds((prev) =>
+                              prev.includes(doc.document_id)
+                                ? prev.filter((id) => id !== doc.document_id)
+                                : [...prev, doc.document_id]
+                            );
+                          }}
+                        />
+                      ))}
                     </div>
                   )}
-
-                  {documents.map((doc) => (
-                    <SelectorItem
-                      key={doc.document_id}
-                      label={doc.filename}
-                      active={selectedDocumentIds.includes(doc.document_id)}
-                      multiSelect
-                      onClick={() => {
-                        setSelectedDocumentIds((prev) =>
-                          prev.includes(doc.document_id)
-                            ? prev.filter((id) => id !== doc.document_id)
-                            : [...prev, doc.document_id]
-                        );
-                      }}
-                    />
-                  ))}
                 </CustomSelector>
 
+                {/* EXPERIMENTAL PIPELINE SELECTORS */}
                 {experimentMode && (
                   <>
-                    {/* RETRIEVAL STRATEGY SELECTOR */}
+                    <CustomSelector
+                      label={activeChunkerLabel}
+                      sublabel="Chunker"
+                      open={showChunkers}
+                      onToggle={() => setShowChunkers((v) => !v)}
+                      selectorRef={chunkerSelectorRef}
+                    >
+                      <p style={{ margin: "4px 8px 8px", fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
+                        Chunking Strategy
+                      </p>
+                      {CHUNKER_OPTIONS.map((opt) => (
+                        <SelectorItem
+                          key={opt.id}
+                          label={opt.label}
+                          subtitle={opt.subtitle}
+                          active={selectedChunker === opt.id}
+                          onClick={() => {
+                            setSelectedChunker(opt.id);
+                            setShowChunkers(false);
+                          }}
+                        />
+                      ))}
+                    </CustomSelector>
+
+                    <CustomSelector
+                      label={activeEmbeddingLabel}
+                      sublabel="Embedding"
+                      open={showEmbeddings}
+                      onToggle={() => setShowEmbeddings((v) => !v)}
+                      selectorRef={embeddingSelectorRef}
+                    >
+                      <p style={{ margin: "4px 8px 8px", fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
+                        Embedding Vector Model
+                      </p>
+                      {EMBEDDING_OPTIONS.map((opt) => (
+                        <SelectorItem
+                          key={opt.id}
+                          label={opt.label}
+                          subtitle={opt.subtitle}
+                          active={selectedEmbeddingModel === opt.id}
+                          onClick={() => {
+                            setSelectedEmbeddingModel(opt.id);
+                            setShowEmbeddings(false);
+                          }}
+                        />
+                      ))}
+                    </CustomSelector>
+
                     <CustomSelector
                       label={activeRetrievalLabel}
-                      sublabel="Retrieval Strategy"
+                      sublabel="Retriever"
                       open={showRetrieval}
                       onToggle={() => setShowRetrieval((v) => !v)}
                       selectorRef={retrievalSelectorRef}
                     >
+                      <p style={{ margin: "4px 8px 8px", fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
+                        Retrieval Technique
+                      </p>
                       {RETRIEVAL_STRATEGIES.map((strategy) => (
                         <SelectorItem
                           key={strategy.id}
@@ -1087,76 +2093,273 @@ function Dashboard({ experimentMode, onLogout, onHome, onTracePilot }) {
                         />
                       ))}
                     </CustomSelector>
-                      {/* RERANKER SELECTOR */}
-<CustomSelector
-  label={activeRerankerLabel}
-  sublabel="Reranker"
-  open={showReranker}
-  onToggle={() => setShowReranker((v) => !v)}
-  selectorRef={rerankerSelectorRef}
->
-  {RERANKER_OPTIONS.map((option) => (
-    <SelectorItem
-      key={option.id}
-      label={option.label}
-      subtitle={option.subtitle}
-      active={reranker === option.id}
-      onClick={() => {
-        setReranker(option.id);
-        setShowReranker(false);
-      }}
-    />
-  ))}
-</CustomSelector>
-                    {/* ENHANCEMENTS MULTI-SELECT */}
+
                     <CustomSelector
-                      label={activeEnhancementLabel}
-                      sublabel="Enhancements"
-                      open={showEnhancements}
-                      onToggle={() => setShowEnhancements((v) => !v)}
-                      selectorRef={enhancementSelectorRef}
+                      label={activeRerankerLabel}
+                      sublabel="Reranker"
+                      open={showReranker}
+                      onToggle={() => setShowReranker((v) => !v)}
+                      selectorRef={rerankerSelectorRef}
                     >
-                      {ENHANCEMENT_OPTIONS.map((opt) => (
+                      <p style={{ margin: "4px 8px 8px", fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
+                        Cross-Encoder Reranker
+                      </p>
+                      {RERANKER_OPTIONS.map((option) => (
                         <SelectorItem
-                          key={opt.id}
-                          label={opt.label}
-                          subtitle={opt.subtitle}
-                          active={isEnhancementActive(selectedEnhancements, opt.id)}
-                          multiSelect
+                          key={option.id}
+                          label={option.label}
+                          subtitle={option.subtitle}
+                          active={reranker === option.id}
                           onClick={() => {
-                            setSelectedEnhancements((prev) => toggleEnhancement(prev, opt.id));
+                            setReranker(option.id);
+                            setShowReranker(false);
                           }}
                         />
                       ))}
                     </CustomSelector>
+
+                    {/* MULTI-SELECT QUERY ENHANCEMENTS SELECTOR */}
+                    <div ref={enhancementSelectorRef} style={{ position: "relative", display: "inline-flex", flexDirection: "column", alignItems: "center" }}>
+                      <div
+                        onClick={() => setShowEnhancements((v) => !v)}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          padding: "6px 12px",
+                          borderRadius: "9999px",
+                          background: "rgba(255, 255, 255, 0.05)",
+                          border: showEnhancements ? "1px solid rgba(168, 85, 247, 0.5)" : "1px solid rgba(255, 255, 255, 0.08)",
+                          color: "var(--text-primary)",
+                          fontSize: "12px",
+                          cursor: "pointer",
+                          transition: "all 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+                          backdropFilter: "blur(8px)",
+                          maxWidth: "320px",
+                          overflowX: "hidden",
+                        }}
+                      >
+                        {selectedEnhancements.includes("Default") || selectedEnhancements.length === 0 ? (
+                          <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>Default (Baseline)</span>
+                        ) : ALL_ENHANCEMENT_IDS.every((id) => selectedEnhancements.includes(id)) && selectedEnhancements.length === ALL_ENHANCEMENT_IDS.length ? (
+                          <span style={{ color: "#c084fc", fontWeight: 700 }}>All Enhancements (11)</span>
+                        ) : (
+                          <div style={{ display: "flex", alignItems: "center", gap: "4px", flexWrap: "nowrap", overflow: "hidden" }}>
+                            {selectedEnhancements.filter((e) => e !== "Default").slice(0, 2).map((id) => (
+                              <span
+                                key={id}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "3px",
+                                  padding: "1px 7px",
+                                  borderRadius: "9999px",
+                                  background: "rgba(168, 85, 247, 0.2)",
+                                  color: "#c084fc",
+                                  fontSize: "11px",
+                                  fontWeight: 600,
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {getEnhancementLabel(id)}
+                                <span
+                                  onClick={(e) => setSelectedEnhancements((prev) => removeEnhancementPill(prev, id, e))}
+                                  style={{ cursor: "pointer", opacity: 0.7, fontSize: "10px", marginLeft: "2px" }}
+                                >
+                                  ✕
+                                </span>
+                              </span>
+                            ))}
+                            {selectedEnhancements.filter((e) => e !== "Default").length > 2 && (
+                              <span
+                                style={{
+                                  padding: "1px 6px",
+                                  borderRadius: "9999px",
+                                  background: "rgba(255, 255, 255, 0.1)",
+                                  color: "var(--text-muted)",
+                                  fontSize: "10px",
+                                  fontWeight: 700,
+                                }}
+                              >
+                                +{selectedEnhancements.filter((e) => e !== "Default").length - 2}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        <span style={{ fontSize: "9px", color: "var(--text-muted)", opacity: 0.7, marginLeft: "auto" }}>
+                          {showEnhancements ? "▲" : "▼"}
+                        </span>
+                      </div>
+
+                      <span
+                        style={{
+                          fontSize: "9px",
+                          color: "var(--text-muted)",
+                          marginTop: "2px",
+                          textAlign: "center",
+                          letterSpacing: "0.04em",
+                          textTransform: "uppercase",
+                          opacity: 0.7,
+                        }}
+                      >
+                        Enhance
+                      </span>
+
+                      {showEnhancements && (
+                        <div
+                          style={{
+                          position: "absolute",
+                          bottom: "calc(100% + 8px)",
+                          left: 0,
+                          width: "350px",
+                          maxHeight: "440px",
+                          overflowY: "auto",
+                          zIndex: 9999,
+                          borderRadius: "18px",
+                          background: "rgba(22, 27, 46, 0.96)",
+                          boxShadow: "0 20px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1)",
+                          backdropFilter: "blur(24px)",
+                          padding: "12px",
+                          boxSizing: "border-box",
+                        }}
+                      >
+                        {/* PRESETS BAR */}
+                        <div style={{ display: "flex", gap: "6px", marginBottom: "12px", paddingBottom: "10px", borderBottom: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedEnhancements(["Default"])}
+                            style={{
+                              flex: 1,
+                              padding: "6px 8px",
+                              borderRadius: "9999px",
+                              border: "none",
+                              background: selectedEnhancements.includes("Default") || selectedEnhancements.length === 0 ? "rgba(255, 255, 255, 0.15)" : "rgba(255, 255, 255, 0.04)",
+                              color: selectedEnhancements.includes("Default") ? "#ffffff" : "var(--text-muted)",
+                              cursor: "pointer",
+                              fontSize: "11px",
+                              fontWeight: 600,
+                            }}
+                          >
+                            Default (Baseline)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedEnhancements([...ALL_ENHANCEMENT_IDS])}
+                            style={{
+                              flex: 1,
+                              padding: "6px 8px",
+                              borderRadius: "9999px",
+                              border: "none",
+                              background: ALL_ENHANCEMENT_IDS.every((e) => selectedEnhancements.includes(e)) && selectedEnhancements.length === ALL_ENHANCEMENT_IDS.length ? "rgba(168, 85, 247, 0.25)" : "rgba(255, 255, 255, 0.04)",
+                              color: ALL_ENHANCEMENT_IDS.every((e) => selectedEnhancements.includes(e)) ? "#c084fc" : "var(--text-muted)",
+                              cursor: "pointer",
+                              fontSize: "11px",
+                              fontWeight: 600,
+                            }}
+                          >
+                            All Enhancements (11)
+                          </button>
+                        </div>
+
+                        {/* CATEGORIZED TECHNIQUES */}
+                        {ENHANCEMENT_CATEGORIES.map((cat) => (
+                          <div key={cat.category} style={{ marginBottom: "12px" }}>
+                            <p style={{ margin: "2px 8px 6px", fontSize: "10px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.05em" }}>
+                              {cat.category}
+                            </p>
+                            {cat.items.map((opt) => (
+                              <SelectorItem
+                                key={opt.id}
+                                label={opt.label}
+                                subtitle={opt.subtitle}
+                                active={isEnhancementActive(selectedEnhancements, opt.id)}
+                                multiSelect
+                                onClick={() => setSelectedEnhancements((prev) => toggleEnhancement(prev, opt.id))}
+                              />
+                            ))}
+                          </div>
+                        ))}
+
+                        {/* LATENCY ADVISORY & RESET FOOTER */}
+                        <div style={{ marginTop: "10px", paddingTop: "10px", borderTop: "1px solid rgba(255, 255, 255, 0.08)", display: "flex", flexDirection: "column", gap: "8px" }}>
+                          {selectedEnhancements.filter((e) => e !== "Default").length > 2 && (
+                            <div
+                              title="Multiple query enhancements may increase latency and token usage."
+                              style={{
+                                padding: "6px 10px",
+                                borderRadius: "10px",
+                                background: "rgba(245, 158, 11, 0.12)",
+                                color: "#fbbf24",
+                                fontSize: "11px",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "6px",
+                              }}
+                            >
+                              <span>⚡</span>
+                              <span>Multiple enhancements may increase latency &amp; tokens</span>
+                            </div>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => setSelectedEnhancements(["Default"])}
+                            style={{
+                              background: "transparent",
+                              border: "none",
+                              color: "var(--text-muted)",
+                              cursor: "pointer",
+                              fontSize: "11px",
+                              textAlign: "center",
+                              padding: "4px",
+                            }}
+                          >
+                            Reset to Baseline
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   </>
                 )}
               </div>
 
+              {/* CIRCULAR SEND BUTTON */}
               <button
+                type="button"
                 onClick={askQuestion}
-                disabled={asking}
+                disabled={asking || !question.trim()}
                 style={{
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: "999px",
-                  border: "1px solid var(--border)",
-                  background: "var(--surface)",
-                  color: "var(--text-primary)",
-                  cursor: asking ? "not-allowed" : "pointer",
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "50%",
+                  border: "none",
+                  background: question.trim()
+                    ? experimentMode
+                      ? "#a855f7"
+                      : "#3b82f6"
+                    : "rgba(255, 255, 255, 0.08)",
+                  color: question.trim() ? "white" : "var(--text-muted)",
+                  cursor: asking || !question.trim() ? "not-allowed" : "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: "18px",
+                  fontSize: "15px",
                   flexShrink: 0,
+                  boxShadow: question.trim()
+                    ? `0 4px 14px ${experimentMode ? "rgba(168, 85, 247, 0.4)" : "rgba(59, 130, 246, 0.4)"}`
+                    : "none",
+                  transition: "all 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
                 }}
               >
-                {asking ? "⏳" : "➤"}
+                {asking ? <Spinner size={13} /> : "➤"}
               </button>
             </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
@@ -1169,7 +2372,7 @@ function Spinner({ size = 14 }) {
         height: `${size}px`,
         border: "2px solid currentColor",
         borderTopColor: "transparent",
-        borderRadius: "999px",
+        borderRadius: "50%",
         display: "inline-block",
         animation: "pilot-spin 0.8s linear infinite",
       }}
@@ -1180,7 +2383,7 @@ function Spinner({ size = 14 }) {
 function ButtonContent({ text }) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-      <Spinner />
+      <Spinner size={12} />
       {text}
     </span>
   );
@@ -1192,29 +2395,20 @@ function LoadingOverlay({ text }) {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(13, 13, 13, 0.55)",
+        background: "rgba(8, 12, 24, 0.8)",
+        backdropFilter: "blur(12px)",
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        color: "#ddd",
-        zIndex: 10,
-        pointerEvents: "none",
+        zIndex: 99999,
+        gap: "14px",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          padding: "14px 18px",
-          background: "var(--surface)",
-          border: "1px solid var(--border)",
-          borderRadius: "10px",
-          boxShadow: "0 18px 50px rgba(0,0,0,0.35)",
-        }}
-      >
-        <Spinner /> {text}
-      </div>
+      <Spinner size={32} />
+      <p style={{ margin: 0, fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>
+        {text}
+      </p>
     </div>
   );
 }

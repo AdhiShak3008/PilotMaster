@@ -24,29 +24,33 @@ const SECTIONS = [
 export default function Visualizations({ leaderboard }) {
   const data = useVisualizations(leaderboard);
 
-  const accent = "#4f6ef7";
-  const green = "#22c55e";
+  const accent = "#a855f7";
+  const green = "#10b981";
 
   const card = {
-    background: "rgba(255,255,255,0.03)",
-    border: "1px solid rgba(255,255,255,0.08)",
+    background: "rgba(255, 255, 255, 0.03)",
     borderRadius: "20px",
     padding: "24px",
   };
 
   const chip = (color = accent) => ({
     display: "inline-flex", alignItems: "center", gap: "6px",
-    padding: "3px 10px", borderRadius: "999px",
-    background: `${color}22`, border: `1px solid ${color}44`,
-    color, fontSize: "11px", fontWeight: 600, letterSpacing: "0.04em",
+    padding: "4px 12px", borderRadius: "9999px",
+    background: `${color}18`,
+    color, fontSize: "11px", fontWeight: 600, letterSpacing: "0.02em",
   });
+
 
   if (!data || data.length === 0) {
     return (
       <div id="visualizations" style={{ maxWidth: "1240px", margin: "0 auto", padding: "28px 24px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px" }}>
-          <span style={{ fontSize: "30px", lineHeight: 1 }}>📈</span>
-          <h1 style={{ margin: 0, fontSize: "34px", fontWeight: 700, letterSpacing: "-0.5px", color: "white" }}>Visualizations</h1>
+        <div style={{ marginBottom: "24px" }}>
+          <h1 style={{ margin: 0, fontSize: "32px", fontWeight: "800", letterSpacing: "-0.8px", color: "#c084fc" }}>
+            Visual Analytics &amp; Performance Comparisons
+          </h1>
+          <p style={{ margin: "4px 0 0", fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.6 }}>
+            Explore relationships, correlations, and tradeoffs across all benchmarked configurations.
+          </p>
         </div>
         <div style={{
           ...card, minHeight: "260px",
@@ -54,11 +58,6 @@ export default function Visualizations({ leaderboard }) {
           gap: "16px", textAlign: "center",
           background: "rgba(255,255,255,0.02)",
         }}>
-          <div style={{
-            width: 72, height: 72, borderRadius: "20px",
-            background: "rgba(79,110,247,0.1)", border: "1px solid rgba(79,110,247,0.2)",
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px",
-          }}>📈</div>
           <div>
             <p style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "white" }}>No Data To Visualize</p>
             <p style={{ margin: "8px 0 0", fontSize: "13px", color: "rgba(255,255,255,0.35)", maxWidth: "360px", lineHeight: 1.6 }}>
@@ -75,14 +74,14 @@ export default function Visualizations({ leaderboard }) {
 
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", marginBottom: "24px" }}>
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-            <span style={{ fontSize: "30px", lineHeight: 1 }}>📈</span>
-            <h1 style={{ margin: 0, fontSize: "34px", fontWeight: 700, letterSpacing: "-0.5px", color: "white" }}>Visualizations</h1>
-          </div>
-          <p style={{ margin: 0, fontSize: "13px", color: "rgba(255,255,255,0.72)", lineHeight: 1.6 }}>
-            Explore relationships, gaps, and tradeoffs across every benchmarked configuration.
+          <h1 style={{ margin: 0, fontSize: "32px", fontWeight: "800", letterSpacing: "-0.8px", color: "#c084fc" }}>
+            Visual Analytics &amp; Performance Comparisons
+          </h1>
+          <p style={{ margin: "4px 0 0", fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.6 }}>
+            Explore relationships, correlations, and tradeoffs across all benchmarked configurations.
           </p>
         </div>
+
         <div style={chip(green)}>
           <span style={{ width: 7, height: 7, borderRadius: "50%", background: green, boxShadow: `0 0 6px ${green}`, display: "inline-block" }} />
           {data.length} Configuration{data.length !== 1 ? "s" : ""} Compared

@@ -7,6 +7,7 @@ def run_benchmark(
     configs,
     user_id,
     source=None,
+    document_ids=None,
 ):
     results = []
 
@@ -24,8 +25,10 @@ def run_benchmark(
                 query=question,
                 user_id=user_id,
                 source=source,
+                document_ids=document_ids,
                 experiment_config=config,
             )
+
 
             chunk_count = 0
 
