@@ -1,6 +1,57 @@
 import React, { useState } from "react";
 import { loginRequest, apiRequest } from "../docpilot/api.js";
 
+const ARCHITECTURE_DESCRIPTIONS = {
+  ecosystem: {
+    title: "PilotCore Shared Execution Framework",
+    badge: "Core Orchestrator",
+    badgeColor: "#38bdf8",
+    description:
+      "The platform follows a modular architecture centered around PilotCore, a shared execution framework responsible for orchestrating the complete retrieval pipeline. Instead of implementing retrieval logic separately for different applications, PilotCore provides reusable services for document ingestion, retrieval execution, prompt construction, response generation, evaluation, telemetry collection, execution tracing, and benchmark orchestration. This shared framework ensures that every application built on PilotMaster executes the same underlying retrieval pipeline, maintaining consistency between operational usage and experimental evaluation.",
+    highlights: [
+      "Unified retrieval kernel & deterministic pipeline",
+      "11 selectable multi-select query enhancements",
+      "FAISS Dense Vector + BM25 Lexical + Reciprocal Rank Fusion",
+    ],
+  },
+  docpilot: {
+    title: "DocPilot — Document Intelligence Studio",
+    badge: "Interactive Research",
+    badgeColor: "#60a5fa",
+    description:
+      "DocPilot serves as the document intelligence interface through which users upload documents and interact with them using natural language. It supports heterogeneous document ingestion, semantic search, grounded question answering, and conversational document exploration. The application is designed for day-to-day interaction with private knowledge bases while delegating all retrieval and generation tasks to PilotCore.",
+    highlights: [
+      "Conversation-scoped document indexing & staging",
+      "Parent-child chunking & rich GFM table synthesis",
+      "ChatGPT-style inline editing & answer regeneration",
+    ],
+  },
+  tracepilot: {
+    title: "TracePilot — Full-Stack RAG Observability",
+    badge: "Execution Telemetry",
+    badgeColor: "#34d399",
+    description:
+      "TracePilot provides the observability layer of the platform. Every query executed through DocPilot automatically produces an execution trace containing retrieval metadata, ranking information, latency measurements, evaluation metrics, retrieved context, and generation details. These traces are stored and presented through an interactive dashboard that enables retrieval engineers to inspect pipeline behavior, diagnose failures, analyze retrieval quality, and understand the reasoning behind generated responses.",
+    highlights: [
+      "Real-time step-by-step pipeline execution tracing",
+      "Chunk ranking scores, latency profiler & replay engine",
+      "Groundedness, faithfulness & semantic coverage metrics",
+    ],
+  },
+  gaugepilot: {
+    title: "GaugePilot — Benchmarking & AI Matrix Studio",
+    badge: "Evaluation Suite",
+    badgeColor: "#c084fc",
+    description:
+      "GaugePilot extends the platform beyond operational document intelligence by providing a dedicated experimentation and benchmarking environment. Users can evaluate multiple retrieval configurations by combining different retrieval strategies, rerankers, query enhancement techniques, and language models. Benchmark results are aggregated into comparative leaderboards and visualized through analytical charts (scatter plots, radar charts, heatmaps, correlation matrices, Pareto frontiers, and Performance profiles) with deterministic AI-assisted engineering recommendations.",
+    highlights: [
+      "Automated multi-configuration pipeline benchmarking",
+      "Comparative leaderboards & statistical boxplot analytics",
+      "Deterministic AI-assisted engineering insight reports",
+    ],
+  },
+};
+
 export default function OpeningLanding({ onLogin, initialMode = "login" }) {
   const [authMode, setAuthMode] = useState(initialMode); // "login" | "signup" | "forgot"
   const [email, setEmail] = useState("");
@@ -41,7 +92,6 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
     setErrorMessage("");
     setLoading(true);
     try {
-      // Try logging in with demo account or create one
       try {
         const data = await loginRequest("demo@pilotmaster.ai", "demo12345");
         if (data.access_token) {
@@ -50,7 +100,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
           return;
         }
       } catch {
-        // If demo user doesn't exist, create it
+        // Create demo account if not exists
         await apiRequest("/auth/signup", "POST", {
           username: "demo_pilot",
           email: "demo@pilotmaster.ai",
@@ -61,10 +111,9 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
         await onLogin();
       }
     } catch (err) {
-      // Fallback: regular login with demo credentials
       setEmail("demo@pilotmaster.ai");
       setPassword("demo12345");
-      setErrorMessage("Demo initialized. Click Continue to enter.");
+      setErrorMessage("Demo initialized. Click 'Continue to Workspace' below to enter.");
     } finally {
       setLoading(false);
     }
@@ -81,7 +130,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
       localStorage.setItem("token", data.access_token);
       await onLogin();
     } catch (err) {
-      setErrorMessage("Signup failed. User or email might already exist.");
+      setErrorMessage("Signup failed. Username or email might already exist.");
     } finally {
       setLoading(false);
     }
@@ -96,7 +145,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
       setResetToken(data.token);
       setSuccessMessage("Reset token generated! Enter your new password below.");
     } catch (err) {
-      setErrorMessage("Email not found.");
+      setErrorMessage("Email address not found.");
     } finally {
       setLoading(false);
     }
@@ -111,7 +160,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
         token: resetToken,
         new_password: newPassword,
       });
-      setSuccessMessage("Password reset successfully! Please sign in.");
+      setSuccessMessage("Password reset successfully! You can now sign in.");
       setAuthMode("login");
       setPassword("");
     } catch (err) {
@@ -121,12 +170,14 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
     }
   };
 
+  const currentDesc = ARCHITECTURE_DESCRIPTIONS[activeTab] || ARCHITECTURE_DESCRIPTIONS.ecosystem;
+
   return (
     <div
       style={{
         minHeight: "100vh",
         width: "100vw",
-        background: "#050811",
+        background: "#040711",
         color: "#f8fafc",
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         display: "flex",
@@ -136,16 +187,16 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
         boxSizing: "border-box",
       }}
     >
-      {/* AMBIENT BACKGROUND GLOW FX */}
+      {/* AMBIENT BACKGROUND GLOW EFFECTS */}
       <div
         style={{
           position: "fixed",
-          top: "-20%",
-          left: "15%",
-          width: "700px",
-          height: "700px",
+          top: "-15%",
+          left: "10%",
+          width: "650px",
+          height: "650px",
           borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, rgba(99, 102, 241, 0.05) 50%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, transparent 70%)",
           filter: "blur(90px)",
           pointerEvents: "none",
           zIndex: 0,
@@ -154,27 +205,13 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
       <div
         style={{
           position: "fixed",
-          bottom: "-15%",
-          right: "10%",
+          bottom: "-10%",
+          right: "5%",
           width: "600px",
           height: "600px",
           borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(168, 85, 247, 0.12) 0%, rgba(236, 72, 153, 0.04) 50%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(168, 85, 247, 0.12) 0%, transparent 70%)",
           filter: "blur(100px)",
-          pointerEvents: "none",
-          zIndex: 0,
-        }}
-      />
-      <div
-        style={{
-          position: "fixed",
-          top: "40%",
-          left: "-10%",
-          width: "500px",
-          height: "500px",
-          borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(6, 182, 212, 0.08) 0%, transparent 70%)",
-          filter: "blur(90px)",
           pointerEvents: "none",
           zIndex: 0,
         }}
@@ -184,22 +221,23 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
       <header
         style={{
           width: "100%",
-          padding: "18px 40px",
+          padding: "16px 36px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
-          background: "rgba(5, 8, 17, 0.8)",
+          background: "rgba(4, 7, 17, 0.85)",
           backdropFilter: "blur(20px)",
           zIndex: 10,
           boxSizing: "border-box",
+          flexShrink: 0,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <div
             style={{
-              width: "36px",
-              height: "36px",
+              width: "34px",
+              height: "34px",
               borderRadius: "10px",
               background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
               display: "flex",
@@ -213,7 +251,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
             ⚡
           </div>
           <div>
-            <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-0.5px", color: "#ffffff" }}>
+            <div style={{ fontSize: "19px", fontWeight: 800, letterSpacing: "-0.5px", color: "#ffffff" }}>
               PilotMaster
             </div>
             <div style={{ fontSize: "11px", color: "#94a3b8", letterSpacing: "0.04em", textTransform: "uppercase", fontWeight: 600 }}>
@@ -222,13 +260,13 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
           <div
             style={{
               display: "flex",
               alignItems: "center",
               gap: "8px",
-              padding: "6px 14px",
+              padding: "5px 12px",
               borderRadius: "9999px",
               background: "rgba(34, 197, 94, 0.08)",
               border: "1px solid rgba(34, 197, 94, 0.2)",
@@ -251,13 +289,14 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
 
           <button
             onClick={handleQuickDemo}
+            title="Instant one-click access with sample data and live Groq inference"
             style={{
-              padding: "8px 18px",
+              padding: "7px 16px",
               borderRadius: "9999px",
               background: "linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(168, 85, 247, 0.2))",
               border: "1px solid rgba(147, 197, 253, 0.3)",
               color: "#ffffff",
-              fontSize: "13px",
+              fontSize: "12px",
               fontWeight: 600,
               cursor: "pointer",
               transition: "all 0.2s ease",
@@ -276,15 +315,15 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
         </div>
       </header>
 
-      {/* MAIN HERO SPLIT VIEW */}
+      {/* MAIN HERO SPLIT VIEW (BALANCED VERTICAL ALIGNMENT) */}
       <main
         style={{
           flex: 1,
           display: "grid",
-          gridTemplateColumns: "1.2fr 0.8fr",
-          gap: "40px",
-          padding: "40px 50px",
-          maxWidth: "1440px",
+          gridTemplateColumns: "1.25fr 0.75fr",
+          gap: "36px",
+          padding: "28px 40px",
+          maxWidth: "1400px",
           margin: "0 auto",
           width: "100%",
           boxSizing: "border-box",
@@ -292,9 +331,9 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
           alignItems: "center",
         }}
       >
-        {/* LEFT COLUMN: MAANG-GRADE ARCHITECTURE SHOWCASE */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
-          {/* Badge & Title */}
+        {/* LEFT COLUMN: ARCHITECTURE TOPOLOGY & DEEP DIVE DESCRIPTION */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          {/* Main Title & Ecosystem Subtitle */}
           <div>
             <div
               style={{
@@ -308,69 +347,56 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                 fontSize: "12px",
                 color: "#93c5fd",
                 fontWeight: 600,
-                marginBottom: "16px",
+                marginBottom: "10px",
               }}
             >
               <span>🔬 Next-Gen RAG Orchestration & Observability</span>
             </div>
             <h1
               style={{
-                margin: "0 0 16px",
-                fontSize: "44px",
+                margin: "0 0 8px",
+                fontSize: "36px",
                 fontWeight: 900,
                 lineHeight: 1.15,
-                letterSpacing: "-1.2px",
+                letterSpacing: "-1px",
                 background: "linear-gradient(135deg, #ffffff 40%, #93c5fd 80%, #c084fc 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
               }}
             >
-              Enterprise-Grade AI Architecture. Fully Observable.
+              Enterprise AI Architecture. Fully Observable.
             </h1>
-            <p
-              style={{
-                margin: 0,
-                fontSize: "16px",
-                lineHeight: 1.65,
-                color: "#94a3b8",
-                maxWidth: "600px",
-              }}
-            >
-              PilotMaster fuses deep execution tracing, multi-technique query enhancements, and automated benchmarking into a unified, high-throughput intelligence kernel.
-            </p>
           </div>
 
-          {/* INTERACTIVE ARCHITECTURE DIAGRAM */}
+          {/* INTERACTIVE ARCHITECTURE TOPOLOGY CARD */}
           <div
             style={{
-              borderRadius: "24px",
-              background: "rgba(11, 16, 27, 0.75)",
+              borderRadius: "20px",
+              background: "rgba(11, 16, 28, 0.7)",
               border: "1px solid rgba(255, 255, 255, 0.1)",
               backdropFilter: "blur(20px)",
-              padding: "24px",
-              boxShadow: "0 20px 50px rgba(0, 0, 0, 0.5)",
-              position: "relative",
-              overflow: "hidden",
+              padding: "20px",
+              boxShadow: "0 16px 40px rgba(0, 0, 0, 0.4)",
             }}
           >
-            {/* DIAGRAM HEADER */}
+            {/* TOPOLOGY TAB SELECTOR */}
             <div
               style={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                marginBottom: "20px",
+                marginBottom: "16px",
                 borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
-                paddingBottom: "12px",
+                paddingBottom: "10px",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#60a5fa" }} />
-                <span style={{ fontSize: "12px", fontWeight: 700, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  Ecosystem Topology
+                <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: currentDesc.badgeColor }} />
+                <span style={{ fontSize: "11px", fontWeight: 700, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  {currentDesc.title}
                 </span>
               </div>
-              <div style={{ display: "flex", gap: "6px" }}>
+              <div style={{ display: "flex", gap: "4px" }}>
                 {["ecosystem", "docpilot", "tracepilot", "gaugepilot"].map((tab) => (
                   <button
                     key={tab}
@@ -378,8 +404,8 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                     style={{
                       padding: "4px 10px",
                       borderRadius: "6px",
-                      background: activeTab === tab ? "rgba(255, 255, 255, 0.1)" : "transparent",
-                      border: "none",
+                      background: activeTab === tab ? "rgba(255, 255, 255, 0.12)" : "transparent",
+                      border: activeTab === tab ? "1px solid rgba(255, 255, 255, 0.15)" : "1px solid transparent",
                       color: activeTab === tab ? "#ffffff" : "#94a3b8",
                       fontSize: "11px",
                       fontWeight: 600,
@@ -394,24 +420,24 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
               </div>
             </div>
 
-            {/* DIAGRAM CANVAS WITH THREE PILLARS & CENTRAL KERNEL */}
+            {/* TOPOLOGY NODES GRID */}
             <div
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr 1.2fr 1fr",
-                gap: "16px",
+                gap: "14px",
                 alignItems: "center",
-                position: "relative",
-                minHeight: "220px",
+                marginBottom: "16px",
               }}
             >
               {/* PILLAR 1: DOCPILOT */}
               <div
+                onClick={() => setActiveTab("docpilot")}
                 onMouseEnter={() => setHoveredNode("docpilot")}
                 onMouseLeave={() => setHoveredNode(null)}
                 style={{
-                  padding: "16px",
-                  borderRadius: "16px",
+                  padding: "14px",
+                  borderRadius: "14px",
                   background:
                     activeTab === "docpilot" || hoveredNode === "docpilot"
                       ? "rgba(59, 130, 246, 0.15)"
@@ -421,91 +447,79 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                       ? "1px solid #60a5fa"
                       : "1px solid rgba(255, 255, 255, 0.08)",
                   cursor: "pointer",
-                  transition: "all 0.2s ease",
-                  transform: hoveredNode === "docpilot" ? "translateY(-3px)" : "none",
-                  boxShadow: hoveredNode === "docpilot" ? "0 8px 24px rgba(59, 130, 246, 0.25)" : "none",
+                  transition: "all 0.18s ease",
+                  transform: hoveredNode === "docpilot" ? "translateY(-2px)" : "none",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                  <span style={{ fontSize: "18px" }}>📄</span>
-                  <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800, color: "#60a5fa" }}>DocPilot</h3>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
+                  <span style={{ fontSize: "16px" }}>📄</span>
+                  <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 800, color: "#60a5fa" }}>DocPilot</h3>
                 </div>
-                <p style={{ margin: 0, fontSize: "12px", color: "#cbd5e1", lineHeight: 1.5 }}>
-                  Knowledge synthesis, conversation-scoped docs & parent-child chunking.
+                <p style={{ margin: 0, fontSize: "11px", color: "#cbd5e1", lineHeight: 1.4 }}>
+                  Document intelligence & grounded natural language synthesis.
                 </p>
-                <div style={{ marginTop: "10px", display: "flex", gap: "4px", flexWrap: "wrap" }}>
-                  <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "4px", background: "rgba(59, 130, 246, 0.15)", color: "#93c5fd" }}>
-                    Multi-Turn RAG
-                  </span>
-                  <span style={{ fontSize: "10px", padding: "2px 6px", borderRadius: "4px", background: "rgba(255, 255, 255, 0.05)", color: "#94a3b8" }}>
-                    GFM Tables
-                  </span>
-                </div>
               </div>
 
               {/* CENTRAL KERNEL: PILOTCORE */}
               <div
+                onClick={() => setActiveTab("ecosystem")}
                 onMouseEnter={() => setHoveredNode("pilotcore")}
                 onMouseLeave={() => setHoveredNode(null)}
                 style={{
-                  padding: "20px 16px",
-                  borderRadius: "20px",
+                  padding: "16px 12px",
+                  borderRadius: "18px",
                   background:
                     activeTab === "ecosystem" || hoveredNode === "pilotcore"
                       ? "linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95))"
                       : "rgba(15, 23, 42, 0.8)",
                   border: "2px solid #38bdf8",
-                  boxShadow: "0 0 30px rgba(56, 189, 248, 0.25)",
+                  boxShadow: "0 0 24px rgba(56, 189, 248, 0.25)",
                   textAlign: "center",
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  gap: "10px",
+                  gap: "6px",
+                  cursor: "pointer",
                   position: "relative",
                 }}
               >
                 <div
                   style={{
                     position: "absolute",
-                    top: "-10px",
+                    top: "-9px",
                     background: "#0284c7",
                     color: "#ffffff",
-                    fontSize: "10px",
+                    fontSize: "9px",
                     fontWeight: 800,
-                    padding: "2px 8px",
+                    padding: "2px 7px",
                     borderRadius: "9999px",
                     letterSpacing: "0.06em",
                     textTransform: "uppercase",
                   }}
                 >
-                  Core Execution Kernel
+                  Core Kernel
                 </div>
-                <div style={{ fontSize: "24px", marginTop: "4px" }}>⚡</div>
+                <div style={{ fontSize: "20px" }}>⚡</div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: "17px", fontWeight: 900, color: "#38bdf8" }}>PilotCore</h3>
-                  <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "2px" }}>
+                  <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 900, color: "#38bdf8" }}>PilotCore</h3>
+                  <div style={{ fontSize: "10px", color: "#94a3b8" }}>
                     Hybrid Vector + Lexical RRF
                   </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px", width: "100%" }}>
-                  <div style={{ fontSize: "10px", padding: "4px 8px", borderRadius: "6px", background: "rgba(56, 189, 248, 0.1)", color: "#7dd3fc", fontWeight: 600 }}>
-                    11 Enhancement Techniques
-                  </div>
-                  <div style={{ fontSize: "10px", padding: "4px 8px", borderRadius: "6px", background: "rgba(168, 85, 247, 0.1)", color: "#d8b4fe", fontWeight: 600 }}>
-                    Deterministic Tracing
-                  </div>
+                <div style={{ fontSize: "9px", padding: "2px 6px", borderRadius: "4px", background: "rgba(56, 189, 248, 0.12)", color: "#7dd3fc", fontWeight: 600 }}>
+                  11 Enhancements · Tracing
                 </div>
               </div>
 
               {/* RIGHT PILLARS: TRACEPILOT & GAUGEPILOT */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {/* PILLAR 2: TRACEPILOT */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 <div
+                  onClick={() => setActiveTab("tracepilot")}
                   onMouseEnter={() => setHoveredNode("tracepilot")}
                   onMouseLeave={() => setHoveredNode(null)}
                   style={{
-                    padding: "14px",
-                    borderRadius: "14px",
+                    padding: "10px 12px",
+                    borderRadius: "12px",
                     background:
                       activeTab === "tracepilot" || hoveredNode === "tracepilot"
                         ? "rgba(16, 185, 129, 0.15)"
@@ -515,26 +529,25 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                         ? "1px solid #34d399"
                         : "1px solid rgba(255, 255, 255, 0.08)",
                     cursor: "pointer",
-                    transition: "all 0.2s ease",
-                    transform: hoveredNode === "tracepilot" ? "translateX(3px)" : "none",
+                    transition: "all 0.18s ease",
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
-                    <span style={{ fontSize: "16px" }}>🔍</span>
-                    <h4 style={{ margin: 0, fontSize: "14px", fontWeight: 800, color: "#34d399" }}>TracePilot</h4>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ fontSize: "13px" }}>🔍</span>
+                    <h4 style={{ margin: 0, fontSize: "12px", fontWeight: 800, color: "#34d399" }}>TracePilot</h4>
                   </div>
-                  <p style={{ margin: 0, fontSize: "11px", color: "#cbd5e1", lineHeight: 1.4 }}>
-                    Execution telemetry, chunk scores & latency profiler.
+                  <p style={{ margin: "2px 0 0", fontSize: "10px", color: "#94a3b8" }}>
+                    Execution telemetry & latency profiler.
                   </p>
                 </div>
 
-                {/* PILLAR 3: GAUGEPILOT */}
                 <div
+                  onClick={() => setActiveTab("gaugepilot")}
                   onMouseEnter={() => setHoveredNode("gaugepilot")}
                   onMouseLeave={() => setHoveredNode(null)}
                   style={{
-                    padding: "14px",
-                    borderRadius: "14px",
+                    padding: "10px 12px",
+                    borderRadius: "12px",
                     background:
                       activeTab === "gaugepilot" || hoveredNode === "gaugepilot"
                         ? "rgba(168, 85, 247, 0.15)"
@@ -544,81 +557,84 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                         ? "1px solid #c084fc"
                         : "1px solid rgba(255, 255, 255, 0.08)",
                     cursor: "pointer",
-                    transition: "all 0.2s ease",
-                    transform: hoveredNode === "gaugepilot" ? "translateX(3px)" : "none",
+                    transition: "all 0.18s ease",
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
-                    <span style={{ fontSize: "16px" }}>🧪</span>
-                    <h4 style={{ margin: 0, fontSize: "14px", fontWeight: 800, color: "#c084fc" }}>GaugePilot</h4>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ fontSize: "13px" }}>🧪</span>
+                    <h4 style={{ margin: 0, fontSize: "12px", fontWeight: 800, color: "#c084fc" }}>GaugePilot</h4>
                   </div>
-                  <p style={{ margin: 0, fontSize: "11px", color: "#cbd5e1", lineHeight: 1.4 }}>
-                    RAG benchmarking, precision matrices & AI evaluation.
+                  <p style={{ margin: "2px 0 0", fontSize: "10px", color: "#94a3b8" }}>
+                    RAG benchmarking & AI matrix evaluation.
                   </p>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* METRIC SPECS ROW */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
-            {[
-              { label: "Query Enhancements", val: "11 Techniques", desc: "Multi-select orchestration" },
-              { label: "Retrieval Latency", val: "< 45ms", desc: "FAISS + BM25 RRF fusion" },
-              { label: "LLM Synthesizers", val: "Multi-Model", desc: "GPT-OSS-120B / Fast-20B" },
-            ].map((stat, i) => (
-              <div
-                key={i}
-                style={{
-                  padding: "16px",
-                  borderRadius: "16px",
-                  background: "rgba(255, 255, 255, 0.02)",
-                  border: "1px solid rgba(255, 255, 255, 0.06)",
-                }}
-              >
-                <div style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", fontWeight: 600 }}>
-                  {stat.label}
-                </div>
-                <div style={{ fontSize: "20px", fontWeight: 800, color: "#ffffff", margin: "4px 0 2px" }}>
-                  {stat.val}
-                </div>
-                <div style={{ fontSize: "12px", color: "#64748b" }}>{stat.desc}</div>
+            {/* AUTHORITATIVE ECOSYSTEM TEXT & HIGHLIGHTS */}
+            <div
+              style={{
+                padding: "14px 16px",
+                borderRadius: "14px",
+                background: "rgba(255, 255, 255, 0.02)",
+                border: "1px solid rgba(255, 255, 255, 0.06)",
+              }}
+            >
+              <p style={{ margin: "0 0 10px", fontSize: "12.5px", lineHeight: 1.6, color: "#cbd5e1" }}>
+                {currentDesc.description}
+              </p>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                {currentDesc.highlights.map((h, idx) => (
+                  <span
+                    key={idx}
+                    style={{
+                      fontSize: "11px",
+                      padding: "3px 8px",
+                      borderRadius: "6px",
+                      background: "rgba(255, 255, 255, 0.05)",
+                      color: "#93c5fd",
+                      fontWeight: 500,
+                    }}
+                  >
+                    ✓ {h}
+                  </span>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </div>
 
-        {/* RIGHT COLUMN: MAANG-GRADE AUTHENTICATION CARD */}
-        <div style={{ display: "flex", justifyContent: "center" }}>
+        {/* RIGHT COLUMN: MAANG-GRADE BALANCED AUTHENTICATION CARD */}
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
           <div
             style={{
               width: "100%",
-              maxWidth: "420px",
-              borderRadius: "28px",
+              maxWidth: "400px",
+              borderRadius: "24px",
               background: "rgba(13, 19, 33, 0.85)",
               border: "1px solid rgba(255, 255, 255, 0.12)",
               backdropFilter: "blur(30px)",
-              padding: "36px 32px",
-              boxShadow: "0 24px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(59, 130, 246, 0.1)",
+              padding: "30px 28px",
+              boxShadow: "0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(59, 130, 246, 0.08)",
               display: "flex",
               flexDirection: "column",
               boxSizing: "border-box",
             }}
           >
-            {/* CARD TOP BRAND */}
-            <div style={{ textAlign: "center", marginBottom: "24px" }}>
+            {/* BRAND TITLE */}
+            <div style={{ textAlign: "center", marginBottom: "18px" }}>
               <h2
                 style={{
                   margin: 0,
-                  fontSize: "32px",
+                  fontSize: "28px",
                   fontWeight: 900,
                   color: "#60a5fa",
-                  letterSpacing: "-0.8px",
+                  letterSpacing: "-0.6px",
                 }}
               >
                 PilotMaster
               </h2>
-              <p style={{ margin: "6px 0 0", color: "#94a3b8", fontSize: "13px" }}>
+              <p style={{ margin: "4px 0 0", color: "#94a3b8", fontSize: "12.5px" }}>
                 {authMode === "login"
                   ? "Sign in to access your intelligence workspace"
                   : authMode === "signup"
@@ -632,9 +648,9 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
               style={{
                 display: "flex",
                 background: "rgba(255, 255, 255, 0.05)",
-                padding: "4px",
-                borderRadius: "12px",
-                marginBottom: "22px",
+                padding: "3px",
+                borderRadius: "10px",
+                marginBottom: "18px",
               }}
             >
               <button
@@ -646,13 +662,13 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                 }}
                 style={{
                   flex: 1,
-                  padding: "8px",
-                  borderRadius: "8px",
+                  padding: "7px",
+                  borderRadius: "7px",
                   border: "none",
                   background: authMode === "login" ? "rgba(59, 130, 246, 0.25)" : "transparent",
                   color: authMode === "login" ? "#ffffff" : "#94a3b8",
                   fontWeight: authMode === "login" ? 700 : 500,
-                  fontSize: "13px",
+                  fontSize: "12px",
                   cursor: "pointer",
                   transition: "all 0.15s ease",
                 }}
@@ -668,13 +684,13 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                 }}
                 style={{
                   flex: 1,
-                  padding: "8px",
-                  borderRadius: "8px",
+                  padding: "7px",
+                  borderRadius: "7px",
                   border: "none",
                   background: authMode === "signup" ? "rgba(59, 130, 246, 0.25)" : "transparent",
                   color: authMode === "signup" ? "#ffffff" : "#94a3b8",
                   fontWeight: authMode === "signup" ? 700 : 500,
-                  fontSize: "13px",
+                  fontSize: "12px",
                   cursor: "pointer",
                   transition: "all 0.15s ease",
                 }}
@@ -683,17 +699,17 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
               </button>
             </div>
 
-            {/* ERROR / SUCCESS ALERTS */}
+            {/* ALERTS */}
             {errorMessage && (
               <div
                 style={{
-                  padding: "10px 14px",
-                  borderRadius: "10px",
+                  padding: "9px 12px",
+                  borderRadius: "8px",
                   background: "rgba(239, 68, 68, 0.12)",
                   border: "1px solid rgba(239, 68, 68, 0.3)",
                   color: "#fca5a5",
-                  fontSize: "13px",
-                  marginBottom: "16px",
+                  fontSize: "12px",
+                  marginBottom: "14px",
                   lineHeight: 1.4,
                 }}
               >
@@ -703,13 +719,13 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
             {successMessage && (
               <div
                 style={{
-                  padding: "10px 14px",
-                  borderRadius: "10px",
+                  padding: "9px 12px",
+                  borderRadius: "8px",
                   background: "rgba(34, 197, 94, 0.12)",
                   border: "1px solid rgba(34, 197, 94, 0.3)",
                   color: "#86efac",
-                  fontSize: "13px",
-                  marginBottom: "16px",
+                  fontSize: "12px",
+                  marginBottom: "14px",
                   lineHeight: 1.4,
                 }}
               >
@@ -717,11 +733,11 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
               </div>
             )}
 
-            {/* FORM BODY */}
+            {/* AUTH FORMS */}
             {authMode === "login" && (
-              <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 <div>
-                  <label style={{ display: "block", fontSize: "12px", color: "#94a3b8", marginBottom: "6px", fontWeight: 600 }}>
+                  <label style={{ display: "block", fontSize: "11.5px", color: "#94a3b8", marginBottom: "5px", fontWeight: 600 }}>
                     Email Address
                   </label>
                   <input
@@ -735,14 +751,14 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                 </div>
 
                 <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-                    <label style={{ fontSize: "12px", color: "#94a3b8", fontWeight: 600 }}>Password</label>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5px" }}>
+                    <label style={{ fontSize: "11.5px", color: "#94a3b8", fontWeight: 600 }}>Password</label>
                     <span
                       onClick={() => {
                         setAuthMode("forgot");
                         setErrorMessage("");
                       }}
-                      style={{ fontSize: "12px", color: "#60a5fa", cursor: "pointer" }}
+                      style={{ fontSize: "11.5px", color: "#60a5fa", cursor: "pointer" }}
                     >
                       Forgot?
                     </span>
@@ -765,10 +781,10 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                   {loading ? "Authenticating..." : "Continue to Workspace →"}
                 </button>
 
-                <div style={{ position: "relative", textAlign: "center", margin: "10px 0" }}>
+                <div style={{ position: "relative", textAlign: "center", margin: "6px 0" }}>
                   <div style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.08)", position: "absolute", top: "50%", width: "100%" }} />
-                  <span style={{ position: "relative", background: "#0d1321", padding: "0 10px", fontSize: "11px", color: "#64748b", textTransform: "uppercase" }}>
-                    Or Instant Access
+                  <span style={{ position: "relative", background: "#0d1321", padding: "0 8px", fontSize: "10.5px", color: "#64748b", textTransform: "uppercase" }}>
+                    Instant Guest Access
                   </span>
                 </div>
 
@@ -776,12 +792,14 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                   type="button"
                   onClick={handleQuickDemo}
                   disabled={loading}
+                  title="One-click sandbox access with active Groq models"
                   style={{
                     ...primaryBtnStyle,
                     background: "rgba(255, 255, 255, 0.05)",
                     border: "1px solid rgba(255, 255, 255, 0.1)",
                     color: "#ffffff",
                     boxShadow: "none",
+                    padding: "10px",
                   }}
                 >
                   ⚡ One-Click Demo Mode
@@ -790,9 +808,9 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
             )}
 
             {authMode === "signup" && (
-              <form onSubmit={handleSignup} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              <form onSubmit={handleSignup} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 <div>
-                  <label style={{ display: "block", fontSize: "12px", color: "#94a3b8", marginBottom: "6px", fontWeight: 600 }}>
+                  <label style={{ display: "block", fontSize: "11.5px", color: "#94a3b8", marginBottom: "5px", fontWeight: 600 }}>
                     Username
                   </label>
                   <input
@@ -806,7 +824,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: "12px", color: "#94a3b8", marginBottom: "6px", fontWeight: 600 }}>
+                  <label style={{ display: "block", fontSize: "11.5px", color: "#94a3b8", marginBottom: "5px", fontWeight: 600 }}>
                     Email Address
                   </label>
                   <input
@@ -820,7 +838,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: "12px", color: "#94a3b8", marginBottom: "6px", fontWeight: 600 }}>
+                  <label style={{ display: "block", fontSize: "11.5px", color: "#94a3b8", marginBottom: "5px", fontWeight: 600 }}>
                     Password
                   </label>
                   <input
@@ -844,9 +862,9 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
             )}
 
             {authMode === "forgot" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 <div>
-                  <label style={{ display: "block", fontSize: "12px", color: "#94a3b8", marginBottom: "6px", fontWeight: 600 }}>
+                  <label style={{ display: "block", fontSize: "11.5px", color: "#94a3b8", marginBottom: "5px", fontWeight: 600 }}>
                     Email Address
                   </label>
                   <input
@@ -870,7 +888,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                 ) : (
                   <>
                     <div>
-                      <label style={{ display: "block", fontSize: "12px", color: "#94a3b8", marginBottom: "6px", fontWeight: 600 }}>
+                      <label style={{ display: "block", fontSize: "11.5px", color: "#94a3b8", marginBottom: "5px", fontWeight: 600 }}>
                         Reset Token
                       </label>
                       <input
@@ -881,7 +899,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                       />
                     </div>
                     <div>
-                      <label style={{ display: "block", fontSize: "12px", color: "#94a3b8", marginBottom: "6px", fontWeight: 600 }}>
+                      <label style={{ display: "block", fontSize: "11.5px", color: "#94a3b8", marginBottom: "5px", fontWeight: 600 }}>
                         New Password
                       </label>
                       <input
@@ -914,9 +932,9 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                     background: "transparent",
                     border: "none",
                     color: "#94a3b8",
-                    fontSize: "13px",
+                    fontSize: "12px",
                     cursor: "pointer",
-                    marginTop: "6px",
+                    marginTop: "4px",
                   }}
                 >
                   ← Back to Sign In
@@ -927,25 +945,26 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
         </div>
       </main>
 
-      {/* FOOTER SPECS */}
+      {/* FOOTER BAR */}
       <footer
         style={{
-          padding: "20px 50px",
+          padding: "16px 36px",
           borderTop: "1px solid rgba(255, 255, 255, 0.05)",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          fontSize: "12px",
+          fontSize: "11.5px",
           color: "#64748b",
           boxSizing: "border-box",
           zIndex: 10,
+          flexShrink: 0,
         }}
       >
-        <div>PilotMaster Intelligence Platform © 2026. Built with PilotCore Engine.</div>
-        <div style={{ display: "flex", gap: "20px" }}>
-          <span>Production & Experimental Dual Mode</span>
-          <span>OpenAI / Groq LLM Inference</span>
-          <span>Neon Distributed PostgreSQL</span>
+        <div>PilotMaster Intelligence Platform © 2026. Powered by PilotCore Kernel.</div>
+        <div style={{ display: "flex", gap: "18px" }}>
+          <span>Dual Mode (Production & Lab)</span>
+          <span>Active Groq Models</span>
+          <span>PostgreSQL Observability</span>
         </div>
       </footer>
     </div>
@@ -954,12 +973,12 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
 
 const inputStyle = {
   width: "100%",
-  padding: "12px 14px",
-  borderRadius: "12px",
+  padding: "10px 12px",
+  borderRadius: "10px",
   background: "rgba(255, 255, 255, 0.04)",
   border: "1px solid rgba(255, 255, 255, 0.1)",
   color: "#ffffff",
-  fontSize: "14px",
+  fontSize: "13px",
   outline: "none",
   boxSizing: "border-box",
   transition: "all 0.15s ease",
@@ -967,14 +986,14 @@ const inputStyle = {
 
 const primaryBtnStyle = {
   width: "100%",
-  padding: "13px",
-  borderRadius: "12px",
+  padding: "11px",
+  borderRadius: "10px",
   background: "linear-gradient(135deg, #3b82f6, #6366f1)",
   color: "#ffffff",
   border: "none",
-  fontSize: "14px",
+  fontSize: "13px",
   fontWeight: 700,
   cursor: "pointer",
-  boxShadow: "0 8px 24px rgba(59, 130, 246, 0.35)",
+  boxShadow: "0 6px 20px rgba(59, 130, 246, 0.3)",
   transition: "all 0.15s ease",
 };
