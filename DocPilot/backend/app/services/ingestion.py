@@ -668,7 +668,17 @@ def process_document(
     sections = extract_text_sections(file_path, mime_type)
 
     strategy_key = (chunking_strategy or "parent_child").lower().replace("-", "_")
-    if strategy_key not in ["fixed", "recursive", "token", "semantic", "parent_child"]:
+    valid_strategies = [
+        "fixed",
+        "recursive",
+        "token",
+        "semantic",
+        "parent_child",
+        "contextual",
+        "structure_aware",
+        "structure",
+    ]
+    if strategy_key not in valid_strategies:
         strategy_key = "parent_child"
 
     all_chunks = []
@@ -679,6 +689,9 @@ def process_document(
     for section in sections:
         metadata = {
             "source_file": source_file,
+            "source": source_file,
+            "document_name": source_file,
+            "file_name": source_file,
             "file_type": extension.lstrip("."),
             **section.metadata,
         }
@@ -692,19 +705,22 @@ def process_document(
 
         for chunk in chunks:
             chunk_unique_id = f"{document_id}_{chunk_index}"
+            chunk_meta = {
+                **metadata,
+                **chunk.get("metadata", {}),
+            }
             all_chunks.append(
                 {
                     "document_id": document_id,
                     "text": chunk["text"],
                     "source": source_file,
                     "source_file": source_file,
+                    "document_name": source_file,
+                    "file_name": source_file,
                     "file_type": extension.lstrip("."),
                     "page": page,
                     "chunk_id": chunk_unique_id,
-                    "metadata": {
-                        **metadata,
-                        **chunk.get("metadata", {}),
-                    },
+                    "metadata": chunk_meta,
                 }
             )
             chunk_index += 1

@@ -6,6 +6,8 @@ import { useTheme } from "./ThemeContext.jsx";
 import GaugePilot from "./gaugepilot/GaugePilot.jsx";
 import OpeningLanding from "./components/OpeningLanding.jsx";
 import LoadingOverlay from "./components/LoadingOverlay.jsx";
+import GlossaryDrawer from "./components/GlossaryDrawer.jsx";
+import GlossaryButton from "./components/GlossaryButton.jsx";
 
 // ─── THEME HELPER ─────────────────────────────────────────────────────────────
 // Must be called INSIDE components so it re-evaluates on every render
@@ -226,6 +228,7 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
     const { experimentMode, toggleMode } = useTheme();
     const [currentPlan, setCurrentPlan] = useState(plan);
     const [planLoading, setPlanLoading] = useState(false);
+    const [showGlossary, setShowGlossary] = useState(false);
 
     const upgradePlan = async () => {
         if (planLoading) return;
@@ -293,6 +296,11 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
                 </div>
 
                 <div className="pilot-home-actions" style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+
+                    <GlossaryButton
+                        onClick={() => setShowGlossary(true)}
+                        experimentMode={experimentMode}
+                    />
 
                     <div
                         style={{
@@ -448,6 +456,14 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
                 </p>
 
             </footer>
+
+            {/* CONTEXT-AWARE GLOSSARY DRAWER */}
+            <GlossaryDrawer
+                isOpen={showGlossary}
+                onClose={() => setShowGlossary(false)}
+                page="home"
+                mode={experimentMode ? "exp" : "prod"}
+            />
         </div>
     );
 }

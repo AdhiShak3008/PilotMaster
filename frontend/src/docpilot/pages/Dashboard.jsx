@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { apiRequest } from "../api";
 import { useDropzone } from "react-dropzone";
 import MarkdownRenderer from "../components/MarkdownRenderer";
+import GlossaryDrawer from "../../components/GlossaryDrawer";
+import GlossaryButton from "../../components/GlossaryButton";
 
 
 // ─────────────────────────────────────────────
@@ -373,6 +375,16 @@ const CHUNKER_OPTIONS = [
     subtitle: "Small child chunks for retrieval, large parent for context",
   },
   {
+    id: "contextual",
+    label: "Contextual Chunking",
+    subtitle: "LLM-generated situating context prefix for every chunk",
+  },
+  {
+    id: "structure_aware",
+    label: "Structure-Aware",
+    subtitle: "Hierarchical headers & syntax preservation (Markdown/HTML)",
+  },
+  {
     id: "recursive",
     label: "Recursive Character",
     subtitle: "Hierarchical splitting by paragraph, sentence, and word",
@@ -476,6 +488,7 @@ function Dashboard({
   const [documents, setDocuments] = useState([]);
   const [selectedDocumentIds, setSelectedDocumentIds] = useState([]);
   const [showDocuments, setShowDocuments] = useState(false);
+  const [showGlossary, setShowGlossary] = useState(false);
 
   const messagesEndRef = useRef(null);
   const modelSelectorRef = useRef(null);
@@ -713,7 +726,12 @@ function Dashboard({
         formData.append("files", file);
       }
 
-      const url = currentSessionId ? `/docs/upload?session_id=${currentSessionId}` : "/docs/upload";
+      const queryParams = new URLSearchParams();
+      if (currentSessionId) queryParams.set("session_id", currentSessionId);
+      if (selectedChunker) queryParams.set("chunker", selectedChunker);
+      if (selectedEmbeddingModel) queryParams.set("embedding_model", selectedEmbeddingModel);
+
+      const url = `/docs/upload${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
       const data = await apiRequest(url, "POST", formData);
       const uploaded = data.uploaded || [];
       if (data.detail) {
@@ -740,8 +758,9 @@ function Dashboard({
           });
         }
       }
-    } catch {
-      alert("Upload failed");
+    } catch (err) {
+      console.error("Upload error:", err);
+      alert("Upload failed: " + (err.message || "Network error"));
     } finally {
       setUploading(false);
     }
@@ -1380,6 +1399,11 @@ function Dashboard({
                 GaugePilot
               </a>
             )}
+
+            <GlossaryButton
+              onClick={() => setShowGlossary(true)}
+              experimentMode={experimentMode}
+            />
 
             <a
               href={experimentMode ? "/productionmode/docpilot" : "/experimentalmode/docpilot"}
@@ -2383,6 +2407,14 @@ function Dashboard({
           </div>
         </div>
       </main>
+
+      {/* CONTEXT-AWARE GLOSSARY DRAWER */}
+      <GlossaryDrawer
+        isOpen={showGlossary}
+        onClose={() => setShowGlossary(false)}
+        page="docpilot"
+        mode={experimentMode ? "exp" : "prod"}
+      />
     </div>
   );
 }

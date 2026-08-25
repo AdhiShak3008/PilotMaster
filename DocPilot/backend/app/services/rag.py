@@ -21,6 +21,7 @@ def ask_question(
     mode="production",
     chunker=None,
     embedding_model=None,
+    chat_history=None,
 ):
     print("RAG document_ids =", document_ids)
     print("\n===== FRONTEND VALUES =====")
@@ -65,6 +66,7 @@ def ask_question(
         document_ids=document_ids,
         model_name=model_name,
         experiment_config=config,
+        chat_history=chat_history,
     )
 
     retrieved = trace.retrieval_result.retrieved_chunks

@@ -68,6 +68,19 @@ def ask(
             db.commit()
 
 
+    # Fetch recent conversation history for working memory buffer (up to 8 previous turns)
+    history_records = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.session_id == session_id)
+        .order_by(ChatMessage.created_at.desc())
+        .limit(8)
+        .all()
+    )
+    chat_history = [
+        {"role": m.role, "content": m.content}
+        for m in reversed(history_records)
+    ]
+
     user_message = ChatMessage(
         session_id=session_id,
         role="user",
@@ -91,6 +104,7 @@ def ask(
             mode=query.mode,
             chunker=query.chunker,
             embedding_model=query.embedding_model,
+            chat_history=chat_history,
         )
 
     except AuthenticationError as exc:

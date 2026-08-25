@@ -7,6 +7,8 @@ from pilotcore.schemas.span import Span
 
 
 class Trace(BaseModel):
+    model_config = {"extra": "allow"}
+
     trace_id: str
 
     user_query: str
@@ -17,8 +19,13 @@ class Trace(BaseModel):
 
     transformation_state: Optional[dict] = None
 
-    retrieval_result: Optional[RetrievalResult] = None
+    chat_history: Optional[List[dict]] = None
 
+    memory_context: Optional[str] = None
+
+    memory_matches: Optional[List[dict]] = Field(default_factory=list)
+
+    retrieval_result: Optional[RetrievalResult] = None
 
     final_response: Optional[str] = None
 

@@ -42,6 +42,9 @@ PilotMaster is an end-to-end platform for building, debugging, evaluating, bench
 - [BM25 Retrieval](#bm25-retrieval)
 - [Reciprocal Rank Fusion (RRF)](#reciprocal-rank-fusion-rrf)
 - [Cross-Encoder Reranking](#cross-encoder-reranking)
+- [7-Strategy Chunking Engine](#7-strategy-chunking-engine)
+- [Dual-Tier Memory System](#dual-tier-memory-system)
+- [Context-Aware Knowledge & Glossary System](#context-aware-knowledge--glossary-system)
 - [DocPilot](#docpilot)
 - [TracePilot](#tracepilot)
 - [GaugePilot](#gaugepilot)
@@ -527,12 +530,76 @@ Supported families:
 - **TinyBERT**
 - **BGE Large**
 - **BGE M3**
+- **FlashRank** (Quantized)
+- **Cohere Rerank API**
 
 Responsibilities:
 
 - Full self-attention candidate rescoring
 - High-precision evidence prioritization
 - Margin and confidence signal calculation
+
+---
+
+# 7-Strategy Chunking Engine
+
+PilotMaster implements 7 specialized chunking engines in `pilotcore/chunking/`, selectable at runtime across DocPilot and GaugePilot:
+
+| # | Strategy | Implementation | Description & Best Use Case |
+| :-: | :--- | :--- | :--- |
+| **1** | **Parent-Child (1200/300)** | [`parent_child.py`](pilotcore/chunking/parent_child.py) | Slices small 300-char child chunks for high-precision vector search, while resolving to large 1200-char parent blocks for prompt generation. |
+| **2** | **Contextual Chunking** | [`contextual.py`](pilotcore/chunking/contextual.py) | Leverages fast parallel LLM inference (Groq LPU) during ingestion to generate 20–35 word situating context prefixes, eliminating standalone chunk ambiguity. |
+| **3** | **Structure-Aware** | [`structure_aware.py`](pilotcore/chunking/structure_aware.py) | Parses document syntax (Markdown `#` to `######` headers, HTML headings, code fences, and tables), prefixing breadcrumb paths (`[Architecture > Storage]`) to sub-chunks. |
+| **4** | **Recursive Character** | [`recursive.py`](pilotcore/chunking/recursive.py) | Hierarchically splits text across prioritized delimiters (`\n\n`, `\n`, `. `, `? `, `! `, ` `) to preserve paragraph and sentence integrity. |
+| **5** | **Fixed Window (500c)** | [`fixed.py`](pilotcore/chunking/fixed.py) | Deterministic character window slicing (default 500c with 80c overlap) snapping to sentence boundaries. |
+| **6** | **Token-Based (256t)** | [`token.py`](pilotcore/chunking/token.py) | Exact Byte-Pair Encoding (BPE) tokenizer boundary alignment, preventing sub-word corruption. |
+| **7** | **Semantic Similarity** | [`semantic.py`](pilotcore/chunking/semantic.py) | Slices text dynamically at statistical drops in consecutive sentence embedding cosine similarity (topic shifts). |
+
+---
+
+# Dual-Tier Memory System
+
+PilotMaster features an integrated **Dual-Tier Memory Architecture** providing both active session continuity and cross-session personalized recall:
+
+```text
+User Query ("What about its pricing?")
+               │
+               ├──► [Tier 1: Short-Term Working Memory Buffer] (Last 8 messages)
+               │         │
+               │         ├──► Query Condensation: "What is the pricing model of PilotMaster?"
+               │         └──► Coreference Resolution: Resolves pronouns ("it", "they")
+               │
+               ├──► [Tier 2: Long-Term Episodic Vector Memory] (User FAISS Partition)
+               │         │
+               │         └──► Semantic Search: Recalls user preferences & cross-session insights
+               │
+               └──► [PilotCore Unified Generation Prompt]
+                         │
+                         ├──► Document Context Chunks
+                         ├──► User Episodic Memory Context
+                         ├──► Conversation Working Memory History
+                         └──► Synthesized Factual Answer
+```
+
+### 1. Short-Term Conversational Working Memory (Session Buffer)
+- **Active Sliding Window**: Queries the recent 8 messages (4 full Q&A turns) from SQLite/PostgreSQL per `session_id`.
+- **Query Condensation**: Sub-second rewriting of follow-up questions into standalone search statements.
+- **Prompt Grounding**: Injects formatted conversation memory turns into the synthesis prompt.
+
+### 2. Long-Term Episodic Semantic Vector Memory
+- **User-Partitioned FAISS Store**: Dedicated memory index (`vector_store/memory_{user_id}/`) storing cross-session user preferences and factual summaries.
+- **TracePilot Observability**: Telemetry tiles record active memory turn count and exact recalled episodic memories for every trace.
+
+---
+
+# Context-Aware Knowledge & Glossary System
+
+PilotMaster includes a slide-over **Glassmorphic Terminology & Knowledge Drawer** across every page in both Production and Experimental modes:
+
+- **Strict Contextual Scoping**: Dynamically filters terms strictly relevant to the active page (`DocPilot`, `TracePilot`, `GaugePilot`, `Hub`, or `Landing`), with a 1-click toggle to search all 60+ ecosystem terms.
+- **Intelligent Multi-Token Fuzzy Search**: Matches across titles, aliases, formulas, and definitions (e.g. searching `"hyde rag"` or `"llama fast"` or `"faithfulness formula"` instantly surfaces relevant entries).
+- **Live `<mark>` Keyword Highlighting**: Real-time visual highlighting of searched query tokens.
+- **Smart Auto-Fallback**: If zero matches are found on the active page, it automatically searches and displays matching terms from the entire platform.
 
 ---
 
@@ -715,38 +782,39 @@ PilotMaster evaluates:
 
 # Current Features
 
-## Retrieval
-
+## Retrieval & Ingestion
 - Dense Retrieval (FAISS)
 - BM25 Retrieval (Okapi)
-- Hybrid Retrieval (Dense + BM25)
-- Reciprocal Rank Fusion (RRF)
-- Cross-Encoder Reranking (MiniLM, BGE)
+- Hybrid Retrieval (Dense + BM25 + RRF)
+- Cross-Encoder Reranking (MiniLM, TinyBERT, BGE Large, BGE M3, FlashRank, Cohere)
+- **7-Strategy Chunking**: Parent-Child, Contextual Chunking, Structure-Aware, Recursive, Fixed Window, Token-Based, Semantic Similarity
 
-## Observability
+## Memory & Continuity
+- **Short-Term Conversational Working Memory**: Active session sliding-window buffer with automatic sub-second query condensation and coreference resolution.
+- **Long-Term Episodic Vector Memory**: Dedicated user-partitioned FAISS memory stores for cross-session personalized preferences and facts.
 
+## Observability & Telemetry
 - Replayable Traces
-- Retrieval Diagnostics
-- Ranking Inspection
-- Evaluation Insights
-- Chunk Lineage Inspection
+- Retrieval Diagnostics & Chunk Lineage Progression
+- Consensus & Lexical/Semantic Concordance Analysis
+- Hallucination Risk Index & Abstention Guardrails
+- Memory Turns & Episodic Recall Observability Tiles
 
-## Benchmarking
-
-- Leaderboards & Rankings
-- Pareto Frontier Trade-Off Analysis
+## Benchmarking & Evaluation
+- Leaderboards & Rankings with ELO / Win Rate
+- Pareto Frontier Trade-Off Analysis (Latency vs Quality)
 - Correlation Matrix & Multidimensional Radar Profiles
-- Metric Heatmaps with Component Lineage
+- Metric Heatmaps with In-Cell Architectural Specs
 - Parallel Coordinates & Multi-Run Regression Tracking
-- Autonomous AI Engineering Insights & Recommendations
+- Autonomous AI Engineering Insights & Executive Recommendations
 
 ## Document Intelligence
-
-- Document OCR & PDF Ingestion
-- Conversation-Scoped Document Isolation
-- Grounded QA with Citation Validation
+- Document OCR & Multi-Format PDF/Text/Docx Ingestion
+- Conversation-Scoped Document Isolation (Zero cross-chat leakage)
+- Grounded QA with Strict Multi-Document Citation Attribution
 - ChatGPT-Style Inline Query Edit, Copy, and Answer Regeneration
-- Rich Preprocessed GFM Table Rendering
+- Rich Preprocessed GFM Table Rendering with Glassmorphism
+- **Context-Aware Glossary**: Slide-over terminology drawer with multi-token fuzzy search and live keyword highlighting across all pages.
 
 ---
 

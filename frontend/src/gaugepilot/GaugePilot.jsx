@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import ExperimentSetup from "./pages/ExperimentSetup";
 import AIAnalysis from "./pages/Aianalysis";
+import GlossaryDrawer from "../components/GlossaryDrawer";
+import GlossaryButton from "../components/GlossaryButton";
 
 const NAV_GROUPS = [
   {
@@ -34,6 +36,7 @@ export default function GaugePilot({ onHome, onDocPilot, onTracePilot }) {
   // selectedRun is lifted here so AIAnalysis can always reflect the currently
   // active run even when the user navigates away from ExperimentSetup.
   const [selectedRun, setSelectedRun]     = useState(null);
+  const [showGlossary, setShowGlossary]   = useState(false);
 
   const observersRef = useRef([]);
   const mainRef      = useRef(null);
@@ -293,7 +296,15 @@ export default function GaugePilot({ onHome, onDocPilot, onTracePilot }) {
         <div style={{
           padding: "14px 18px",
           flexShrink: 0,
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
         }}>
+          <GlossaryButton
+            variant="sidebar"
+            onClick={() => setShowGlossary(true)}
+            experimentMode={true}
+          />
           <div style={{
             fontSize: "11px", color: "var(--text-muted)", lineHeight: 1.4,
           }}>
@@ -399,6 +410,21 @@ export default function GaugePilot({ onHome, onDocPilot, onTracePilot }) {
           }}
         />
       </main>
+
+      {/* FLOATING GLOSSARY QUICK TRIGGER */}
+      <GlossaryButton
+        variant="floating"
+        onClick={() => setShowGlossary(true)}
+        experimentMode={true}
+      />
+
+      {/* CONTEXT-AWARE GLOSSARY DRAWER */}
+      <GlossaryDrawer
+        isOpen={showGlossary}
+        onClose={() => setShowGlossary(false)}
+        page="gaugepilot"
+        mode="exp"
+      />
     </div>
   );
 }

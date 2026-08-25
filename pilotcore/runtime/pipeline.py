@@ -16,6 +16,7 @@ from pilotcore.evaluation.evaluator import run_evaluation
 from pilotcore.retrieval.query_rewriter import rewrite_query
 from pilotcore.runtime.experiment_config import ExperimentConfig
 from pilotcore.enhancements.orchestrator import EnhancementOrchestrator
+from pilotcore.memory.vector_memory import VectorMemoryManager
 from pilotcore.retrieval.multi_query import (
     generate_queries,
 )
@@ -29,6 +30,7 @@ def run_pipeline(
     document_ids=None,
     model_name=None,
     experiment_config=None,
+    chat_history=None,
 ):
     print("PIPELINE document_ids =", document_ids)
     if experiment_config is None:
@@ -43,6 +45,29 @@ def run_pipeline(
         trace_id=trace_id,
         user_query=query,
     )
+    trace.chat_history = chat_history
+
+    # ─────────────────────────────────────────────────────────────
+    # Search Long-Term Episodic Vector Memory (if user_id provided)
+    # ─────────────────────────────────────────────────────────────
+    memories = []
+    if user_id:
+        try:
+            memories = VectorMemoryManager.search_memory(
+                user_id=user_id,
+                query=query,
+                top_k=2,
+                similarity_threshold=0.58,
+            )
+        except Exception:
+            memories = []
+
+    trace.memory_matches = memories
+    if memories:
+        mem_lines = [f"- {m['text']}" for m in memories]
+        trace.memory_context = "\n".join(mem_lines)
+    else:
+        trace.memory_context = None
 
     # ─────────────────────────────────────────────────────────────
     # Run Centralized Query Enhancement Orchestrator
@@ -54,6 +79,7 @@ def run_pipeline(
     transform_state = EnhancementOrchestrator.execute(
         query=query,
         enhancements=active_enh_list,
+        chat_history=chat_history,
     )
     trace.transformation_state = transform_state.model_dump()
     trace.rewritten_query = transform_state.rewritten_query or transform_state.current_query
@@ -234,6 +260,9 @@ def _emit_trace(
         "transformation_state": getattr(trace, "transformation_state", None),
         "response": trace.final_response or "",
         "prompt": build_prompt(trace),
+        "memory_turns_count": len(getattr(trace, "chat_history", []) or []),
+        "memory_matches_count": len(getattr(trace, "memory_matches", []) or []),
+        "memory_context": getattr(trace, "memory_context", None),
         "latency": round(latency_ms, 2),
         "model_name": model_name or GROQ_MODEL,
 

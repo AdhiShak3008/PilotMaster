@@ -370,6 +370,8 @@ export default function ExperimentSetup({ onRunChange }) {
     "deepseek-r1-distill-llama-70b": "DeepSeek R1 70B",
 
     parent_child: "Parent-Child",
+    contextual: "Contextual Chunking",
+    structure_aware: "Structure-Aware",
     recursive: "Recursive",
     fixed: "Fixed Character",
     token: "Token-Based",
@@ -645,6 +647,8 @@ export default function ExperimentSetup({ onRunChange }) {
             onChange={setChunker}
             options={[
               { value: "parent_child", label: "Parent-Child (1200/300)", description: "Hierarchical parent-child chunking" },
+              { value: "contextual", label: "Contextual Chunking", description: "LLM-generated situating context prefix" },
+              { value: "structure_aware", label: "Structure-Aware", description: "Markdown/HTML heading & syntax preservation" },
               { value: "recursive", label: "Recursive Splitter", description: "LangChain recursive token splitter" },
               { value: "fixed", label: "Fixed Window (500c)", description: "Uniform fixed length character blocks" },
               { value: "token", label: "Token-Based (256t)", description: "Tokenizer boundary alignment" },

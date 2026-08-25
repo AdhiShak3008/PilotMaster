@@ -29,6 +29,8 @@ class RetrievedChunk(BaseModel):
 
 
 class Trace(BaseModel):
+    model_config = {"extra": "allow"}
+
     trace_id: str
     query: str
     retrieved_chunks: List[RetrievedChunk]
@@ -55,10 +57,12 @@ class Trace(BaseModel):
     retriever_version: str = "vector_v1"
     retrieval_consensus: str | None = None
     rewritten_query: Optional[str] = None
-    generated_queries: List[str] = Field(default_factory=list)
     transformation_state: Optional[dict] = None
     mode: str = "production"
     pipeline_config: Optional[dict] = None
+    memory_turns_count: Optional[int] = 0
+    memory_matches_count: Optional[int] = 0
+    memory_context: Optional[str] = None
 
 
     @staticmethod

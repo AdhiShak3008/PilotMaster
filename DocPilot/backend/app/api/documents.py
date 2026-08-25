@@ -42,6 +42,8 @@ router = APIRouter()
 async def upload_document(
     files: list[UploadFile] = File(...),
     session_id: int | None = None,
+    chunker: str | None = None,
+    embedding_model: str | None = None,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -154,6 +156,8 @@ async def upload_document(
                 current_user.id,
                 document.id,
                 mime_type=file.content_type,
+                chunking_strategy=chunker,
+                embedding_model=embedding_model,
             )
             if chunks:
                 document.chunks_json = json.dumps(chunks)

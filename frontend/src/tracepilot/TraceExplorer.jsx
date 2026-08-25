@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import LoadingOverlay from "../components/LoadingOverlay";
+import GlossaryDrawer from "../components/GlossaryDrawer";
+import GlossaryButton from "../components/GlossaryButton";
 
 
 const api = axios.create({
@@ -73,6 +75,7 @@ export default function TraceExplorer({
   const [resetMessage, setResetMessage] = useState("");
   const [searchFilter, setSearchFilter] = useState("");
   const [copiedResponse, setCopiedResponse] = useState(false);
+  const [showGlossary, setShowGlossary] = useState(false);
 
   useEffect(() => {
     const fetchIfVisible = () => {
@@ -349,6 +352,11 @@ export default function TraceExplorer({
                 GaugePilot
               </a>
             )}
+
+            <GlossaryButton
+              onClick={() => setShowGlossary(true)}
+              experimentMode={experimentMode}
+            />
 
             <a
               href={experimentMode ? "/productionmode/tracepilot" : "/experimentalmode/tracepilot"}
@@ -865,7 +873,14 @@ export default function TraceExplorer({
                     <MetricCard label="Retrieval Strategy" value={selectedTrace.pipeline_config.retrieval_strategy || "Hybrid (Dense + BM25)"} />
                     <MetricCard label="Embedding Model" value={selectedTrace.pipeline_config.embedding_model || "all-mpnet-base-v2"} />
                     <MetricCard label="Chunker" value={selectedTrace.pipeline_config.chunker || "Parent-Child (1200/300)"} />
-                    <MetricCard label="Reranker" value={selectedTrace.pipeline_config.reranker_model || "MiniLM"} />
+                    <MetricCard
+                      label="Working Memory"
+                      value={
+                        selectedTrace.memory_turns_count > 0
+                          ? `${selectedTrace.memory_turns_count} turns active`
+                          : "Stateless (Turn 1)"
+                      }
+                    />
                     <MetricCard
                       label="Enhancements"
                       value={
@@ -875,6 +890,29 @@ export default function TraceExplorer({
                       }
                     />
                   </div>
+
+                  {/* ── Episodic Long-Term Memory Context Display ── */}
+                  {selectedTrace.memory_context && (
+                    <div
+                      style={{
+                        marginTop: "12px",
+                        padding: "10px 14px",
+                        background: "rgba(168, 85, 247, 0.08)",
+                        border: "1px solid rgba(168, 85, 247, 0.2)",
+                        borderRadius: "12px",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <span style={{ fontSize: "12px" }}>🧠</span>
+                        <span style={{ fontSize: "11px", color: "#c084fc", fontWeight: 700, textTransform: "uppercase" }}>
+                          Episodic Memory Recalled ({selectedTrace.memory_matches_count || 1}):
+                        </span>
+                      </div>
+                      <p style={{ margin: "4px 0 0", fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.5, whiteSpace: "pre-line" }}>
+                        {selectedTrace.memory_context}
+                      </p>
+                    </div>
+                  )}
 
                   {/* ── Granular Query Enhancement Lifecycle & Transformation States ── */}
                   {(() => {
@@ -1244,6 +1282,14 @@ export default function TraceExplorer({
           )}
         </main>
       </div>
+
+      {/* CONTEXT-AWARE GLOSSARY DRAWER */}
+      <GlossaryDrawer
+        isOpen={showGlossary}
+        onClose={() => setShowGlossary(false)}
+        page="tracepilot"
+        mode={experimentMode ? "exp" : "prod"}
+      />
     </div>
   );
 }

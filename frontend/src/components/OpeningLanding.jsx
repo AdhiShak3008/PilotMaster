@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { loginRequest, apiRequest } from "../docpilot/api.js";
+import GlossaryDrawer from "./GlossaryDrawer.jsx";
+import GlossaryButton from "./GlossaryButton.jsx";
 
 const ARCHITECTURE_DESCRIPTIONS = {
   ecosystem: {
@@ -62,6 +64,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
   const [successMessage, setSuccessMessage] = useState("");
   const [activeTab, setActiveTab] = useState("ecosystem"); // "ecosystem" | "docpilot" | "tracepilot" | "gaugepilot"
   const [hoveredNode, setHoveredNode] = useState(null);
+  const [showGlossary, setShowGlossary] = useState(false);
 
   // Forgot password flow states
   const [resetToken, setResetToken] = useState("");
@@ -275,6 +278,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+          <GlossaryButton onClick={() => setShowGlossary(true)} />
           <button
             onClick={handleQuickDemo}
             title="Instant one-click access with sample data and live Groq inference"
@@ -974,6 +978,14 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
           <span>PostgreSQL Observability</span>
         </div>
       </footer>
+
+      {/* CONTEXT-AWARE GLOSSARY DRAWER */}
+      <GlossaryDrawer
+        isOpen={showGlossary}
+        onClose={() => setShowGlossary(false)}
+        page="landing"
+        mode="all"
+      />
     </div>
   );
 }

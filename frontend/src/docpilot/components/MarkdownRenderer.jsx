@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 
 function extractThoughts(rawText) {
   if (!rawText) return { thoughts: null, answer: "" };
@@ -17,6 +18,10 @@ function extractThoughts(rawText) {
 function preprocessMarkdown(text) {
   if (!text) return "";
   let processed = String(text);
+
+  // Normalize HTML break variants to standard self-closing <br />
+  processed = processed.replace(/&lt;br\s*\/?&gt;/gi, "<br />");
+  processed = processed.replace(/<br\s*>/gi, "<br />");
 
   // 1. Ensure blank line after headings (e.g. ## Heading\n...)
   processed = processed.replace(/(#{1,6}[^\n]+)\n([^\n#])/g, "$1\n\n$2");
@@ -102,7 +107,9 @@ export default function MarkdownRenderer({ content, experimentMode }) {
       <ReactMarkdown
         children={cleanContent}
         remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw]}
         components={{
+          br: () => <br style={{ marginBottom: "4px" }} />,
           table: ({ node, ...props }) => (
             <div
               style={{

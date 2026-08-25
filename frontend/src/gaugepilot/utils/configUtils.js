@@ -59,8 +59,16 @@ export function parseConfigDetails(configName) {
 
   // 4. Detect Chunker
   let chunker = "Parent-Child (1200/300)";
-  if (lower.includes("recursive")) {
+  if (lower.includes("contextual")) {
+    chunker = "Contextual Chunking";
+  } else if (lower.includes("structure")) {
+    chunker = "Structure-Aware";
+  } else if (lower.includes("semantic")) {
+    chunker = "Semantic Boundary";
+  } else if (lower.includes("recursive")) {
     chunker = "Recursive Splitter";
+  } else if (lower.includes("fixed")) {
+    chunker = "Fixed Window (500c)";
   } else if (lower.includes("token")) {
     chunker = "Fixed Token (512)";
   } else if (lower.includes("parent child") || lower.includes("parent_child")) {

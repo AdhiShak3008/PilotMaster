@@ -26,13 +26,13 @@ def get_system_instruction():
 
 
 def clean_doc_name(name):
-    if not name:
+    if not name or name == "None":
         return "Document"
     cleaned = re.sub(r"^[0-9a-fA-F-]{32,36}_", "", str(name))
-    return cleaned
+    return cleaned.strip()
 
 
-def build_prompt(trace):
+def build_prompt(trace, chat_history=None):
     retrieval_result = trace.retrieval_result
     retrieved_chunks = getattr(retrieval_result, "retrieved_chunks", []) or []
 
@@ -40,11 +40,26 @@ def build_prompt(trace):
     seen_texts = set()
     context_parts = []
     for chunk in retrieved_chunks:
-        meta = getattr(chunk.chunk, "metadata", {}) or {}
-        text = meta.get("parent_text") or getattr(chunk.chunk, "text", "")
-        raw_doc_name = meta.get("document_name") or meta.get("file_name") or meta.get("source") or "Document"
+        chunk_obj = getattr(chunk, "chunk", chunk)
+        meta = getattr(chunk_obj, "metadata", {}) or {}
+        text = meta.get("parent_text") or getattr(chunk_obj, "text", "")
+        raw_doc_name = (
+            meta.get("document_name")
+            or meta.get("file_name")
+            or meta.get("source_file")
+            or meta.get("source")
+            or getattr(chunk_obj, "source", None)
+            or getattr(chunk_obj, "source_file", None)
+            or getattr(chunk_obj, "document_name", None)
+            or "Document"
+        )
         doc_name = clean_doc_name(raw_doc_name)
-        page_num = meta.get("page") or meta.get("page_number")
+        page_num = (
+            meta.get("page")
+            or meta.get("page_number")
+            or getattr(chunk_obj, "page_number", None)
+            or getattr(chunk_obj, "page", None)
+        )
 
         if text and text not in seen_texts:
             seen_texts.add(text)
@@ -54,14 +69,30 @@ def build_prompt(trace):
     context = "\n\n".join(context_parts) if context_parts else "No relevant document context found."
     query = trace.user_query
 
-    user_prompt = f"""Document Context:
-{context}
+    prompt_sections = [
+        f"Document Context:\n{context}"
+    ]
 
-User Query:
-{query}
+    # Check for Episodic Long-Term Memory Context
+    memory_context = getattr(trace, "memory_context", None)
+    if memory_context:
+        prompt_sections.append(f"User Episodic Memory Context:\n{memory_context}")
 
-Please provide a structured, detailed, and comprehensive response using the document context above."""
+    # Check for Conversational Working Memory Buffer
+    history = chat_history or getattr(trace, "chat_history", None)
+    if history and len(history) > 0:
+        history_lines = []
+        for msg in history[-8:]:  # Keep last 8 turns (4 full Q&A pairs)
+            role = msg.get("role", "user")
+            content = msg.get("content", "").strip()
+            if content:
+                history_lines.append(f"{role.capitalize()}: {content}")
+        if history_lines:
+            prompt_sections.append(f"Conversation History:\n" + "\n".join(history_lines))
 
-    return user_prompt
+    prompt_sections.append(f"User Query:\n{query}")
+    prompt_sections.append("Please provide a structured, detailed, and comprehensive response using the document context and conversation history above.")
+
+    return "\n\n".join(prompt_sections)
 
 
