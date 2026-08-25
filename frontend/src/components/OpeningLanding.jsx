@@ -271,7 +271,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
             <div style={{ fontSize: "18px", fontWeight: 800, letterSpacing: "-0.5px", color: "#ffffff" }}>
               PilotMaster
             </div>
-            <div style={{ fontSize: "10px", color: "#94a3b8", letterSpacing: "0.04em", textTransform: "uppercase", fontWeight: 600 }}>
+            <div style={{ fontSize: "12px", color: "#94a3b8", letterSpacing: "0.04em", textTransform: "uppercase", fontWeight: 600 }}>
               Observable AI Ecosystem
             </div>
           </div>
@@ -288,7 +288,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
               background: "linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(168, 85, 247, 0.2))",
               border: "1px solid rgba(147, 197, 253, 0.3)",
               color: "#ffffff",
-              fontSize: "11px",
+              fontSize: "12px",
               fontWeight: 600,
               cursor: "pointer",
               transition: "all 0.2s ease",
@@ -345,7 +345,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                 borderRadius: "9999px",
                 background: "rgba(59, 130, 246, 0.1)",
                 border: "1px solid rgba(59, 130, 246, 0.25)",
-                fontSize: "11px",
+                fontSize: "12px",
                 color: "#93c5fd",
                 fontWeight: 600,
                 marginBottom: "8px",
@@ -359,31 +359,38 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                 margin: "0 0 8px",
                 fontSize: "clamp(24px, 4vw, 36px)",
                 fontWeight: 900,
-                lineHeight: 1.15,
-                letterSpacing: "-0.8px",
-                background: "linear-gradient(135deg, #ffffff 40%, #93c5fd 80%, #c084fc 100%)",
+                letterSpacing: "-1px",
+                background: "linear-gradient(135deg, #ffffff 30%, #93c5fd 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
+                lineHeight: 1.15,
               }}
             >
-              Enterprise AI Architecture. Fully Observable.
+              Enterprise-Grade Multi-Doc RAG & Evaluation
             </h1>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "13.5px",
+                color: "#94a3b8",
+                lineHeight: 1.6,
+                maxWidth: "540px",
+              }}
+            >
+              Unified runtime pairing conversational knowledge synthesis, fine-grained telemetry tracing, and reproducible benchmark evaluations.
+            </p>
           </div>
 
-          {/* INTERACTIVE ARCHITECTURE TOPOLOGY CARD */}
+          {/* INTERACTIVE ARCHITECTURE TOPOLOGY MAP (RESPONSIVE) */}
           <div
             style={{
+              background: "rgba(15, 23, 42, 0.65)",
               borderRadius: "20px",
-              background: "rgba(11, 16, 28, 0.7)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              backdropFilter: "blur(20px)",
-              padding: "clamp(14px, 2.5vw, 20px)",
-              boxShadow: "0 16px 40px rgba(0, 0, 0, 0.4)",
-              width: "100%",
-              boxSizing: "border-box",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              padding: "16px",
+              backdropFilter: "blur(16px)",
             }}
           >
-            {/* TOPOLOGY TAB SELECTOR */}
             <div
               style={{
                 display: "flex",
@@ -391,14 +398,14 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                 alignItems: "center",
                 flexWrap: "wrap",
                 gap: "8px",
-                marginBottom: "14px",
+                marginBottom: "12px",
                 borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
                 paddingBottom: "10px",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
                 <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: currentDesc.badgeColor, flexShrink: 0 }} />
-                <span style={{ fontSize: "11px", fontWeight: 700, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: "0.06em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <span style={{ fontSize: "12px", fontWeight: 700, color: "#e2e8f0", textTransform: "uppercase", letterSpacing: "0.06em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {currentDesc.title}
                 </span>
               </div>
@@ -413,7 +420,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                       background: activeTab === tab ? "rgba(255, 255, 255, 0.12)" : "transparent",
                       border: activeTab === tab ? "1px solid rgba(255, 255, 255, 0.15)" : "1px solid transparent",
                       color: activeTab === tab ? "#ffffff" : "#94a3b8",
-                      fontSize: "11px",
+                      fontSize: "12px",
                       fontWeight: 600,
                       cursor: "pointer",
                       textTransform: "capitalize",
@@ -462,7 +469,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                   <span style={{ fontSize: "15px" }}>📄</span>
                   <h3 style={{ margin: 0, fontSize: "13px", fontWeight: 800, color: "#60a5fa" }}>DocPilot</h3>
                 </div>
-                <p style={{ margin: 0, fontSize: "11px", color: "#cbd5e1", lineHeight: 1.4 }}>
+                <p style={{ margin: 0, fontSize: "12px", color: "#cbd5e1", lineHeight: 1.4 }}>
                   Document intelligence & grounded natural language synthesis.
                 </p>
               </div>
@@ -497,7 +504,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                     top: "-9px",
                     background: "#0284c7",
                     color: "#ffffff",
-                    fontSize: "9px",
+                    fontSize: "11px",
                     fontWeight: 800,
                     padding: "2px 7px",
                     borderRadius: "9999px",
@@ -510,11 +517,11 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                 <div style={{ fontSize: "18px" }}>⚡</div>
                 <div>
                   <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 900, color: "#38bdf8" }}>PilotCore</h3>
-                  <div style={{ fontSize: "10px", color: "#94a3b8" }}>
+                  <div style={{ fontSize: "12px", color: "#94a3b8" }}>
                     Hybrid Vector + Lexical RRF
                   </div>
                 </div>
-                <div style={{ fontSize: "9px", padding: "2px 6px", borderRadius: "4px", background: "rgba(56, 189, 248, 0.12)", color: "#7dd3fc", fontWeight: 600 }}>
+                <div style={{ fontSize: "12px", padding: "2px 6px", borderRadius: "4px", background: "rgba(56, 189, 248, 0.12)", color: "#7dd3fc", fontWeight: 600 }}>
                   11 Enhancements · Tracing
                 </div>
               </div>
@@ -544,7 +551,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                     <span style={{ fontSize: "13px" }}>🔍</span>
                     <h4 style={{ margin: 0, fontSize: "12px", fontWeight: 800, color: "#34d399" }}>TracePilot</h4>
                   </div>
-                  <p style={{ margin: "2px 0 0", fontSize: "10px", color: "#94a3b8" }}>
+                  <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#94a3b8" }}>
                     Execution telemetry & latency profiler.
                   </p>
                 </div>
@@ -572,7 +579,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                     <span style={{ fontSize: "13px" }}>🧪</span>
                     <h4 style={{ margin: 0, fontSize: "12px", fontWeight: 800, color: "#c084fc" }}>GaugePilot</h4>
                   </div>
-                  <p style={{ margin: "2px 0 0", fontSize: "10px", color: "#94a3b8" }}>
+                  <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#94a3b8" }}>
                     RAG benchmarking & AI matrix evaluation.
                   </p>
                 </div>
@@ -588,7 +595,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                 border: "1px solid rgba(255, 255, 255, 0.06)",
               }}
             >
-              <p style={{ margin: "0 0 10px", fontSize: "12px", lineHeight: 1.6, color: "#cbd5e1" }}>
+              <p style={{ margin: "0 0 10px", fontSize: "12.5px", lineHeight: 1.6, color: "#cbd5e1" }}>
                 {currentDesc.description}
               </p>
               <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
@@ -596,7 +603,7 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
                   <span
                     key={idx}
                     style={{
-                      fontSize: "10.5px",
+                      fontSize: "12px",
                       padding: "3px 8px",
                       borderRadius: "6px",
                       background: "rgba(255, 255, 255, 0.05)",

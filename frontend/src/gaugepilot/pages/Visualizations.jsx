@@ -38,7 +38,7 @@ export default memo(function Visualizations({ leaderboard }) {
     display: "inline-flex", alignItems: "center", gap: "6px",
     padding: "4px 12px", borderRadius: "9999px",
     background: `${color}18`,
-    color, fontSize: "11px", fontWeight: 600, letterSpacing: "0.02em",
+    color, fontSize: "12px", fontWeight: 600, letterSpacing: "0.02em",
   });
 
 

@@ -236,17 +236,17 @@ export default function GlossaryDrawer({
                 >
                   <span
                     style={{
-                      fontSize: "11px",
+                      fontSize: "12px",
                       color: isExp ? "#c084fc" : "#60a5fa",
                       fontWeight: 600,
                     }}
                   >
                     {pageDisplayName}
                   </span>
-                  <span style={{ fontSize: "11px", color: "var(--text-muted, #64748b)" }}>•</span>
+                  <span style={{ fontSize: "12px", color: "var(--text-muted, #64748b)" }}>•</span>
                   <span
                     style={{
-                      fontSize: "10px",
+                      fontSize: "12px",
                       fontWeight: 700,
                       textTransform: "uppercase",
                       letterSpacing: "0.06em",
@@ -383,7 +383,7 @@ export default function GlossaryDrawer({
                         : "#2563eb"
                       : "transparent",
                   color: scope === "page" ? "#ffffff" : "var(--text-muted, #64748b)",
-                  fontSize: "11px",
+                  fontSize: "12px",
                   fontWeight: 600,
                   cursor: "pointer",
                   transition: "all 0.15s ease",
@@ -404,7 +404,7 @@ export default function GlossaryDrawer({
                         : "#2563eb"
                       : "transparent",
                   color: scope === "all" ? "#ffffff" : "var(--text-muted, #64748b)",
-                  fontSize: "11px",
+                  fontSize: "12px",
                   fontWeight: 600,
                   cursor: "pointer",
                   transition: "all 0.15s ease",
@@ -416,7 +416,7 @@ export default function GlossaryDrawer({
 
             <span
               style={{
-                fontSize: "11px",
+                fontSize: "12px",
                 color: "var(--text-muted, #64748b)",
                 fontWeight: 500,
               }}
@@ -455,7 +455,7 @@ export default function GlossaryDrawer({
                         : "rgba(59, 130, 246, 0.2)"
                       : "rgba(255, 255, 255, 0.03)",
                     color: active ? "#ffffff" : "var(--text-secondary, #94a3b8)",
-                    fontSize: "11px",
+                    fontSize: "12px",
                     fontWeight: active ? 600 : 500,
                     cursor: "pointer",
                     whiteSpace: "nowrap",
@@ -495,7 +495,7 @@ export default function GlossaryDrawer({
                 padding: "2px 8px",
                 borderRadius: "4px",
                 cursor: "pointer",
-                fontSize: "11px",
+                fontSize: "12px",
                 fontWeight: 600,
               }}
             >
@@ -608,7 +608,7 @@ export default function GlossaryDrawer({
                       <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
                         <span
                           style={{
-                            fontSize: "10px",
+                            fontSize: "12px",
                             fontWeight: 600,
                             padding: "2px 7px",
                             borderRadius: "9999px",
@@ -622,7 +622,7 @@ export default function GlossaryDrawer({
                         {term.modes.includes("exp") && !term.modes.includes("prod") && (
                           <span
                             style={{
-                              fontSize: "10px",
+                              fontSize: "12px",
                               fontWeight: 700,
                               padding: "2px 7px",
                               borderRadius: "9999px",
@@ -637,7 +637,7 @@ export default function GlossaryDrawer({
                         {term.modes.includes("prod") && !term.modes.includes("exp") && (
                           <span
                             style={{
-                              fontSize: "10px",
+                              fontSize: "12px",
                               fontWeight: 700,
                               padding: "2px 7px",
                               borderRadius: "9999px",
@@ -660,7 +660,7 @@ export default function GlossaryDrawer({
                         border: "1px solid " + (copiedId === term.id ? "rgba(16, 185, 129, 0.4)" : "rgba(255, 255, 255, 0.08)"),
                         borderRadius: "8px",
                         padding: "5px 9px",
-                        fontSize: "11px",
+                        fontSize: "12px",
                         fontWeight: 600,
                         color: copiedId === term.id ? "#34d399" : "var(--text-muted, #94a3b8)",
                         cursor: "pointer",
@@ -730,7 +730,7 @@ export default function GlossaryDrawer({
                         borderRadius: "8px",
                         background: "rgba(0, 0, 0, 0.4)",
                         fontFamily: "'Fira Code', 'Courier New', monospace",
-                        fontSize: "11px",
+                        fontSize: "12px",
                         color: "#38bdf8",
                         overflowX: "auto",
                         border: "1px solid rgba(255, 255, 255, 0.05)",
@@ -748,7 +748,7 @@ export default function GlossaryDrawer({
                         display: "flex",
                         alignItems: "center",
                         gap: "6px",
-                        fontSize: "11px",
+                        fontSize: "12px",
                         color: "var(--text-muted, #7c8ba1)",
                       }}
                     >
@@ -774,7 +774,7 @@ export default function GlossaryDrawer({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            fontSize: "11px",
+            fontSize: "12px",
             color: "var(--text-muted, #64748b)",
             flexShrink: 0,
           }}

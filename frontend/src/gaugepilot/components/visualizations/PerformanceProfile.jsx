@@ -63,7 +63,7 @@ export default function PerformanceProfile({ data }) {
         <div style={{ color: "#38bdf8", fontWeight: 600, marginBottom: "6px" }}>
           Metrics Won Outright: {p.wins} / {METRICS.length}
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "10.5px", color: "rgba(255,255,255,0.6)", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "6px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "12px", color: "rgba(255,255,255,0.65)", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "6px" }}>
           <div>Model: {details.model}</div>
           <div>Retrieval: {details.retrieval} · {details.reranker}</div>
           <div>Enhancements: {details.enhancements?.join(", ")}</div>
@@ -92,19 +92,19 @@ export default function PerformanceProfile({ data }) {
           <CartesianGrid stroke="rgba(255,255,255,0.06)" />
           <XAxis
             dataKey="configLabel"
-            stroke="rgba(255,255,255,0.35)" tick={{ fill: "rgba(255,255,255,0.75)", fontSize: 11, fontWeight: 600 }}
+            stroke="rgba(255,255,255,0.35)" tick={{ fill: "rgba(255,255,255,0.75)", fontSize: 12, fontWeight: 600 }}
             interval={0} angle={-20} textAnchor="end" height={60}
           />
           <YAxis
             allowDecimals={false} domain={[0, METRICS.length]}
-            stroke="rgba(255,255,255,0.35)" tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 11 }}
-            label={{ value: "Metrics won", angle: -90, position: "insideLeft", fill: "rgba(255,255,255,0.5)", fontSize: 11 }}
+            stroke="rgba(255,255,255,0.35)" tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }}
+            label={{ value: "Metrics won", angle: -90, position: "insideLeft", fill: "rgba(255,255,255,0.5)", fontSize: 12 }}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ stroke: "rgba(255,255,255,0.2)" }} />
           <Line type="monotone" dataKey="wins" stroke={accent} strokeWidth={2} dot={<CustomDot />} />
         </LineChart>
       </ResponsiveContainer>
-      <p style={{ margin: "14px 0 0", fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>
+      <p style={{ margin: "14px 0 0", fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>
         Counts how many of the {METRICS.length} metrics each configuration leads on (latency counts a win for lowest value).
       </p>
     </div>

@@ -132,9 +132,9 @@ export default function ConfigBadge({
       {isBest && (
         <span
           style={{
-            fontSize: "10px",
+            fontSize: "12px",
             fontWeight: 700,
-            padding: "2px 6px",
+            padding: "2px 8px",
             borderRadius: "4px",
             background: "rgba(245, 158, 11, 0.15)",
             border: "1px solid rgba(245, 158, 11, 0.3)",
@@ -176,7 +176,7 @@ export default function ConfigBadge({
             height: "14px",
             borderRadius: "50%",
             background: hovered ? "rgba(168, 85, 247, 0.4)" : "rgba(255, 255, 255, 0.12)",
-            fontSize: "9px",
+            fontSize: "10px",
             fontWeight: 700,
             fontFamily: "system-ui, -apple-system, sans-serif",
             color: hovered ? "#d8b4fe" : "rgba(255, 255, 255, 0.65)",
@@ -220,14 +220,14 @@ export default function ConfigBadge({
               </span>
             </div>
             {isBest && (
-              <span style={{ fontSize: "9px", fontWeight: 700, padding: "1px 5px", borderRadius: "4px", background: "rgba(245, 158, 11, 0.2)", color: "#fbbf24", textTransform: "uppercase" }}>
+              <span style={{ fontSize: "12px", fontWeight: 700, padding: "2px 6px", borderRadius: "4px", background: "rgba(245, 158, 11, 0.2)", color: "#fbbf24", textTransform: "uppercase" }}>
                 Top Rank
               </span>
             )}
           </div>
 
           {/* Breakdown Rows */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "11.5px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
               <span style={{ color: "rgba(255,255,255,0.5)" }}>🤖 LLM Model:</span>
               <span style={{ color: "#ffffff", fontWeight: 600, textAlign: "right" }}>{details.model}</span>
@@ -260,7 +260,7 @@ export default function ConfigBadge({
                   <span
                     key={idx}
                     style={{
-                      fontSize: "10px",
+                      fontSize: "12px",
                       padding: "2px 6px",
                       borderRadius: "6px",
                       background: enh.includes("Default") ? "rgba(255,255,255,0.05)" : "rgba(168, 85, 247, 0.2)",
@@ -275,7 +275,7 @@ export default function ConfigBadge({
             </div>
 
             {/* Raw signature */}
-            <div style={{ marginTop: "6px", paddingTop: "6px", borderTop: "1px solid rgba(255,255,255,0.06)", fontSize: "10px", color: "rgba(255,255,255,0.35)", wordBreak: "break-all", fontFamily: "monospace" }}>
+            <div style={{ marginTop: "6px", paddingTop: "6px", borderTop: "1px solid rgba(255,255,255,0.06)", fontSize: "11px", color: "rgba(255,255,255,0.4)", wordBreak: "break-all", fontFamily: "monospace" }}>
               Signature: {details.rawName}
             </div>
           </div>

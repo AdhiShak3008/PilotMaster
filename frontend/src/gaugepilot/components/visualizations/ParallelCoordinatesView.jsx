@@ -135,7 +135,7 @@ export default function ParallelCoordinatesView({ data }) {
                 }}
               >
                 <span style={{ color: entry.color, fontWeight: 700 }}>{entry.dataKey}</span>
-                <span style={{ color: "rgba(255,255,255,0.9)", fontWeight: 600, fontSize: "11.5px", marginLeft: "10px" }}>
+                <span style={{ color: "rgba(255,255,255,0.9)", fontWeight: 600, fontSize: "12px", marginLeft: "10px" }}>
                   {entry.value}/100 {rawFormatted}
                 </span>
               </div>
@@ -148,8 +148,8 @@ export default function ParallelCoordinatesView({ data }) {
 
   if (displayRows.length === 0) {
     return (
-      <p style={{ margin: 0, fontSize: "13px", color: "rgba(255,255,255,0.35)" }}>
-        No configurations to plot yet.
+      <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
+        No configurations to compare yet.
       </p>
     );
   }
@@ -160,48 +160,26 @@ export default function ParallelCoordinatesView({ data }) {
         <LineChart data={chartData} margin={{ top: 20, right: 30, bottom: 20, left: 10 }}>
           <CartesianGrid stroke="rgba(255,255,255,0.06)" />
           <XAxis
-            dataKey="metric"
+            dataKey="metricLabel"
             stroke="rgba(255,255,255,0.35)"
-            tick={{ fill: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: 600 }}
+            tick={{ fill: "rgba(255,255,255,0.75)", fontSize: 12, fontWeight: 600 }}
           />
           <YAxis
             domain={[0, 100]}
             stroke="rgba(255,255,255,0.35)"
-            tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 11 }}
-            label={{
-              value: "Normalized Score",
-              angle: -90,
-              position: "insideLeft",
-              fill: "rgba(255,255,255,0.45)",
-              fontSize: 11,
-            }}
+            tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }}
+            label={{ value: "Normalized score (0–100)", angle: -90, position: "insideLeft", fill: "rgba(255,255,255,0.5)", fontSize: 12 }}
           />
           <Tooltip content={<CustomTooltip />} />
-          <Legend
-            layout="horizontal"
-            verticalAlign="bottom"
-            wrapperStyle={{
-              maxHeight: 70,
-              overflowY: "auto",
-              fontSize: 12,
-              paddingTop: "10px",
-            }}
-            formatter={(value) => (
-              <span style={{ color: "rgba(255,255,255,0.85)", fontWeight: 600, marginRight: 8 }}>
-                {value}
-              </span>
-            )}
-          />
-          {displayRows.map((row, i) => {
-            const cLabel = row.configLabel || row.config;
+          {displayRows.map((r, i) => {
+            const key = r.configLabel || r.config;
             return (
               <Line
-                key={cLabel}
+                key={key}
                 type="monotone"
-                name={cLabel}
-                dataKey={cLabel}
+                dataKey={key}
                 stroke={getColor(i)}
-                strokeWidth={3}
+                strokeWidth={i === 0 ? 3 : 2}
                 dot={{ r: 5, fill: getColor(i), strokeWidth: 2 }}
                 activeDot={{ r: 7 }}
                 connectNulls
@@ -211,7 +189,7 @@ export default function ParallelCoordinatesView({ data }) {
         </LineChart>
       </ResponsiveContainer>
 
-      <p style={{ margin: "16px 0 0", fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>
+      <p style={{ margin: "16px 0 0", fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>
         Each metric is normalized from 0–100 across displayed configurations. Latency is inverted so higher represents better performance.
       </p>
 
@@ -223,7 +201,7 @@ export default function ParallelCoordinatesView({ data }) {
         borderRadius: "14px",
         border: "1px solid rgba(255, 255, 255, 0.06)",
       }}>
-        <div style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", marginBottom: "10px" }}>
+        <div style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", marginBottom: "10px" }}>
           Configuration Reference (Hover any badge for full specifications)
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>

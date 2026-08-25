@@ -1,3 +1,4 @@
+import os
 import re
 
 SYSTEM_INSTRUCTION = """You are PilotMaster Intelligence Engine, a flagship AI research, analysis, and document synthesis system.
@@ -28,8 +29,11 @@ def get_system_instruction():
 def clean_doc_name(name):
     if not name or name == "None":
         return "Document"
-    cleaned = re.sub(r"^[0-9a-fA-F-]{32,36}_", "", str(name))
-    return cleaned.strip()
+    base = os.path.basename(str(name))
+    cleaned = re.sub(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}_?", "", base)
+    cleaned = re.sub(r"^[0-9a-fA-F]{16,64}_?", "", cleaned)
+    cleaned = re.sub(r"^[0-9a-fA-F-]{32,38}_?", "", cleaned)
+    return cleaned.strip() if cleaned.strip() else base
 
 
 def build_prompt(trace, chat_history=None):

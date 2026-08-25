@@ -53,10 +53,10 @@ export default function RankingBarView({ data }) {
       }}>
         <div style={{ fontWeight: 700, color: "#ffffff", fontSize: "13px", marginBottom: "6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span>🏷️ {p.configLabel}</span>
-          <span style={{ color: "#38bdf8", fontSize: "11px" }}>Rank: {Number(p.averageRank).toFixed(2)}</span>
+          <span style={{ color: "#38bdf8", fontSize: "12px" }}>Rank: {Number(p.averageRank).toFixed(2)}</span>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "11px", color: "rgba(255,255,255,0.75)", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "6px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "12px", color: "rgba(255,255,255,0.75)", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "6px" }}>
           <div><strong style={{ color: "rgba(255,255,255,0.5)" }}>Model:</strong> {details.model}</div>
           <div><strong style={{ color: "rgba(255,255,255,0.5)" }}>Retrieval:</strong> {details.retrieval}</div>
           <div><strong style={{ color: "rgba(255,255,255,0.5)" }}>Reranker:</strong> {details.reranker}</div>
@@ -81,12 +81,12 @@ export default function RankingBarView({ data }) {
           <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
           <XAxis
             dataKey="configLabel"
-            stroke="rgba(255,255,255,0.35)" tick={{ fill: "rgba(255,255,255,0.75)", fontSize: 11, fontWeight: 600 }}
+            stroke="rgba(255,255,255,0.35)" tick={{ fill: "rgba(255,255,255,0.75)", fontSize: 12, fontWeight: 600 }}
             interval={0} angle={-20} textAnchor="end" height={60}
           />
           <YAxis
-            stroke="rgba(255,255,255,0.35)" tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 11 }}
-            label={{ value: "Average rank (lower is better)", angle: -90, position: "insideLeft", fill: "rgba(255,255,255,0.5)", fontSize: 11 }}
+            stroke="rgba(255,255,255,0.35)" tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }}
+            label={{ value: "Average rank (lower is better)", angle: -90, position: "insideLeft", fill: "rgba(255,255,255,0.5)", fontSize: 12 }}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
           <Bar dataKey="averageRank" radius={[6, 6, 0, 0]}>
@@ -94,7 +94,7 @@ export default function RankingBarView({ data }) {
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-      <p style={{ margin: "14px 0 0", fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>
+      <p style={{ margin: "14px 0 0", fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>
         Sorted best to worst; greener bars indicate a stronger average rank across all metrics. Hover to inspect configuration parameters.
       </p>
     </div>

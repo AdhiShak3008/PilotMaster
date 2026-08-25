@@ -36,7 +36,7 @@ function BoxColumn({ label, values }) {
     return (
       <div style={{ width: PLOT_WIDTH, textAlign: "center" }}>
         <p style={{ margin: 0, fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>No data</p>
-        <p style={{ margin: "6px 0 0", fontSize: "11px", color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>{label}</p>
+        <p style={{ margin: "6px 0 0", fontSize: "12px", color: "rgba(255,255,255,0.6)", fontWeight: 600 }}>{label}</p>
       </div>
     );
   }
@@ -64,12 +64,12 @@ function BoxColumn({ label, values }) {
         {/* Median line */}
         <line x1={boxX} x2={boxX + boxWidth} y1={y(median)} y2={y(median)} stroke={accent} strokeWidth={2.5} />
       </svg>
-      <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.4)", lineHeight: 1.6 }}>
+      <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>
         <div>max {max != null ? Number(max).toFixed(2) : "—"}</div>
         <div style={{ color: accent, fontWeight: 700 }}>med {median != null ? Number(median).toFixed(2) : "—"}</div>
         <div>min {min != null ? Number(min).toFixed(2) : "—"}</div>
       </div>
-      <p style={{ margin: "6px 0 0", fontSize: "11px", color: "rgba(255,255,255,0.6)", fontWeight: 600 }}>{label}</p>
+      <p style={{ margin: "6px 0 0", fontSize: "12px", color: "rgba(255,255,255,0.7)", fontWeight: 600 }}>{label}</p>
     </div>
   );
 }
@@ -99,7 +99,7 @@ export default function BoxPlotView({ data }) {
       <div style={{ display: "flex", justifyContent: "space-around", flexWrap: "wrap", gap: "16px" }}>
         {columns.map((col) => <BoxColumn key={col.label} label={col.label} values={col.values} />)}
       </div>
-      <p style={{ margin: "16px 0 0", fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>
+      <p style={{ margin: "16px 0 0", fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>
         Each box plot is scaled to its own metric's range, spanning {rows.length} configuration{rows.length !== 1 ? "s" : ""}: box = interquartile range, line = median, whiskers = min/max.
       </p>
     </div>

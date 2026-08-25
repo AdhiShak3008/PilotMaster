@@ -77,7 +77,7 @@ export default function ParetoView({ data }) {
         <div style={{ fontWeight: 700, color: "white", fontSize: "13px", marginBottom: "6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span>🏷️ {p.configLabel}</span>
           <span style={{
-            fontSize: "10px",
+            fontSize: "12px",
             fontWeight: 700,
             padding: "2px 6px",
             borderRadius: "4px",
@@ -88,12 +88,12 @@ export default function ParetoView({ data }) {
           </span>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "11.5px", color: "rgba(255,255,255,0.8)" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", color: "rgba(255,255,255,0.85)" }}>
           <div>{metricLabel(xMetric)}: <strong style={{ color: "#38bdf8" }}>{Number(p.x).toFixed(2)}</strong></div>
           <div>{metricLabel(yMetric)}: <strong style={{ color: "#c084fc" }}>{Number(p.y).toFixed(2)}</strong></div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "10.5px", color: "rgba(255,255,255,0.6)", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "6px", marginTop: "6px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "12px", color: "rgba(255,255,255,0.65)", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "6px", marginTop: "6px" }}>
           <div>Model: {details.model}</div>
           <div>Retrieval: {details.retrieval} · {details.reranker}</div>
           <div>Enhancements: {details.enhancements?.join(", ")}</div>

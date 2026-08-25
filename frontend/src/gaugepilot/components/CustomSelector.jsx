@@ -43,18 +43,18 @@ export function CustomSelector({
         {badge && (
           <span
             style={{
-              padding: "1px 6px",
+              padding: "2px 8px",
               borderRadius: "9999px",
               background: "rgba(168, 85, 247, 0.25)",
               color: "#d8b4fe",
-              fontSize: "10px",
+              fontSize: "12px",
               fontWeight: 700,
             }}
           >
             {badge}
           </span>
         )}
-        <span style={{ fontSize: "9px", color: "var(--text-muted)", opacity: 0.7 }}>
+        <span style={{ fontSize: "11px", color: "var(--text-muted)", opacity: 0.7 }}>
           {open ? "▲" : "▼"}
         </span>
       </button>
@@ -85,13 +85,13 @@ export function CustomSelector({
       {sublabel && (
         <span
           style={{
-            fontSize: "9px",
+            fontSize: "12px",
             color: "var(--text-muted)",
             marginTop: "3px",
             textAlign: "center",
             letterSpacing: "0.05em",
             textTransform: "uppercase",
-            opacity: 0.7,
+            opacity: 0.8,
           }}
         >
           {sublabel}
@@ -145,7 +145,7 @@ export function SelectorItem({
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "11px",
+                fontSize: "12px",
                 fontWeight: "bold",
                 color: "white",
                 flexShrink: 0,
@@ -176,7 +176,7 @@ export function SelectorItem({
       {subtitle && (
         <div
           style={{
-            fontSize: "11.5px",
+            fontSize: "12px",
             color: "rgba(255, 255, 255, 0.72)",
             marginTop: "3px",
             paddingLeft: multiSelect ? "24px" : "0",

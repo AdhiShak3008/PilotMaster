@@ -6,6 +6,7 @@ import Visualizations from "./Visualizations";
 import ExperimentSelector from "../components/ExperimentSelector";
 import { CustomSelector, SelectorItem } from "../components/CustomSelector";
 import LoadingOverlay from "../../components/LoadingOverlay";
+import { cleanDocName } from "../../utils/formatUtils";
 
 
 const DEFAULT_MODEL_OPTIONS = [
@@ -515,7 +516,7 @@ export default function ExperimentSetup({ onRunChange }) {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: "1 1 320px" }}>
-          <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", flexShrink: 0 }}>
+          <span style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", flexShrink: 0 }}>
             Run History:
           </span>
 
@@ -558,7 +559,7 @@ export default function ExperimentSetup({ onRunChange }) {
                 color: "#fca5a5",
                 border: "none",
                 cursor: "pointer",
-                fontSize: "11px",
+                fontSize: "12px",
                 fontWeight: 600,
                 flexShrink: 0,
               }}
@@ -579,7 +580,7 @@ export default function ExperimentSetup({ onRunChange }) {
                 color: "var(--text-muted)",
                 border: "none",
                 cursor: "pointer",
-                fontSize: "11px",
+                fontSize: "12px",
                 fontWeight: 500,
               }}
             >
@@ -597,7 +598,7 @@ export default function ExperimentSetup({ onRunChange }) {
                 color: "#ef4444",
                 border: "none",
                 cursor: "pointer",
-                fontSize: "11px",
+                fontSize: "12px",
                 fontWeight: 600,
               }}
             >
@@ -618,7 +619,7 @@ export default function ExperimentSetup({ onRunChange }) {
       >
         <span
           style={{
-            fontSize: "11px",
+            fontSize: "12px",
             fontWeight: 700,
             color: "var(--text-muted)",
             textTransform: "uppercase",
@@ -737,11 +738,11 @@ export default function ExperimentSetup({ onRunChange }) {
                         display: "inline-flex",
                         alignItems: "center",
                         gap: "3px",
-                        padding: "1px 7px",
+                        padding: "2px 8px",
                         borderRadius: "9999px",
                         background: "rgba(168, 85, 247, 0.2)",
                         color: "#c084fc",
-                        fontSize: "11px",
+                        fontSize: "12px",
                         fontWeight: 600,
                         whiteSpace: "nowrap",
                       }}
@@ -749,7 +750,7 @@ export default function ExperimentSetup({ onRunChange }) {
                       {getEnhancementLabel(id)}
                       <span
                         onClick={(e) => setSelectedEnhancements((prev) => removeEnhancementPill(prev, id, e))}
-                        style={{ cursor: "pointer", opacity: 0.7, fontSize: "10px", marginLeft: "2px" }}
+                        style={{ cursor: "pointer", opacity: 0.7, fontSize: "12px", marginLeft: "2px" }}
                       >
                         ✕
                       </span>
@@ -758,11 +759,11 @@ export default function ExperimentSetup({ onRunChange }) {
                   {selectedEnhancements.filter((e) => e !== "Default").length > 2 && (
                     <span
                       style={{
-                        padding: "1px 6px",
+                        padding: "2px 7px",
                         borderRadius: "9999px",
                         background: "rgba(255, 255, 255, 0.1)",
                         color: "var(--text-muted)",
-                        fontSize: "10px",
+                        fontSize: "12px",
                         fontWeight: 700,
                       }}
                     >
@@ -772,20 +773,20 @@ export default function ExperimentSetup({ onRunChange }) {
                 </div>
               )}
 
-              <span style={{ fontSize: "9px", color: "var(--text-muted)", opacity: 0.7, marginLeft: "auto" }}>
+              <span style={{ fontSize: "11px", color: "var(--text-muted)", opacity: 0.7, marginLeft: "auto" }}>
                 {showEnhancements ? "▲" : "▼"}
               </span>
             </div>
 
             <span
               style={{
-                fontSize: "9px",
+                fontSize: "12px",
                 color: "var(--text-muted)",
                 marginTop: "2px",
                 textAlign: "center",
                 letterSpacing: "0.04em",
                 textTransform: "uppercase",
-                opacity: 0.7,
+                opacity: 0.8,
               }}
             >
               Query Enhancements
@@ -824,7 +825,7 @@ export default function ExperimentSetup({ onRunChange }) {
                       background: selectedEnhancements.includes("Default") || selectedEnhancements.length === 0 ? "rgba(255, 255, 255, 0.15)" : "rgba(255, 255, 255, 0.04)",
                       color: selectedEnhancements.includes("Default") ? "#ffffff" : "var(--text-muted)",
                       cursor: "pointer",
-                      fontSize: "11px",
+                      fontSize: "12px",
                       fontWeight: 600,
                     }}
                   >
@@ -841,7 +842,7 @@ export default function ExperimentSetup({ onRunChange }) {
                       background: ALL_ENHANCEMENT_IDS.every((e) => selectedEnhancements.includes(e)) && selectedEnhancements.length === ALL_ENHANCEMENT_IDS.length ? "rgba(168, 85, 247, 0.25)" : "rgba(255, 255, 255, 0.04)",
                       color: ALL_ENHANCEMENT_IDS.every((e) => selectedEnhancements.includes(e)) ? "#c084fc" : "var(--text-muted)",
                       cursor: "pointer",
-                      fontSize: "11px",
+                      fontSize: "12px",
                       fontWeight: 600,
                     }}
                   >
@@ -852,7 +853,7 @@ export default function ExperimentSetup({ onRunChange }) {
                 {/* CATEGORIZED TECHNIQUES */}
                 {ENHANCEMENT_CATEGORIES.map((cat) => (
                   <div key={cat.category} style={{ marginBottom: "12px" }}>
-                    <p style={{ margin: "2px 8px 6px", fontSize: "10px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.05em" }}>
+                    <p style={{ margin: "2px 8px 6px", fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.05em" }}>
                       {cat.category}
                     </p>
                     {cat.items.map((opt) => (
@@ -878,7 +879,7 @@ export default function ExperimentSetup({ onRunChange }) {
                         borderRadius: "10px",
                         background: "rgba(245, 158, 11, 0.12)",
                         color: "#fbbf24",
-                        fontSize: "11px",
+                        fontSize: "12px",
                         display: "flex",
                         alignItems: "center",
                         gap: "6px",
@@ -897,7 +898,7 @@ export default function ExperimentSetup({ onRunChange }) {
                       border: "none",
                       color: "var(--text-muted)",
                       cursor: "pointer",
-                      fontSize: "11px",
+                      fontSize: "12px",
                       textAlign: "center",
                       padding: "4px",
                     }}
@@ -1000,20 +1001,20 @@ export default function ExperimentSetup({ onRunChange }) {
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                   Active Scope ({selectedDocIds.length}/{documents.length})
                 </span>
                 <div style={{ display: "flex", gap: "6px" }}>
                   <button
                     onClick={() => setSelectedDocIds(documents.map((d) => d.id))}
-                    style={{ background: "transparent", border: "none", color: "#c084fc", fontSize: "11px", cursor: "pointer", fontWeight: 600 }}
+                    style={{ background: "transparent", border: "none", color: "#c084fc", fontSize: "12px", cursor: "pointer", fontWeight: 600 }}
                   >
                     Select All
                   </button>
                   <span style={{ color: "var(--text-muted)" }}>·</span>
                   <button
                     onClick={() => setSelectedDocIds([])}
-                    style={{ background: "transparent", border: "none", color: "var(--text-muted)", fontSize: "11px", cursor: "pointer" }}
+                    style={{ background: "transparent", border: "none", color: "var(--text-muted)", fontSize: "12px", cursor: "pointer" }}
                   >
                     Clear
                   </button>
@@ -1037,7 +1038,7 @@ export default function ExperimentSetup({ onRunChange }) {
                         background: isSelected ? "rgba(168, 85, 247, 0.2)" : "rgba(255, 255, 255, 0.04)",
                         color: isSelected ? "#ffffff" : "var(--text-secondary)",
                         border: "none",
-                        fontSize: "11px",
+                        fontSize: "12px",
                         fontWeight: isSelected ? 600 : 400,
                         cursor: "pointer",
                         display: "flex",
@@ -1046,7 +1047,7 @@ export default function ExperimentSetup({ onRunChange }) {
                       }}
                     >
                       <span>{isSelected ? "✓" : "+"}</span>
-                      <span>{doc.filename}</span>
+                      <span>{cleanDocName(doc.filename)}</span>
                     </button>
                   );
                 })}
@@ -1056,7 +1057,7 @@ export default function ExperimentSetup({ onRunChange }) {
 
           {/* Active Run Configuration Pill Grid */}
           <div style={{ background: "rgba(0, 0, 0, 0.25)", borderRadius: "20px", padding: "16px 20px" }}>
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: "10px" }}>
+            <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: "10px" }}>
               Active Configuration
             </span>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px" }}>
@@ -1087,7 +1088,7 @@ export default function ExperimentSetup({ onRunChange }) {
               <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                 Evaluation Benchmark Prompts
               </span>
-              <p style={{ margin: "2px 0 0", fontSize: "11px", color: "var(--text-muted)" }}>
+              <p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--text-muted)" }}>
                 {questionList.length} evaluation prompt{questionList.length !== 1 ? "s" : ""} loaded
               </p>
             </div>
@@ -1104,7 +1105,7 @@ export default function ExperimentSetup({ onRunChange }) {
                     border: "none",
                     color: "var(--text-secondary)",
                     cursor: "pointer",
-                    fontSize: "11px",
+                    fontSize: "12px",
                     fontWeight: 500,
                   }}
                 >
@@ -1217,7 +1218,7 @@ export default function ExperimentSetup({ onRunChange }) {
       {/* ── Visualizations Section ── */}
       {useMemo(
         () => (
-          <div id="visualizations" style={{ marginTop: "32px" }}>
+          <div style={{ marginTop: "32px" }}>
             <Visualizations leaderboard={displayedLeaderboard} />
           </div>
         ),
@@ -1256,14 +1257,14 @@ function KpiTile({ label, value, sub, icon, color }) {
       </div>
 
       <div>
-        <p style={{ margin: 0, fontSize: "10px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>
+        <p style={{ margin: 0, fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>
           {label}
         </p>
         <p style={{ margin: "2px 0 0", fontSize: "20px", fontWeight: "700", color: "#ffffff" }}>
           {value}
         </p>
         {sub && (
-          <p style={{ margin: "1px 0 0", fontSize: "10px", color: "var(--text-muted)" }}>
+          <p style={{ margin: "1px 0 0", fontSize: "12px", color: "var(--text-muted)" }}>
             {sub}
           </p>
         )}
@@ -1275,7 +1276,7 @@ function KpiTile({ label, value, sub, icon, color }) {
 function SummaryItem({ label, value }) {
   return (
     <div style={{ padding: "4px 0" }}>
-      <span style={{ fontSize: "10px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, display: "block" }}>
+      <span style={{ fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 600, display: "block" }}>
         {label}
       </span>
       <span style={{ fontSize: "12px", color: "var(--text-primary)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>

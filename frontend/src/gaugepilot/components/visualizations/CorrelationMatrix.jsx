@@ -103,13 +103,13 @@ export default function CorrelationMatrix({ data }) {
         </table>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "16px" }}>
-        <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)" }}>−1 (inverse)</span>
+        <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>−1 (inverse)</span>
         <div style={{ display: "flex", flex: 1, maxWidth: "200px", height: "8px", borderRadius: "4px", overflow: "hidden" }}>
           {[-0.8, -0.4, 0, 0.4, 0.8].map((r) => (
             <div key={r} style={{ flex: 1, background: cellColor(r) }} />
           ))}
         </div>
-        <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)" }}>+1 (in step)</span>
+        <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.4)" }}>+1 (in step)</span>
       </div>
     </div>
   );

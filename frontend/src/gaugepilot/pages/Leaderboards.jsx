@@ -26,7 +26,7 @@ export default memo(function Leaderboards({ leaderboard }) {
   };
 
   const sectionLabel = {
-    fontSize: "11px", fontWeight: 700, letterSpacing: "0.06em",
+    fontSize: "12px", fontWeight: 700, letterSpacing: "0.06em",
     textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "14px",
   };
 
@@ -34,7 +34,7 @@ export default memo(function Leaderboards({ leaderboard }) {
     display: "inline-flex", alignItems: "center", gap: "6px",
     padding: "4px 12px", borderRadius: "9999px",
     background: `${color}18`,
-    color, fontSize: "11px", fontWeight: 600, letterSpacing: "0.02em",
+    color, fontSize: "12px", fontWeight: 600, letterSpacing: "0.02em",
   });
 
   const labelMap = useMemo(() => buildConfigLabelMap(leaderboard), [leaderboard]);
@@ -178,9 +178,9 @@ export default memo(function Leaderboards({ leaderboard }) {
               )}
               <div
                 style={{
-                  fontSize: "11px",
+                  fontSize: "12px",
                   fontWeight: 500,
-                  color: "rgba(255, 255, 255, 0.4)",
+                  color: "rgba(255, 255, 255, 0.5)",
                   textTransform: "uppercase",
                   letterSpacing: "0.04em",
                 }}

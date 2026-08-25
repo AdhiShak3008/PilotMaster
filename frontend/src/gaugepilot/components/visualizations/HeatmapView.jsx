@@ -141,7 +141,7 @@ export default function HeatmapView({ data }) {
         borderRadius: "14px",
         border: "1px solid rgba(255, 255, 255, 0.06)",
       }}>
-        <div style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", marginBottom: "10px" }}>
+        <div style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", marginBottom: "10px" }}>
           Configuration Reference (Hover any badge for full specifications)
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>

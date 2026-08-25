@@ -3,6 +3,7 @@ import axios from "axios";
 import LoadingOverlay from "../components/LoadingOverlay";
 import GlossaryDrawer from "../components/GlossaryDrawer";
 import GlossaryButton from "../components/GlossaryButton";
+import { cleanDocName, formatPage } from "../utils/formatUtils";
 
 
 const api = axios.create({
@@ -76,6 +77,7 @@ export default function TraceExplorer({
   const [searchFilter, setSearchFilter] = useState("");
   const [copiedResponse, setCopiedResponse] = useState(false);
   const [showGlossary, setShowGlossary] = useState(false);
+  const [isLlmOutputOpen, setIsLlmOutputOpen] = useState(false);
 
   useEffect(() => {
     const fetchIfVisible = () => {
@@ -109,6 +111,7 @@ export default function TraceExplorer({
     try {
       const r = await api.get(`/traces/${traceId}`);
       setSelectedTrace(r.data);
+      setIsLlmOutputOpen(false);
       setSidebarOpen(false);
     } finally {
       setLoadingTraceId(null);
@@ -256,9 +259,9 @@ export default function TraceExplorer({
 
                 <span
                   style={{
-                    fontSize: "10px",
+                    fontSize: "12px",
                     fontWeight: 700,
-                    padding: "3px 8px",
+                    padding: "4px 10px",
                     borderRadius: "9999px",
                     background: experimentMode
                       ? "rgba(168, 85, 247, 0.15)"
@@ -271,7 +274,7 @@ export default function TraceExplorer({
                   {experimentMode ? "Lab Observability" : "Production Trace"}
                 </span>
               </div>
-              <p style={{ margin: "2px 0 0", color: "var(--text-muted)", fontSize: "11px", letterSpacing: "0.02em" }}>
+              <p style={{ margin: "2px 0 0", color: "var(--text-muted)", fontSize: "12px", letterSpacing: "0.02em" }}>
                 Execution telemetry &amp; retrieval evaluation kernel
               </p>
             </div>
@@ -505,7 +508,7 @@ export default function TraceExplorer({
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              fontSize: "11px",
+              fontSize: "12px",
               color: "var(--text-muted)",
               textTransform: "uppercase",
               letterSpacing: "0.06em",
@@ -514,7 +517,7 @@ export default function TraceExplorer({
             <span>History ({filteredTraces.length})</span>
             {loadingTraces && (
               <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                <Spinner size={10} /> Syncing
+                <Spinner size={12} /> Syncing
               </span>
             )}
           </div>
@@ -531,7 +534,7 @@ export default function TraceExplorer({
                 }}
               >
                 No traces recorded.
-                <p style={{ margin: "4px 0 0", fontSize: "11px", opacity: 0.7 }}>
+                <p style={{ margin: "4px 0 0", fontSize: "12px", opacity: 0.7 }}>
                   Ask questions in DocPilot to generate live observability telemetry.
                 </p>
               </div>
@@ -599,7 +602,7 @@ export default function TraceExplorer({
 
                     <span
                       style={{
-                        fontSize: "11px",
+                        fontSize: "12px",
                         color: "var(--text-muted)",
                         fontWeight: 500,
                       }}
@@ -679,7 +682,7 @@ export default function TraceExplorer({
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
                     <span
                       style={{
-                        fontSize: "11px",
+                        fontSize: "12px",
                         fontWeight: 700,
                         textTransform: "uppercase",
                         letterSpacing: "0.06em",
@@ -687,9 +690,6 @@ export default function TraceExplorer({
                       }}
                     >
                       User Prompt
-                    </span>
-                    <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-                      · ID: {selectedTrace.trace_id}
                     </span>
                   </div>
                   <h2
@@ -770,60 +770,125 @@ export default function TraceExplorer({
                 })()}
               </div>
 
-              {/* GENERATED RESPONSE */}
+              {/* GENERATED RESPONSE (COLLAPSIBLE) */}
               <div
                 style={{
                   background: "rgba(255, 255, 255, 0.03)",
                   borderRadius: "20px",
-                  padding: "20px 24px",
+                  border: isLlmOutputOpen ? "1px solid rgba(168, 85, 247, 0.3)" : "1px solid rgba(255, 255, 255, 0.06)",
+                  padding: "16px 22px",
+                  transition: "all 0.2s ease",
                 }}
               >
                 <div
+                  onClick={() => setIsLlmOutputOpen(!isLlmOutputOpen)}
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    marginBottom: "12px",
+                    cursor: "pointer",
+                    userSelect: "none",
                   }}
                 >
-                  <span
-                    style={{
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      color: "var(--text-muted)",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.06em",
-                    }}
-                  >
-                    LLM Synthesis Output
-                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <span style={{ fontSize: "16px" }}>✨</span>
+                    <span
+                      style={{
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        color: isLlmOutputOpen ? "var(--text-primary)" : "rgba(255, 255, 255, 0.85)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                      }}
+                    >
+                      LLM Synthesis Output
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        padding: "2px 8px",
+                        borderRadius: "9999px",
+                        background: isLlmOutputOpen ? "rgba(168, 85, 247, 0.2)" : "rgba(255, 255, 255, 0.06)",
+                        color: isLlmOutputOpen ? "#c084fc" : "var(--text-muted)",
+                      }}
+                    >
+                      {isLlmOutputOpen ? "Expanded" : "Click to view full output"}
+                    </span>
+                  </div>
 
-                  <button
-                    onClick={() => copyToClipboard(selectedTrace.response)}
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        copyToClipboard(selectedTrace.response);
+                      }}
+                      title="Copy response"
+                      style={{
+                        padding: "4px 10px",
+                        background: "rgba(255, 255, 255, 0.06)",
+                        border: "none",
+                        borderRadius: "9999px",
+                        color: "var(--text-secondary)",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                      }}
+                    >
+                      {copiedResponse ? "✓ Copied" : "📋 Copy"}
+                    </button>
+                    <span
+                      style={{
+                        fontSize: "12px",
+                        color: "var(--text-muted)",
+                        transform: isLlmOutputOpen ? "rotate(180deg)" : "rotate(0deg)",
+                        transition: "transform 0.2s ease",
+                        display: "inline-block",
+                      }}
+                    >
+                      ▼
+                    </span>
+                  </div>
+                </div>
+
+                {!isLlmOutputOpen && selectedTrace.response && (
+                  <div
+                    onClick={() => setIsLlmOutputOpen(true)}
                     style={{
-                      padding: "4px 10px",
-                      background: "rgba(255, 255, 255, 0.06)",
-                      border: "none",
-                      borderRadius: "9999px",
+                      marginTop: "10px",
+                      padding: "10px 14px",
+                      borderRadius: "12px",
+                      background: "rgba(255, 255, 255, 0.02)",
+                      border: "1px solid rgba(255, 255, 255, 0.04)",
+                      fontSize: "13.5px",
+                      lineHeight: 1.55,
                       color: "var(--text-secondary)",
                       cursor: "pointer",
-                      fontSize: "11px",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
                     }}
                   >
-                    {copiedResponse ? "✓ Copied" : "📋 Copy"}
-                  </button>
-                </div>
+                    {selectedTrace.response}
+                  </div>
+                )}
 
-                <div
-                  style={{
-                    fontSize: "14px",
-                    lineHeight: 1.75,
-                    color: "#e2e8f0",
-                    whiteSpace: "pre-wrap",
-                  }}
-                >
-                  {selectedTrace.response || "No response recorded."}
-                </div>
+                {isLlmOutputOpen && (
+                  <div
+                    style={{
+                      marginTop: "14px",
+                      paddingTop: "14px",
+                      borderTop: "1px solid rgba(255, 255, 255, 0.06)",
+                      fontSize: "14px",
+                      lineHeight: 1.75,
+                      color: "#e2e8f0",
+                      whiteSpace: "pre-wrap",
+                    }}
+                  >
+                    {selectedTrace.response || "No response recorded."}
+                  </div>
+                )}
               </div>
 
               {/* PIPELINE ARCHITECTURE & EXPERIMENT CONFIG */}
@@ -849,11 +914,11 @@ export default function TraceExplorer({
                     </span>
                     <span
                       style={{
-                        padding: "2px 8px",
+                        padding: "3px 10px",
                         borderRadius: "9999px",
                         background: selectedTrace.mode === "experimental" ? "rgba(168, 85, 247, 0.18)" : "rgba(59, 130, 246, 0.14)",
                         color: selectedTrace.mode === "experimental" ? "#c084fc" : "#60a5fa",
-                        fontSize: "10px",
+                        fontSize: "12px",
                         fontWeight: 700,
                         textTransform: "uppercase",
                       }}
@@ -903,12 +968,12 @@ export default function TraceExplorer({
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <span style={{ fontSize: "12px" }}>🧠</span>
-                        <span style={{ fontSize: "11px", color: "#c084fc", fontWeight: 700, textTransform: "uppercase" }}>
+                        <span style={{ fontSize: "14px" }}>🧠</span>
+                        <span style={{ fontSize: "12px", color: "#c084fc", fontWeight: 700, textTransform: "uppercase" }}>
                           Episodic Memory Recalled ({selectedTrace.memory_matches_count || 1}):
                         </span>
                       </div>
-                      <p style={{ margin: "4px 0 0", fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.5, whiteSpace: "pre-line" }}>
+                      <p style={{ margin: "4px 0 0", fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.5, whiteSpace: "pre-line" }}>
                         {selectedTrace.memory_context}
                       </p>
                     </div>
@@ -924,10 +989,10 @@ export default function TraceExplorer({
                         <>
                           {selectedTrace.rewritten_query && selectedTrace.rewritten_query !== selectedTrace.query && (
                             <div style={{ marginTop: "12px", padding: "10px 14px", background: "rgba(0,0,0,0.2)", borderRadius: "12px" }}>
-                              <span style={{ fontSize: "10px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
+                              <span style={{ fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
                                 Rewritten Query Transformation:
                               </span>
-                              <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#38bdf8" }}>
+                              <p style={{ margin: "2px 0 0", fontSize: "13px", color: "#38bdf8" }}>
                                 {selectedTrace.rewritten_query}
                               </p>
                             </div>
@@ -935,12 +1000,12 @@ export default function TraceExplorer({
 
                           {selectedTrace.generated_queries?.length > 1 && (
                             <div style={{ marginTop: "10px", padding: "10px 14px", background: "rgba(0,0,0,0.2)", borderRadius: "12px" }}>
-                              <span style={{ fontSize: "10px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
+                              <span style={{ fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
                                 Multi-Query Variants ({selectedTrace.generated_queries.length}):
                               </span>
                               <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "4px" }}>
                                 {selectedTrace.generated_queries.map((q, i) => (
-                                  <span key={i} style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+                                  <span key={i} style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
                                     • {q}
                                   </span>
                                 ))}
@@ -953,23 +1018,23 @@ export default function TraceExplorer({
 
                     return (
                       <div style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
-                        <span style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.04em" }}>
+                        <span style={{ fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.04em" }}>
                           Query Transformation Pipeline Lifecycle ({tState.active_enhancements?.length || 0} active techniques)
                         </span>
 
                         {/* Phase 1: Context Preparation */}
                         {(tState.standalone_query || tState.resolved_query) && (
                           <div style={{ padding: "10px 14px", background: "rgba(0,0,0,0.25)", borderRadius: "12px" }}>
-                            <span style={{ fontSize: "10px", color: "#818cf8", fontWeight: 700, textTransform: "uppercase" }}>
+                            <span style={{ fontSize: "12px", color: "#818cf8", fontWeight: 700, textTransform: "uppercase" }}>
                               Phase 1: Context Preparation
                             </span>
                             {tState.standalone_query && (
-                              <p style={{ margin: "4px 0 2px", fontSize: "12px", color: "var(--text-secondary)" }}>
+                              <p style={{ margin: "4px 0 2px", fontSize: "13px", color: "var(--text-secondary)" }}>
                                 <strong style={{ color: "var(--text-primary)" }}>Condensed Standalone:</strong> {tState.standalone_query}
                               </p>
                             )}
                             {tState.resolved_query && (
-                              <p style={{ margin: "2px 0 0", fontSize: "12px", color: "var(--text-secondary)" }}>
+                              <p style={{ margin: "2px 0 0", fontSize: "13px", color: "var(--text-secondary)" }}>
                                 <strong style={{ color: "var(--text-primary)" }}>Coreference Resolved:</strong> {tState.resolved_query}
                               </p>
                             )}
@@ -979,10 +1044,10 @@ export default function TraceExplorer({
                         {/* Phase 2: Query Rewrite */}
                         {tState.rewritten_query && tState.rewritten_query !== tState.original_query && (
                           <div style={{ padding: "10px 14px", background: "rgba(0,0,0,0.25)", borderRadius: "12px" }}>
-                            <span style={{ fontSize: "10px", color: "#38bdf8", fontWeight: 700, textTransform: "uppercase" }}>
+                            <span style={{ fontSize: "12px", color: "#38bdf8", fontWeight: 700, textTransform: "uppercase" }}>
                               Phase 2: Retrieval Optimization Rewrite
                             </span>
-                            <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#38bdf8", fontWeight: 500 }}>
+                            <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#38bdf8", fontWeight: 500 }}>
                               {tState.rewritten_query}
                             </p>
                           </div>
@@ -991,27 +1056,27 @@ export default function TraceExplorer({
                         {/* Phase 3: Structuring & Routing */}
                         {(tState.metadata_filters && Object.keys(tState.metadata_filters).length > 0 || tState.route || (tState.sub_queries && tState.sub_queries.length > 1)) && (
                           <div style={{ padding: "10px 14px", background: "rgba(0,0,0,0.25)", borderRadius: "12px" }}>
-                            <span style={{ fontSize: "10px", color: "#34d399", fontWeight: 700, textTransform: "uppercase" }}>
+                            <span style={{ fontSize: "12px", color: "#34d399", fontWeight: 700, textTransform: "uppercase" }}>
                               Phase 3: Structuring &amp; Routing Decisions
                             </span>
 
                             {tState.route && (
                               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "6px", flexWrap: "wrap" }}>
-                                <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Route:</span>
-                                <span style={{ padding: "2px 8px", borderRadius: "9999px", background: "rgba(52, 211, 153, 0.15)", color: "#34d399", fontSize: "11px", fontWeight: 600 }}>
+                                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>Route:</span>
+                                <span style={{ padding: "3px 10px", borderRadius: "9999px", background: "rgba(52, 211, 153, 0.15)", color: "#34d399", fontSize: "12px", fontWeight: 600 }}>
                                   🧭 {tState.route.route || "general_knowledge"} ({Math.round((tState.route.confidence || 0.9) * 100)}% conf)
                                 </span>
                                 {tState.route.reasoning && (
-                                  <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>— {tState.route.reasoning}</span>
+                                  <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>— {tState.route.reasoning}</span>
                                 )}
                               </div>
                             )}
 
                             {tState.metadata_filters && Object.keys(tState.metadata_filters).length > 0 && (
                               <div style={{ display: "flex", gap: "6px", alignItems: "center", marginTop: "6px", flexWrap: "wrap" }}>
-                                <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Filters:</span>
+                                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>Filters:</span>
                                 {Object.entries(tState.metadata_filters).map(([k, v]) => (
-                                  <span key={k} style={{ padding: "2px 8px", borderRadius: "9999px", background: "rgba(255,255,255,0.06)", color: "var(--text-primary)", fontSize: "10px" }}>
+                                  <span key={k} style={{ padding: "3px 10px", borderRadius: "9999px", background: "rgba(255,255,255,0.06)", color: "var(--text-primary)", fontSize: "12px" }}>
                                     🏷️ {k}: <strong>{String(v)}</strong>
                                   </span>
                                 ))}
@@ -1020,11 +1085,11 @@ export default function TraceExplorer({
 
                             {tState.sub_queries?.length > 1 && (
                               <div style={{ marginTop: "6px" }}>
-                                <span style={{ fontSize: "11px", color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>
+                                <span style={{ fontSize: "12px", color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>
                                   Decomposed Sub-Queries ({tState.sub_queries.length}):
                                 </span>
                                 {tState.sub_queries.map((sq, i) => (
-                                  <div key={i} style={{ fontSize: "12px", color: "var(--text-secondary)", marginLeft: "8px" }}>
+                                  <div key={i} style={{ fontSize: "13px", color: "var(--text-secondary)", marginLeft: "8px" }}>
                                     • {sq}
                                   </div>
                                 ))}
@@ -1036,19 +1101,19 @@ export default function TraceExplorer({
                         {/* Phase 4: Expansion & Transformation */}
                         {(tState.step_back_query || (tState.keyword_expansion_terms && tState.keyword_expansion_terms.length > 0)) && (
                           <div style={{ padding: "10px 14px", background: "rgba(0,0,0,0.25)", borderRadius: "12px" }}>
-                            <span style={{ fontSize: "10px", color: "#fbbf24", fontWeight: 700, textTransform: "uppercase" }}>
+                            <span style={{ fontSize: "12px", color: "#fbbf24", fontWeight: 700, textTransform: "uppercase" }}>
                               Phase 4: Conceptual &amp; Keyword Expansion
                             </span>
                             {tState.step_back_query && (
-                              <p style={{ margin: "4px 0 2px", fontSize: "12px", color: "var(--text-secondary)" }}>
+                              <p style={{ margin: "4px 0 2px", fontSize: "13px", color: "var(--text-secondary)" }}>
                                 <strong style={{ color: "var(--text-primary)" }}>Step-Back Query:</strong> {tState.step_back_query}
                               </p>
                             )}
                             {tState.keyword_expansion_terms?.length > 0 && (
                               <div style={{ display: "flex", gap: "4px", alignItems: "center", marginTop: "4px", flexWrap: "wrap" }}>
-                                <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Keywords:</span>
+                                <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>Keywords:</span>
                                 {tState.keyword_expansion_terms.map((kw, i) => (
-                                  <span key={i} style={{ padding: "1px 6px", borderRadius: "9999px", background: "rgba(251, 191, 36, 0.15)", color: "#fbbf24", fontSize: "10px" }}>
+                                  <span key={i} style={{ padding: "2px 8px", borderRadius: "9999px", background: "rgba(251, 191, 36, 0.15)", color: "#fbbf24", fontSize: "12px" }}>
                                     {kw}
                                   </span>
                                 ))}
@@ -1060,24 +1125,24 @@ export default function TraceExplorer({
                         {/* Phase 5: Retrieval Augmentation (HyDE & Multi-Query) */}
                         {(tState.hypothetical_document || (tState.expanded_queries && tState.expanded_queries.length > 1)) && (
                           <div style={{ padding: "10px 14px", background: "rgba(0,0,0,0.25)", borderRadius: "12px" }}>
-                            <span style={{ fontSize: "10px", color: "#c084fc", fontWeight: 700, textTransform: "uppercase" }}>
+                            <span style={{ fontSize: "12px", color: "#c084fc", fontWeight: 700, textTransform: "uppercase" }}>
                               Phase 5: Retrieval Augmentation (HyDE &amp; Multi-Query)
                             </span>
                             {tState.hypothetical_document && (
                               <div style={{ marginTop: "4px", padding: "8px 10px", background: "rgba(168,85,247,0.1)", borderRadius: "8px" }}>
-                                <span style={{ fontSize: "10px", color: "#c084fc", fontWeight: 700 }}>HyDE Synthetic Document Excerpt:</span>
-                                <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#e2e8f0", fontStyle: "italic" }}>
+                                <span style={{ fontSize: "12px", color: "#c084fc", fontWeight: 700 }}>HyDE Synthetic Document Excerpt:</span>
+                                <p style={{ margin: "2px 0 0", fontSize: "13px", color: "#e2e8f0", fontStyle: "italic" }}>
                                   "{tState.hypothetical_document}"
                                 </p>
                               </div>
                             )}
                             {tState.expanded_queries?.length > 1 && (
                               <div style={{ marginTop: "6px" }}>
-                                <span style={{ fontSize: "11px", color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>
+                                <span style={{ fontSize: "12px", color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>
                                   Retrieved Against {tState.expanded_queries.length} Formulations:
                                 </span>
                                 {tState.expanded_queries.map((eq, i) => (
-                                  <div key={i} style={{ fontSize: "12px", color: "var(--text-secondary)", marginLeft: "8px" }}>
+                                  <div key={i} style={{ fontSize: "13px", color: "var(--text-secondary)", marginLeft: "8px" }}>
                                     • {eq}
                                   </div>
                                 ))}
@@ -1089,21 +1154,21 @@ export default function TraceExplorer({
                         {/* Technique Latency & Execution Breakdown */}
                         {tState.technique_traces?.length > 0 && (
                           <div style={{ marginTop: "6px" }}>
-                            <span style={{ fontSize: "10px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700, display: "block", marginBottom: "6px" }}>
+                            <span style={{ fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700, display: "block", marginBottom: "6px" }}>
                               Technique Telemetry &amp; Latency Profiles
                             </span>
                             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "6px" }}>
                               {tState.technique_traces.map((tech, i) => (
                                 <div key={i} style={{ padding: "6px 10px", background: "rgba(255,255,255,0.02)", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.05)" }}>
                                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                    <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-primary)" }}>
+                                    <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-primary)" }}>
                                       {tech.technique.replace(/_/g, " ")}
                                     </span>
-                                    <span style={{ fontSize: "10px", color: tech.status === "success" ? "#34d399" : "#fbbf24" }}>
+                                    <span style={{ fontSize: "12px", color: tech.status === "success" ? "#34d399" : "#fbbf24" }}>
                                       {tech.status === "success" ? "✓" : "⚠"} {Math.round(tech.latency_ms || 0)}ms
                                     </span>
                                   </div>
-                                  <span style={{ fontSize: "9px", color: "var(--text-muted)", display: "block", marginTop: "2px" }}>
+                                  <span style={{ fontSize: "11px", color: "var(--text-muted)", display: "block", marginTop: "2px" }}>
                                     {tech.phase}
                                   </span>
                                 </div>
@@ -1143,7 +1208,7 @@ export default function TraceExplorer({
                   {(() => {
                     const docMap = {};
                     (selectedTrace.retrieved_chunks || []).forEach((c) => {
-                      const name = c.source_file || "Unknown Document";
+                      const name = cleanDocName(c.source_file) || "Unknown Document";
                       docMap[name] = (docMap[name] || 0) + 1;
                     });
                     const docNames = Object.keys(docMap);
@@ -1151,18 +1216,18 @@ export default function TraceExplorer({
 
                     return (
                       <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
-                        <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                        <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
                           {docNames.length} {docNames.length === 1 ? "document" : "documents"} in scope:
                         </span>
                         {docNames.map((d, i) => (
                           <span
                             key={d}
                             style={{
-                              padding: "2px 8px",
+                              padding: "3px 10px",
                               borderRadius: "9999px",
                               background: i % 2 === 0 ? "rgba(56, 189, 248, 0.15)" : "rgba(168, 85, 247, 0.15)",
                               color: i % 2 === 0 ? "#38bdf8" : "#c084fc",
-                              fontSize: "10px",
+                              fontSize: "12px",
                               fontWeight: 600,
                             }}
                           >
@@ -1325,14 +1390,14 @@ function StatTile({ label, value, sub, icon, accent }) {
       </div>
 
       <div>
-        <p style={{ margin: 0, fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>
+        <p style={{ margin: 0, fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>
           {label}
         </p>
         <p style={{ margin: "2px 0 0", fontSize: "17px", fontWeight: "700", color: "var(--text-primary)" }}>
           {value}
         </p>
         {sub && (
-          <p style={{ margin: "1px 0 0", fontSize: "10px", color: "var(--text-muted)" }}>
+          <p style={{ margin: "1px 0 0", fontSize: "12px", color: "var(--text-muted)" }}>
             {sub}
           </p>
         )}
@@ -1353,7 +1418,7 @@ function EvalTile({ label, value, color = "#64748b" }) {
         gap: "4px",
       }}
     >
-      <span style={{ fontSize: "10px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>
+      <span style={{ fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>
         {label}
       </span>
       <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -1375,7 +1440,7 @@ function MetricCard({ label, value }) {
         padding: "10px 14px",
       }}
     >
-      <p style={{ margin: 0, fontSize: "10px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>
+      <p style={{ margin: 0, fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>
         {label}
       </p>
       <p style={{ margin: "2px 0 0", fontSize: "13px", fontWeight: 600, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -1392,8 +1457,8 @@ function PillTag({ color, children }) {
         background: `${color}18`,
         color,
         borderRadius: "9999px",
-        padding: "2px 8px",
-        fontSize: "11px",
+        padding: "3px 9px",
+        fontSize: "12px",
         fontWeight: 600,
         letterSpacing: "0.02em",
         textTransform: "capitalize",
@@ -1438,10 +1503,10 @@ function ChunkCard({ chunk, index }) {
         <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
           <span
             style={{
-              padding: "2px 8px",
+              padding: "3px 9px",
               background: "rgba(255, 255, 255, 0.06)",
               borderRadius: "9999px",
-              fontSize: "11px",
+              fontSize: "12px",
               fontWeight: 700,
               color: "var(--text-primary)",
             }}
@@ -1455,30 +1520,30 @@ function ChunkCard({ chunk, index }) {
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
-                padding: "2px 10px",
+                padding: "3px 10px",
                 borderRadius: "9999px",
                 background: "rgba(56, 189, 248, 0.12)",
                 color: "#38bdf8",
-                fontSize: "11px",
+                fontSize: "12px",
                 fontWeight: 600,
               }}
             >
-              📄 {chunk.source_file}
+              📄 {cleanDocName(chunk.source_file)}
             </span>
           )}
 
           {chunk.page != null && (
             <span
               style={{
-                padding: "2px 8px",
+                padding: "3px 9px",
                 borderRadius: "9999px",
                 background: "rgba(255, 255, 255, 0.05)",
                 color: "var(--text-secondary)",
-                fontSize: "11px",
+                fontSize: "12px",
                 fontWeight: 500,
               }}
             >
-              p. {chunk.page}
+              {formatPage(chunk.page)}
             </span>
           )}
 
@@ -1513,8 +1578,8 @@ function ChunkCard({ chunk, index }) {
                 border: "none",
                 color: "#818cf8",
                 borderRadius: "9999px",
-                padding: "3px 10px",
-                fontSize: "11px",
+                padding: "4px 12px",
+                fontSize: "12px",
                 cursor: "pointer",
                 fontWeight: 600,
               }}
@@ -1526,7 +1591,7 @@ function ChunkCard({ chunk, index }) {
       </div>
 
       {chunk.section_title && (
-        <div style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: 500 }}>
+        <div style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: 500 }}>
           📌 Section: <span style={{ color: "var(--text-secondary)" }}>{chunk.section_title}</span>
         </div>
       )}
@@ -1592,11 +1657,11 @@ function RetrievalDiagnostics({ chunk }) {
       <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
         {stages.map((s, i) => (
           <span key={s.label} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-            <span style={{ fontSize: "11px", fontWeight: 700, color: s.color, textTransform: "uppercase" }}>
+            <span style={{ fontSize: "12px", fontWeight: 700, color: s.color, textTransform: "uppercase" }}>
               {s.label}
             </span>
             {i < stages.length - 1 && (
-              <span style={{ color: "var(--text-muted)", fontSize: "11px", opacity: 0.5 }}>→</span>
+              <span style={{ color: "var(--text-muted)", fontSize: "12px", opacity: 0.5 }}>→</span>
             )}
           </span>
         ))}
@@ -1612,11 +1677,11 @@ function RetrievalDiagnostics({ chunk }) {
               padding: "6px 10px",
             }}
           >
-            <p style={{ margin: "0 0 2px", fontSize: "10px", color: s.color, fontWeight: 700, textTransform: "uppercase" }}>
+            <p style={{ margin: "0 0 2px", fontSize: "12px", color: s.color, fontWeight: 700, textTransform: "uppercase" }}>
               {s.label}
             </p>
             {s.items.map(({ k, v }) => (
-              <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "var(--text-secondary)", marginTop: "2px" }}>
+              <div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px" }}>
                 <span>{k}:</span>
                 <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{v}</span>
               </div>

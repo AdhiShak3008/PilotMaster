@@ -133,7 +133,7 @@ export default function RadarView({ data }) {
                 }}
               >
                 <span style={{ color: entry.color, fontWeight: 700 }}>{entry.dataKey}</span>
-                <span style={{ color: "#ffffff", fontWeight: 600, fontSize: "11.5px", marginLeft: "10px" }}>
+                <span style={{ color: "#ffffff", fontWeight: 600, fontSize: "12px", marginLeft: "10px" }}>
                   {entry.value}/100 {rawFormatted}
                 </span>
               </div>
@@ -165,7 +165,7 @@ export default function RadarView({ data }) {
             angle={30}
             domain={[0, 100]}
             stroke="rgba(255,255,255,0.2)"
-            tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }}
+            tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 12 }}
           />
 
           <Tooltip content={<CustomTooltip />} />

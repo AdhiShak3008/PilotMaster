@@ -81,7 +81,7 @@ export default function MarkdownRenderer({ content, experimentMode }) {
               <span style={{ fontSize: "14px" }}>💭</span>
               <span style={{ color: experimentMode ? "#c084fc" : "#93c5fd" }}>Thought Process</span>
             </span>
-            <span style={{ fontSize: "10px", color: "var(--text-muted)", transform: showThoughts ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}>
+            <span style={{ fontSize: "11px", color: "var(--text-muted)", transform: showThoughts ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}>
               ▼
             </span>
           </button>
@@ -341,7 +341,7 @@ export default function MarkdownRenderer({ content, experimentMode }) {
                     padding: "8px 14px",
                     background: "rgba(255, 255, 255, 0.03)",
                     borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
-                    fontSize: "11px",
+                    fontSize: "12px",
                     color: "var(--text-muted)",
                     fontWeight: 600,
                     textTransform: "uppercase",
@@ -356,7 +356,7 @@ export default function MarkdownRenderer({ content, experimentMode }) {
                       border: "none",
                       color: "var(--text-muted)",
                       cursor: "pointer",
-                      fontSize: "11px",
+                      fontSize: "12px",
                       padding: "2px 6px",
                       borderRadius: "4px",
                     }}

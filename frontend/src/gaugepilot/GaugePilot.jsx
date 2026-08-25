@@ -40,6 +40,16 @@ export default function GaugePilot({ onHome, onDocPilot, onTracePilot }) {
 
   const observersRef = useRef([]);
   const mainRef      = useRef(null);
+  const isNavigatingRef = useRef(false);
+  const navTimerRef  = useRef(null);
+
+  // Helper to accurately get the element top relative to mainRef scroll container
+  const getElementTopInMain = (el, mainEl) => {
+    if (!el || !mainEl) return 0;
+    const mainRect = mainEl.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    return mainEl.scrollTop + (elRect.top - mainRect.top);
+  };
 
   // ── Responsive breakpoints ─────────────────────────────────────────────────
   useEffect(() => {
@@ -49,26 +59,56 @@ export default function GaugePilot({ onHome, onDocPilot, onTracePilot }) {
     return () => window.removeEventListener("resize", check);
   }, []);
 
+  // ── Hash navigation on mount ───────────────────────────────────────────────
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "");
+    if (hash && SECTION_IDS.includes(hash)) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(hash);
+        if (el && mainRef.current) {
+          const targetTop = getElementTopInMain(el, mainRef.current) - 10;
+          mainRef.current.scrollTo({
+            top: Math.max(0, targetTop),
+            behavior: "smooth",
+          });
+          setActiveSection(hash);
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   // ── Scroll spy ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const mainEl = mainRef.current;
     if (!mainEl) return;
 
     const handleScroll = () => {
+      if (isNavigatingRef.current) return;
+
       const scrollTop = mainEl.scrollTop;
       const viewportH = mainEl.clientHeight;
+      const scrollHeight = mainEl.scrollHeight;
+
+      // If scrolled to the bottom of the container, activate the last section
+      if (scrollTop + viewportH >= scrollHeight - 40) {
+        const last = SECTION_IDS[SECTION_IDS.length - 1];
+        if (last) setActiveSection(last);
+        return;
+      }
 
       const sections = SECTION_IDS
         .map((id) => {
           const el = document.getElementById(id);
-          return el ? { id, top: el.offsetTop } : null;
+          if (!el) return null;
+          return { id, top: getElementTopInMain(el, mainEl) };
         })
         .filter(Boolean)
         .sort((a, b) => a.top - b.top);
 
       if (!sections.length) return;
 
-      const threshold = scrollTop + viewportH * 0.4;
+      const threshold = scrollTop + viewportH * 0.35;
       let current = sections[0].id;
       for (const s of sections) {
         if (s.top <= threshold) current = s.id;
@@ -103,8 +143,15 @@ export default function GaugePilot({ onHome, onDocPilot, onTracePilot }) {
     const sectionId = item.scrollTo;
     const element = document.getElementById(sectionId);
     if (element && mainRef.current) {
+      isNavigatingRef.current = true;
+      if (navTimerRef.current) clearTimeout(navTimerRef.current);
+      navTimerRef.current = setTimeout(() => {
+        isNavigatingRef.current = false;
+      }, 700);
+
+      const targetTop = getElementTopInMain(element, mainRef.current) - 10;
       mainRef.current.scrollTo({
-        top: element.offsetTop - 20,
+        top: Math.max(0, targetTop),
         behavior: "smooth",
       });
       setActiveSection(sectionId);
@@ -160,7 +207,7 @@ export default function GaugePilot({ onHome, onDocPilot, onTracePilot }) {
             }}>GaugePilot</h1>
             <p style={{
               margin: "2px 0 0",
-              fontSize: "11px", fontWeight: 600, color: "var(--text-muted)",
+              fontSize: "12px", fontWeight: 600, color: "var(--text-muted)",
               letterSpacing: "0.04em", textTransform: "uppercase", whiteSpace: "nowrap",
             }}>Benchmark Studio</p>
           </div>
@@ -178,7 +225,7 @@ export default function GaugePilot({ onHome, onDocPilot, onTracePilot }) {
               background: "rgba(255,255,255,0.06)",
               border: "none",
               borderRadius: "9999px", color: "var(--text-secondary)", cursor: "pointer",
-              padding: "6px 8px", fontSize: "11px", lineHeight: 1, flexShrink: 0,
+              padding: "6px 8px", fontSize: "12px", lineHeight: 1, flexShrink: 0,
               transition: "all 0.15s",
             }}
             onMouseEnter={(e) => {
@@ -206,7 +253,7 @@ export default function GaugePilot({ onHome, onDocPilot, onTracePilot }) {
             {/* Group label */}
             {!isCollapsed && (
               <div style={{
-                fontSize: "10px", fontWeight: 700, letterSpacing: "0.08em",
+                fontSize: "12px", fontWeight: 700, letterSpacing: "0.08em",
                 textTransform: "uppercase", color: "var(--text-muted)",
                 padding: "8px 12px 4px", userSelect: "none",
               }}>
@@ -306,7 +353,7 @@ export default function GaugePilot({ onHome, onDocPilot, onTracePilot }) {
             experimentMode={true}
           />
           <div style={{
-            fontSize: "11px", color: "var(--text-muted)", lineHeight: 1.4,
+            fontSize: "12px", color: "var(--text-muted)", lineHeight: 1.4,
           }}>
             <p style={{ margin: 0, fontWeight: 600 }}>GaugePilot Engine</p>
             <p style={{ margin: "2px 0 0", opacity: 0.7 }}>Multi-Model Benchmarks</p>

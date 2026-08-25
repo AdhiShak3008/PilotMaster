@@ -4,6 +4,7 @@ import { useDropzone } from "react-dropzone";
 import MarkdownRenderer from "../components/MarkdownRenderer";
 import GlossaryDrawer from "../../components/GlossaryDrawer";
 import GlossaryButton from "../../components/GlossaryButton";
+import { cleanDocName, formatPage } from "../../utils/formatUtils";
 
 
 // ─────────────────────────────────────────────
@@ -45,18 +46,18 @@ function CustomSelector({ label, sublabel, open, onToggle, selectorRef, children
         {badge && (
           <span
             style={{
-              padding: "1px 6px",
+              padding: "2px 8px",
               borderRadius: "9999px",
               background: "rgba(99, 102, 241, 0.25)",
               color: "#c7d2fe",
-              fontSize: "10px",
+              fontSize: "12px",
               fontWeight: 700,
             }}
           >
             {badge}
           </span>
         )}
-        <span style={{ fontSize: "9px", color: "var(--text-muted)", opacity: 0.7 }}>
+        <span style={{ fontSize: "11px", color: "var(--text-muted)", opacity: 0.7 }}>
           {open ? "▲" : "▼"}
         </span>
       </button>
@@ -87,13 +88,13 @@ function CustomSelector({ label, sublabel, open, onToggle, selectorRef, children
       {sublabel && (
         <span
           style={{
-            fontSize: "9px",
+            fontSize: "12px",
             color: "var(--text-muted)",
             marginTop: "2px",
             textAlign: "center",
             letterSpacing: "0.04em",
             textTransform: "uppercase",
-            opacity: 0.7,
+            opacity: 0.8,
           }}
         >
           {sublabel}
@@ -142,7 +143,7 @@ function SelectorItem({ label, subtitle, active, onClick, multiSelect }) {
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "11px",
+                fontSize: "12px",
                 fontWeight: "bold",
                 color: "white",
                 flexShrink: 0,
@@ -172,7 +173,7 @@ function SelectorItem({ label, subtitle, active, onClick, multiSelect }) {
       {subtitle && (
         <div
           style={{
-            fontSize: "11px",
+            fontSize: "12px",
             color: "var(--text-muted)",
             marginTop: "2px",
             paddingLeft: multiSelect ? "24px" : "0",
@@ -655,13 +656,13 @@ function Dashboard({
       if (Array.isArray(docData) && docData.length > 0) {
         const formatted = docData.map((d, index) => ({
           document_id: d.id ?? d.document_id ?? index,
-          filename: d.filename ?? d.name ?? `Document ${index + 1}`,
+          filename: cleanDocName(d.filename ?? d.name ?? `Document ${index + 1}`),
         }));
         setDocuments(formatted);
         setSelectedDocumentIds(formatted.map((d) => d.document_id));
         setSource(
           formatted.length === 1
-            ? formatted[0].filename
+            ? cleanDocName(formatted[0].filename)
             : `${formatted.length} documents`
         );
       } else {
@@ -733,7 +734,10 @@ function Dashboard({
 
       const url = `/docs/upload${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
       const data = await apiRequest(url, "POST", formData);
-      const uploaded = data.uploaded || [];
+      const uploaded = (data.uploaded || []).map((d) => ({
+        ...d,
+        filename: cleanDocName(d.filename),
+      }));
       if (data.detail) {
         alert(data.detail);
       } else {
@@ -746,7 +750,7 @@ function Dashboard({
             const updated = [...prev, ...newOnes];
             setSource(
               updated.length === 1
-                ? updated[0].filename
+                ? cleanDocName(updated[0].filename)
                 : `${updated.length} documents`
             );
             return updated;
@@ -1002,14 +1006,14 @@ function Dashboard({
             >
               DocPilot
             </h1>
-            <span style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: 500 }}>
+            <span style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: 500 }}>
               {username ? `@${username}` : "AI Workspace"}
             </span>
           </div>
 
           <span
             style={{
-              fontSize: "10px",
+              fontSize: "12px",
               fontWeight: 700,
               padding: "3px 8px",
               borderRadius: "9999px",
@@ -1078,7 +1082,7 @@ function Dashboard({
             {isDragActive ? "Drop documents here" : "Upload source files"}
           </p>
           {files.length > 0 && (
-            <p style={{ margin: "4px 0 0", color: "#818cf8", fontSize: "11px", fontWeight: 600 }}>
+            <p style={{ margin: "4px 0 0", color: "#818cf8", fontSize: "12px", fontWeight: 600 }}>
               {files.length} staged · click Upload below
             </p>
           )}
@@ -1117,7 +1121,7 @@ function Dashboard({
           >
             <span
               style={{
-                fontSize: "11px",
+                fontSize: "12px",
                 fontWeight: 600,
                 color: "var(--text-muted)",
                 letterSpacing: "0.06em",
@@ -1135,7 +1139,7 @@ function Dashboard({
                   border: "none",
                   color: "#ef4444",
                   cursor: clearingSessions ? "not-allowed" : "pointer",
-                  fontSize: "11px",
+                  fontSize: "12px",
                   padding: 0,
                   opacity: 0.75,
                 }}
@@ -1158,7 +1162,7 @@ function Dashboard({
                 border: "none",
                 borderRadius: "9999px",
                 color: "var(--text-primary)",
-                fontSize: "11px",
+                fontSize: "12px",
                 outline: "none",
                 marginBottom: "4px",
                 boxSizing: "border-box",
@@ -1440,7 +1444,7 @@ function Dashboard({
                 border: "1px solid rgba(239, 68, 68, 0.2)",
                 borderRadius: "9999px",
                 cursor: deletingDoc ? "not-allowed" : "pointer",
-                fontSize: "11px",
+                fontSize: "12px",
                 fontWeight: 600,
                 display: "inline-flex",
                 alignItems: "center",
@@ -1707,7 +1711,7 @@ function Dashboard({
                               border: "none",
                               color: "var(--text-muted)",
                               cursor: "pointer",
-                              fontSize: "11px",
+                              fontSize: "12px",
                               padding: "4px 6px",
                               borderRadius: "6px",
                               transition: "all 0.15s ease",
@@ -1742,7 +1746,7 @@ function Dashboard({
                               border: "none",
                               color: "var(--text-muted)",
                               cursor: "pointer",
-                              fontSize: "11px",
+                              fontSize: "12px",
                               padding: "4px 6px",
                               borderRadius: "6px",
                               transition: "all 0.15s ease",
@@ -1784,16 +1788,19 @@ function Dashboard({
                                 <div
                                   key={idx}
                                   style={{
-                                    padding: "3px 10px",
-                                    background: "rgba(255, 255, 255, 0.04)",
+                                    padding: "4px 12px",
+                                    background: "rgba(255, 255, 255, 0.05)",
                                     borderRadius: "9999px",
-                                    fontSize: "11px",
+                                    fontSize: "12px",
                                     color: "var(--text-muted)",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "4px",
                                   }}
                                 >
-                                  📄 {s.source || s.file_name || "Document"}{" "}
+                                  📄 {cleanDocName(s.source || s.file_name || s.document_name || "Document")}{" "}
                                   {(s.page || s.page_number) != null && (
-                                    <span style={{ opacity: 0.7 }}>· p. {s.page || s.page_number}</span>
+                                    <span style={{ opacity: 0.8 }}>· {formatPage(s.page || s.page_number)}</span>
                                   )}
                                 </div>
                               ))}
@@ -1813,7 +1820,7 @@ function Dashboard({
                                 border: "none",
                                 color: "var(--text-muted)",
                                 cursor: "pointer",
-                                fontSize: "11px",
+                                fontSize: "12px",
                                 padding: "4px 9px",
                                 borderRadius: "8px",
                                 transition: "all 0.15s ease",
@@ -1855,7 +1862,7 @@ function Dashboard({
                                 border: "none",
                                 color: "var(--text-muted)",
                                 cursor: asking ? "not-allowed" : "pointer",
-                                fontSize: "11px",
+                                fontSize: "12px",
                                 padding: "4px 9px",
                                 borderRadius: "8px",
                                 opacity: asking ? 0.5 : 1,
@@ -1978,7 +1985,7 @@ function Dashboard({
                   onToggle={() => togglePopup("models")}
                   selectorRef={modelSelectorRef}
                 >
-                  <p style={{ margin: "4px 8px 8px", fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
+                  <p style={{ margin: "4px 8px 8px", fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
                     Select LLM Provider
                   </p>
                   {models.map((model) => (
@@ -2016,7 +2023,7 @@ function Dashboard({
                         borderRadius: "8px",
                         color: "#c7d2fe",
                         cursor: "pointer",
-                        fontSize: "11px",
+                        fontSize: "12px",
                         fontWeight: 600,
                       }}
                     >
@@ -2033,7 +2040,7 @@ function Dashboard({
                         borderRadius: "8px",
                         color: "var(--text-muted)",
                         cursor: "pointer",
-                        fontSize: "11px",
+                        fontSize: "12px",
                       }}
                     >
                       Clear All
@@ -2075,7 +2082,7 @@ function Dashboard({
                       onToggle={() => togglePopup("chunkers")}
                       selectorRef={chunkerSelectorRef}
                     >
-                      <p style={{ margin: "4px 8px 8px", fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
+                      <p style={{ margin: "4px 8px 8px", fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
                         Chunking Strategy
                       </p>
                       {CHUNKER_OPTIONS.map((opt) => (
@@ -2099,7 +2106,7 @@ function Dashboard({
                       onToggle={() => togglePopup("embeddings")}
                       selectorRef={embeddingSelectorRef}
                     >
-                      <p style={{ margin: "4px 8px 8px", fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
+                      <p style={{ margin: "4px 8px 8px", fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
                         Embedding Vector Model
                       </p>
                       {EMBEDDING_OPTIONS.map((opt) => (
@@ -2123,7 +2130,7 @@ function Dashboard({
                       onToggle={() => togglePopup("retrieval")}
                       selectorRef={retrievalSelectorRef}
                     >
-                      <p style={{ margin: "4px 8px 8px", fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
+                      <p style={{ margin: "4px 8px 8px", fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
                         Retrieval Technique
                       </p>
                       {RETRIEVAL_STRATEGIES.map((strategy) => (
@@ -2147,7 +2154,7 @@ function Dashboard({
                       onToggle={() => togglePopup("reranker")}
                       selectorRef={rerankerSelectorRef}
                     >
-                      <p style={{ margin: "4px 8px 8px", fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
+                      <p style={{ margin: "4px 8px 8px", fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
                         Cross-Encoder Reranker
                       </p>
                       {RERANKER_OPTIONS.map((option) => (
@@ -2198,11 +2205,11 @@ function Dashboard({
                                   display: "inline-flex",
                                   alignItems: "center",
                                   gap: "3px",
-                                  padding: "1px 7px",
+                                  padding: "2px 8px",
                                   borderRadius: "9999px",
                                   background: "rgba(168, 85, 247, 0.2)",
                                   color: "#c084fc",
-                                  fontSize: "11px",
+                                  fontSize: "12px",
                                   fontWeight: 600,
                                   whiteSpace: "nowrap",
                                 }}
@@ -2210,7 +2217,7 @@ function Dashboard({
                                 {getEnhancementLabel(id)}
                                 <span
                                   onClick={(e) => setSelectedEnhancements((prev) => removeEnhancementPill(prev, id, e))}
-                                  style={{ cursor: "pointer", opacity: 0.7, fontSize: "10px", marginLeft: "2px" }}
+                                  style={{ cursor: "pointer", opacity: 0.7, fontSize: "12px", marginLeft: "2px" }}
                                 >
                                   ✕
                                 </span>
@@ -2219,11 +2226,11 @@ function Dashboard({
                             {selectedEnhancements.filter((e) => e !== "Default").length > 2 && (
                               <span
                                 style={{
-                                  padding: "1px 6px",
+                                  padding: "2px 7px",
                                   borderRadius: "9999px",
                                   background: "rgba(255, 255, 255, 0.1)",
                                   color: "var(--text-muted)",
-                                  fontSize: "10px",
+                                  fontSize: "12px",
                                   fontWeight: 700,
                                 }}
                               >
@@ -2233,20 +2240,20 @@ function Dashboard({
                           </div>
                         )}
 
-                        <span style={{ fontSize: "9px", color: "var(--text-muted)", opacity: 0.7, marginLeft: "auto" }}>
+                        <span style={{ fontSize: "11px", color: "var(--text-muted)", opacity: 0.7, marginLeft: "auto" }}>
                           {showEnhancements ? "▲" : "▼"}
                         </span>
                       </div>
 
                       <span
                         style={{
-                          fontSize: "9px",
+                          fontSize: "12px",
                           color: "var(--text-muted)",
                           marginTop: "2px",
                           textAlign: "center",
                           letterSpacing: "0.04em",
                           textTransform: "uppercase",
-                          opacity: 0.7,
+                          opacity: 0.8,
                         }}
                       >
                         Query Enhancements
@@ -2284,7 +2291,7 @@ function Dashboard({
                               background: selectedEnhancements.includes("Default") || selectedEnhancements.length === 0 ? "rgba(255, 255, 255, 0.15)" : "rgba(255, 255, 255, 0.04)",
                               color: selectedEnhancements.includes("Default") ? "#ffffff" : "var(--text-muted)",
                               cursor: "pointer",
-                              fontSize: "11px",
+                              fontSize: "12px",
                               fontWeight: 600,
                             }}
                           >
@@ -2301,7 +2308,7 @@ function Dashboard({
                               background: ALL_ENHANCEMENT_IDS.every((e) => selectedEnhancements.includes(e)) && selectedEnhancements.length === ALL_ENHANCEMENT_IDS.length ? "rgba(168, 85, 247, 0.25)" : "rgba(255, 255, 255, 0.04)",
                               color: ALL_ENHANCEMENT_IDS.every((e) => selectedEnhancements.includes(e)) ? "#c084fc" : "var(--text-muted)",
                               cursor: "pointer",
-                              fontSize: "11px",
+                              fontSize: "12px",
                               fontWeight: 600,
                             }}
                           >
@@ -2312,7 +2319,7 @@ function Dashboard({
                         {/* CATEGORIZED TECHNIQUES */}
                         {ENHANCEMENT_CATEGORIES.map((cat) => (
                           <div key={cat.category} style={{ marginBottom: "12px" }}>
-                            <p style={{ margin: "2px 8px 6px", fontSize: "10px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.05em" }}>
+                            <p style={{ margin: "2px 8px 6px", fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.05em" }}>
                               {cat.category}
                             </p>
                             {cat.items.map((opt) => (
@@ -2338,7 +2345,7 @@ function Dashboard({
                                 borderRadius: "10px",
                                 background: "rgba(245, 158, 11, 0.12)",
                                 color: "#fbbf24",
-                                fontSize: "11px",
+                                fontSize: "12px",
                                 display: "flex",
                                 alignItems: "center",
                                 gap: "6px",
@@ -2357,7 +2364,7 @@ function Dashboard({
                               border: "none",
                               color: "var(--text-muted)",
                               cursor: "pointer",
-                              fontSize: "11px",
+                              fontSize: "12px",
                               textAlign: "center",
                               padding: "4px",
                             }}

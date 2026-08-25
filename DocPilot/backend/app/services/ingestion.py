@@ -682,7 +682,12 @@ def process_document(
         strategy_key = "parent_child"
 
     all_chunks = []
-    source_file = os.path.basename(file_path)
+    base_file = os.path.basename(file_path)
+    # Strip UUID or hash prefixes so clean PDF/document name is stored in chunk metadata
+    clean_file = re.sub(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}_?", "", base_file)
+    clean_file = re.sub(r"^[0-9a-fA-F]{16,64}_?", "", clean_file)
+    clean_file = re.sub(r"^[0-9a-fA-F-]{32,38}_?", "", clean_file)
+    source_file = clean_file.strip() if clean_file.strip() else base_file
     extension, _ = detect_type(file_path, mime_type)
     chunk_index = 0
 

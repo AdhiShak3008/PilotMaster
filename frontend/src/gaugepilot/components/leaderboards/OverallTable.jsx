@@ -45,7 +45,7 @@ export default function OverallTable({ data, labelMap = null }) {
     padding: "14px 20px",
     background: "rgba(255,255,255,0.025)",
     borderBottom: "1px solid rgba(255,255,255,0.06)",
-    fontWeight: 600, fontSize: "11px", letterSpacing: "0.08em",
+    fontWeight: 600, fontSize: "12px", letterSpacing: "0.08em",
     color: "rgba(255,255,255,0.72)", textAlign: "left",
     whiteSpace: "nowrap", textTransform: "uppercase",
     position: "sticky", top: 0, zIndex: 1,
