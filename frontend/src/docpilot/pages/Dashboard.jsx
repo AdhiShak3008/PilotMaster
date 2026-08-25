@@ -1411,7 +1411,6 @@ function Dashboard({
 
             <a
               href={experimentMode ? "/productionmode/docpilot" : "/experimentalmode/docpilot"}
-              className="interactive-mode-btn"
               onClick={(e) => {
                 if (!e.metaKey && !e.ctrlKey && !e.shiftKey && e.button === 0) {
                   e.preventDefault();
@@ -1420,25 +1419,14 @@ function Dashboard({
               }}
               style={{
                 padding: "6px 14px",
-                background: experimentMode
-                  ? "linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(126, 34, 206, 0.3) 100%)"
-                  : "linear-gradient(135deg, rgba(59, 130, 246, 0.22) 0%, rgba(37, 99, 235, 0.28) 100%)",
-                color: experimentMode ? "#f3e8ff" : "#dbeafe",
-                border: experimentMode
-                  ? "1px solid rgba(192, 132, 252, 0.45)"
-                  : "1px solid rgba(147, 197, 253, 0.4)",
-                boxShadow: experimentMode
-                  ? "0 0 16px rgba(168, 85, 247, 0.35), inset 0 0 8px rgba(168, 85, 247, 0.15)"
-                  : "0 0 16px rgba(59, 130, 246, 0.3), inset 0 0 8px rgba(59, 130, 246, 0.15)",
+                background: experimentMode ? "rgba(168, 85, 247, 0.18)" : "rgba(66, 133, 244, 0.14)",
+                color: experimentMode ? "#c084fc" : "#60a5fa",
                 textDecoration: "none",
                 borderRadius: "9999px",
                 cursor: "pointer",
                 fontSize: "12px",
                 fontWeight: 600,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                transition: "all 0.18s ease",
+                transition: "all 0.15s ease",
               }}
             >
               {experimentMode ? "← Production" : "🧪 Experimental"}
