@@ -379,22 +379,100 @@ function PilotMasterHome({ username, plan, onOpen, onLogout }) {
                 <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
                     <button
                         onClick={toggleMode}
+                        className="interactive-mode-btn"
                         style={{
-                            padding: "8px 20px",
+                            padding: "10px 22px",
                             borderRadius: "9999px",
-                            border: "none",
-                            background: experimentMode ? "rgba(168, 85, 247, 0.18)" : "rgba(66, 133, 244, 0.14)",
-                            color: experimentMode ? "#c084fc" : "#60a5fa",
+                            border: experimentMode
+                                ? "1px solid rgba(192, 132, 252, 0.55)"
+                                : "1px solid rgba(96, 165, 250, 0.55)",
+                            background: experimentMode
+                                ? "linear-gradient(135deg, rgba(88, 28, 135, 0.35) 0%, rgba(147, 51, 234, 0.25) 50%, rgba(219, 39, 119, 0.25) 100%)"
+                                : "linear-gradient(135deg, rgba(29, 78, 216, 0.3) 0%, rgba(99, 102, 241, 0.3) 50%, rgba(168, 85, 247, 0.3) 100%)",
+                            color: "#ffffff",
                             cursor: "pointer",
-                            fontSize: "13px",
-                            fontWeight: "600",
+                            fontSize: "13.5px",
+                            fontWeight: "700",
+                            letterSpacing: "-0.2px",
                             display: "inline-flex",
                             alignItems: "center",
-                            gap: "8px",
-                            transition: "all 0.18s ease",
+                            gap: "10px",
+                            animation: experimentMode
+                                ? "pilot-mode-pulse-exp 3.2s infinite ease-in-out"
+                                : "pilot-mode-pulse-prod 3.2s infinite ease-in-out",
+                            backdropFilter: "blur(12px)",
                         }}
                     >
-                        {experimentMode ? "← Return to Production Mode" : "🧪 Enter Experimentation Mode"}
+                        {experimentMode ? (
+                            <>
+                                <span style={{ fontSize: "14px", opacity: 0.9 }}>←</span>
+                                <span>Return to Production Mode</span>
+                                <span
+                                    style={{
+                                        background: "rgba(59, 130, 246, 0.22)",
+                                        border: "1px solid rgba(147, 197, 253, 0.4)",
+                                        borderRadius: "9999px",
+                                        padding: "2px 8px",
+                                        fontSize: "10px",
+                                        fontWeight: 800,
+                                        letterSpacing: "0.06em",
+                                        textTransform: "uppercase",
+                                        color: "#93c5fd",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "4px",
+                                    }}
+                                >
+                                    <span
+                                        style={{
+                                            width: 6,
+                                            height: 6,
+                                            borderRadius: "50%",
+                                            background: "#60a5fa",
+                                            display: "inline-block",
+                                            animation: "pilot-beacon-ping-blue 1.8s infinite",
+                                        }}
+                                    />
+                                    PROD
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <span style={{ fontSize: "16px", display: "inline-block", animation: "icon-float 2.5s infinite ease-in-out" }}>
+                                    🧪
+                                </span>
+                                <span>Enter Experimentation Mode</span>
+                                <span
+                                    style={{
+                                        background: "rgba(236, 72, 153, 0.22)",
+                                        border: "1px solid rgba(244, 114, 182, 0.45)",
+                                        borderRadius: "9999px",
+                                        padding: "2px 8px",
+                                        fontSize: "10px",
+                                        fontWeight: 800,
+                                        letterSpacing: "0.06em",
+                                        textTransform: "uppercase",
+                                        color: "#f472b6",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "4px",
+                                    }}
+                                >
+                                    <span
+                                        style={{
+                                            width: 6,
+                                            height: 6,
+                                            borderRadius: "50%",
+                                            background: "#f472b6",
+                                            display: "inline-block",
+                                            animation: "pilot-beacon-ping 1.8s infinite",
+                                        }}
+                                    />
+                                    LAB
+                                </span>
+                                <span style={{ fontSize: "14px", opacity: 0.8 }}>→</span>
+                            </>
+                        )}
                     </button>
 
                     <h2
