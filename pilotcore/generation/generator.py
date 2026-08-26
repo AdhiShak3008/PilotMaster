@@ -1,6 +1,6 @@
 from groq import Groq
 
-from pilotcore.config import GROQ_API_KEY, GROQ_MODEL
+from pilotcore.config import GROQ_API_KEY, GROQ_MODEL, GROQ_FAST_MODEL
 from pilotcore.generation.prompt_builder import build_prompt, get_system_instruction
 from pilotcore.models.registry import SUPPORTED_MODELS
 from pilotcore.tracing.telemetry import emit_event

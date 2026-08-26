@@ -9,7 +9,10 @@ function extractThoughts(rawText) {
   const thinkMatch = str.match(/<think>([\s\S]*?)(?:<\/think>|$)/i);
   if (thinkMatch) {
     const thoughts = thinkMatch[1].trim();
-    const answer = str.replace(/<think>[\s\S]*?(?:<\/think>|$)/i, "").trim();
+    let answer = str.replace(/<think>[\s\S]*?(?:<\/think>|$)/i, "").trim();
+    if (!answer && thoughts) {
+      answer = thoughts;
+    }
     return { thoughts, answer };
   }
   return { thoughts: null, answer: str };
