@@ -69,36 +69,53 @@ def ask_question(
         chat_history=chat_history,
     )
 
-    retrieved = trace.retrieval_result.retrieved_chunks
+    retrieved = (
+        getattr(trace.retrieval_result, "retrieved_chunks", [])
+        if trace.retrieval_result
+        else []
+    ) or []
 
     if not retrieved:
         return {
-            "answer": "No relevant context found.",
+            "answer": getattr(trace, "final_response", None) or "No relevant context found.",
             "sources": [],
+            "trace_id": getattr(trace, "trace_id", None),
         }
 
     sources = []
     seen = set()
 
     for item in retrieved:
-
-        key = (
-            item.chunk.source,
-            item.chunk.page_number,
+        chunk_obj = getattr(item, "chunk", item)
+        meta = getattr(chunk_obj, "metadata", {}) or {}
+        
+        source = (
+            getattr(chunk_obj, "source", None)
+            or meta.get("document_name")
+            or meta.get("source_file")
+            or meta.get("source")
+            or "Document"
         )
+        page = (
+            getattr(chunk_obj, "page_number", None)
+            or getattr(chunk_obj, "page", None)
+            or meta.get("page")
+            or meta.get("page_number")
+        )
+
+        key = (source, page)
 
         if key not in seen:
             seen.add(key)
-
             sources.append(
                 {
-                    "source": item.chunk.source,
-                    "page": item.chunk.page_number,
+                    "source": source,
+                    "page": page,
                 }
             )
 
     return {
-        "answer": trace.final_response,
+        "answer": getattr(trace, "final_response", "No response generated."),
         "sources": sources,
-        "trace_id": trace.trace_id,
+        "trace_id": getattr(trace, "trace_id", None),
     }

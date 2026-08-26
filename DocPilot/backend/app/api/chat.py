@@ -112,6 +112,14 @@ def ask(
             status_code=502,
             detail="Groq authentication failed. Check GROQ_API_KEY in .env and restart the server.",
         ) from exc
+    except Exception as exc:
+        print(f"[ERROR] Exception in /chat/ask: {exc}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Retrieval engine error: {str(exc)}",
+        ) from exc
 
     assistant_message = ChatMessage(
         session_id=session_id,

@@ -20,44 +20,45 @@ def generate_response(
     system_instruction = get_system_instruction()
     user_prompt = build_prompt(trace)
 
-
     print(f"\n===== FINAL PROMPT SENT TO LLM ({selected_model}) =====")
-    print(user_prompt)
+    print(user_prompt[:500] + "... [truncated for logging]" if len(user_prompt) > 500 else user_prompt)
     print("===================================\n")
 
-    try:
-        completion = client.chat.completions.create(
-            model=selected_model,
-            messages=[
-                {
-                    "role": "system",
-                    "content": system_instruction,
-                },
-                {
-                    "role": "user",
-                    "content": user_prompt,
-                },
-            ],
-            temperature=0.2,
-            max_tokens=4096,
-        )
-    except Exception as e:
-        print(f"Warning: Model '{selected_model}' failed with error: {e}. Falling back to '{GROQ_MODEL}'.")
-        completion = client.chat.completions.create(
-            model=GROQ_MODEL,
-            messages=[
-                {
-                    "role": "system",
-                    "content": system_instruction,
-                },
-                {
-                    "role": "user",
-                    "content": user_prompt,
-                },
-            ],
-            temperature=0.2,
-            max_tokens=4096,
-        )
+    fallback_models = [selected_model]
+    if GROQ_MODEL not in fallback_models:
+        fallback_models.append(GROQ_MODEL)
+    if GROQ_FAST_MODEL not in fallback_models:
+        fallback_models.append(GROQ_FAST_MODEL)
+
+    completion = None
+    used_model = selected_model
+
+    for idx, model_id in enumerate(fallback_models):
+        max_tok = 2048 if idx == 0 else 1536
+        try:
+            completion = client.chat.completions.create(
+                model=model_id,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": system_instruction,
+                    },
+                    {
+                        "role": "user",
+                        "content": user_prompt,
+                    },
+                ],
+                temperature=0.2,
+                max_tokens=max_tok,
+            )
+            used_model = model_id
+            break
+        except Exception as e:
+            print(f"Warning: Model '{model_id}' failed with error: {e}. Trying next fallback...")
+            continue
+
+    if completion is None:
+        raise RuntimeError("All Groq generation model fallbacks failed. Check API key or rate limits.")
 
     response = completion.choices[0].message.content
 
@@ -68,7 +69,7 @@ def generate_response(
         {
             "trace_id": trace.trace_id,
             "response_length": len(response),
-            "model": selected_model,
+            "model": used_model,
         },
     )
 

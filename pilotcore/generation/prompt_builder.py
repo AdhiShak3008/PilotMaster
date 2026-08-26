@@ -82,13 +82,16 @@ def build_prompt(trace, chat_history=None):
     if memory_context:
         prompt_sections.append(f"User Episodic Memory Context:\n{memory_context}")
 
-    # Check for Conversational Working Memory Buffer
+    # Check for Conversational Working Memory Buffer (keep last 4 turns, truncate older responses)
     history = chat_history or getattr(trace, "chat_history", None)
     if history and len(history) > 0:
         history_lines = []
-        for msg in history[-8:]:  # Keep last 8 turns (4 full Q&A pairs)
+        for msg in history[-4:]:  # Keep last 4 turns (2 full Q&A pairs)
             role = msg.get("role", "user")
-            content = msg.get("content", "").strip()
+            content = (msg.get("content") or "").strip()
+            # If assistant response in history is very long, truncate to avoid token bloat
+            if role == "assistant" and len(content) > 800:
+                content = content[:800] + "... [truncated historical response]"
             if content:
                 history_lines.append(f"{role.capitalize()}: {content}")
         if history_lines:
