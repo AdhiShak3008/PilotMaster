@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import axios from "axios";
 import LoadingOverlay from "../components/LoadingOverlay";
 import GlossaryDrawer from "../components/GlossaryDrawer";
@@ -78,6 +78,29 @@ export default function TraceExplorer({
   const [copiedResponse, setCopiedResponse] = useState(false);
   const [showGlossary, setShowGlossary] = useState(false);
   const [isLlmOutputOpen, setIsLlmOutputOpen] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const rootRef = useRef(null);
+
+  useEffect(() => {
+    const el = rootRef.current;
+    const handleScroll = () => {
+      const scrollY = el ? el.scrollTop : (window.scrollY || 0);
+      setShowScrollTop(scrollY > 160);
+    };
+    if (el) el.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      if (el) el.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  const scrollToTop = () => {
+    if (rootRef.current) {
+      rootRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   useEffect(() => {
     const fetchIfVisible = () => {
@@ -178,12 +201,13 @@ export default function TraceExplorer({
 
   return (
     <div
+      ref={rootRef}
       className="trace-root"
       style={{
         display: "flex",
         flexDirection: "column",
         width: "100vw",
-        height: "100vh",
+        height: "100dvh",
         background: "var(--bg-primary)",
         color: "var(--text-primary)",
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
@@ -550,7 +574,10 @@ export default function TraceExplorer({
               return (
                 <div
                   key={trace.trace_id}
-                  onClick={() => loadTrace(trace.trace_id)}
+                  onClick={() => {
+                    loadTrace(trace.trace_id);
+                    setSidebarOpen(false);
+                  }}
                   style={{
                     padding: "10px 14px",
                     borderRadius: "14px",
@@ -1355,6 +1382,39 @@ export default function TraceExplorer({
         page="tracepilot"
         mode={experimentMode ? "exp" : "prod"}
       />
+
+      {/* FLOATING RETURN TO TOP TRIGGER ON MOBILE */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="trace-scroll-top-btn"
+          aria-label="Scroll back to top"
+          style={{
+            position: "fixed",
+            bottom: "22px",
+            right: "20px",
+            zIndex: 9999,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "8px 14px",
+            borderRadius: "9999px",
+            background: experimentMode
+              ? "linear-gradient(135deg, rgba(168, 85, 247, 0.95), rgba(126, 34, 206, 0.98))"
+              : "linear-gradient(135deg, rgba(56, 189, 248, 0.95), rgba(37, 99, 235, 0.98))",
+            color: "#ffffff",
+            border: "1px solid rgba(255, 255, 255, 0.25)",
+            boxShadow: "0 8px 24px rgba(0, 0, 0, 0.45)",
+            fontSize: "12px",
+            fontWeight: 700,
+            cursor: "pointer",
+            backdropFilter: "blur(8px)",
+            animation: "pilot-fade-in 0.2s ease-out",
+          }}
+        >
+          ↑ Top
+        </button>
+      )}
     </div>
   );
 }
