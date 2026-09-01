@@ -76,6 +76,7 @@ export default function TraceExplorer({
   const [resetMessage, setResetMessage] = useState("");
   const [searchFilter, setSearchFilter] = useState("");
   const [copiedResponse, setCopiedResponse] = useState(false);
+  const [showGlossary, setShowGlossary] = useState(false);
   const [isLlmOutputOpen, setIsLlmOutputOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [traceScope, setTraceScope] = useState("mode"); // "mode" | "all"
