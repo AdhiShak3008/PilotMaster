@@ -76,9 +76,9 @@ export default function TraceExplorer({
   const [resetMessage, setResetMessage] = useState("");
   const [searchFilter, setSearchFilter] = useState("");
   const [copiedResponse, setCopiedResponse] = useState(false);
-  const [showGlossary, setShowGlossary] = useState(false);
   const [isLlmOutputOpen, setIsLlmOutputOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [traceScope, setTraceScope] = useState("mode"); // "mode" | "all"
   const rootRef = useRef(null);
   const selectedIdRef = useRef(null);
   const loadingTraceIdRef = useRef(null);
@@ -111,10 +111,10 @@ export default function TraceExplorer({
 
   function fetchTraces(silent = false) {
     if (!silent) setLoadingTraces(true);
-    const mode = experimentMode ? "experimental" : "production";
+    const modeParam = traceScope === "all" ? "all" : (experimentMode ? "experimental" : "production");
     api
       .get("/traces", {
-        params: { mode },
+        params: { mode: modeParam },
       })
       .then((r) => {
         const list = Array.isArray(r.data) ? r.data : [];
@@ -139,9 +139,6 @@ export default function TraceExplorer({
   }
 
   useEffect(() => {
-    selectedIdRef.current = null;
-    setSelectedId(null);
-    setSelectedTrace(null);
     fetchTraces(false);
 
     const onVisibilityChange = () => {
@@ -167,7 +164,7 @@ export default function TraceExplorer({
       window.removeEventListener("focus", onFocus);
       clearInterval(interval);
     };
-  }, [experimentMode]);
+  }, [experimentMode, traceScope]);
 
   async function loadTrace(traceId) {
     if (!traceId || loadingTraceIdRef.current === traceId) return;
@@ -601,6 +598,67 @@ export default function TraceExplorer({
             }}
           />
 
+          {/* Scope Segmented Control */}
+          <div
+            style={{
+              display: "flex",
+              gap: "4px",
+              background: "rgba(255, 255, 255, 0.04)",
+              padding: "3px",
+              borderRadius: "9999px",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setTraceScope("mode")}
+              style={{
+                flex: 1,
+                padding: "4px 8px",
+                border: "none",
+                borderRadius: "9999px",
+                background:
+                  traceScope === "mode"
+                    ? experimentMode
+                      ? "rgba(168, 85, 247, 0.25)"
+                      : "rgba(59, 130, 246, 0.25)"
+                    : "transparent",
+                color:
+                  traceScope === "mode"
+                    ? experimentMode
+                      ? "#c084fc"
+                      : "#60a5fa"
+                    : "var(--text-muted)",
+                fontSize: "11px",
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+              }}
+            >
+              {experimentMode ? "🧪 Lab Mode" : "🏢 Prod Mode"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setTraceScope("all")}
+              style={{
+                flex: 1,
+                padding: "4px 8px",
+                border: "none",
+                borderRadius: "9999px",
+                background:
+                  traceScope === "all"
+                    ? "rgba(255, 255, 255, 0.15)"
+                    : "transparent",
+                color: traceScope === "all" ? "#ffffff" : "var(--text-muted)",
+                fontSize: "11px",
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+              }}
+            >
+              🌐 All Traces
+            </button>
+          </div>
+
           <div
             style={{
               padding: "2px 8px",
@@ -698,6 +756,12 @@ export default function TraceExplorer({
                     }}
                   >
                     <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                      {trace.mode === "experimental" && (
+                        <PillTag color="#c084fc">Exp</PillTag>
+                      )}
+                      {trace.mode === "production" && (
+                        <PillTag color="#60a5fa">Prod</PillTag>
+                      )}
                       <PillTag color={relevanceColor[rel] || "#64748b"}>{rel}</PillTag>
                       {trace.grounded && <PillTag color="#10b981">Grounded</PillTag>}
                       {trace.parent_trace_id && <PillTag color="#a855f7">Replay</PillTag>}

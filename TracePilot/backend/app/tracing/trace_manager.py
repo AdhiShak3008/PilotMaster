@@ -105,33 +105,57 @@ def get_traces(
     conn = get_connection()
     cursor = conn.cursor()
 
-    if retrieval_quality and mode:
+    if retrieval_quality and mode and mode != "all":
+        if mode == "production":
+            cursor.execute(
+                """
+                SELECT *
+                FROM traces
+                WHERE retrieval_quality = %s
+                AND (mode = %s OR mode IS NULL OR mode = '')
+                ORDER BY timestamp DESC
+                """,
+                (
+                    retrieval_quality,
+                    mode,
+                ),
+            )
+        else:
+            cursor.execute(
+                """
+                SELECT *
+                FROM traces
+                WHERE retrieval_quality = %s
+                AND mode = %s
+                ORDER BY timestamp DESC
+                """,
+                (
+                    retrieval_quality,
+                    mode,
+                ),
+            )
 
-        cursor.execute(
-            """
-            SELECT *
-            FROM traces
-            WHERE retrieval_quality = %s
-            AND mode = %s
-            ORDER BY timestamp DESC
-            """,
-            (
-                retrieval_quality,
-                mode,
-            ),
-        )
-
-    elif mode:
-
-        cursor.execute(
-            """
-            SELECT *
-            FROM traces
-            WHERE mode = %s
-            ORDER BY timestamp DESC
-            """,
-            (mode,),
-        )
+    elif mode and mode != "all":
+        if mode == "production":
+            cursor.execute(
+                """
+                SELECT *
+                FROM traces
+                WHERE mode = %s OR mode IS NULL OR mode = ''
+                ORDER BY timestamp DESC
+                """,
+                (mode,),
+            )
+        else:
+            cursor.execute(
+                """
+                SELECT *
+                FROM traces
+                WHERE mode = %s
+                ORDER BY timestamp DESC
+                """,
+                (mode,),
+            )
 
     elif retrieval_quality:
 
