@@ -388,6 +388,20 @@ style.textContent = `
       padding: 8px 10px !important;
     }
 
+    .docpilot-selector-popup {
+      position: fixed !important;
+      bottom: 84px !important;
+      left: 12px !important;
+      right: 12px !important;
+      width: auto !important;
+      max-width: 440px !important;
+      margin: 0 auto !important;
+      max-height: min(480px, 62vh) !important;
+      z-index: 999999 !important;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.18) !important;
+      animation: pilot-fade-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
     .trace-root {
       height: 100% !important;
       min-height: 100dvh !important;

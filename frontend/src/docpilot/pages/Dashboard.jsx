@@ -65,6 +65,7 @@ function CustomSelector({ label, sublabel, open, onToggle, selectorRef, children
 
       {open && (
         <div
+          className="docpilot-selector-popup"
           style={{
             position: "absolute",
             bottom: "calc(100% + 8px)",
@@ -73,9 +74,9 @@ function CustomSelector({ label, sublabel, open, onToggle, selectorRef, children
             maxWidth: "calc(100vw - 28px)",
             maxHeight: "360px",
             overflowY: "auto",
-            zIndex: 9999,
+            zIndex: 999999,
             borderRadius: "18px",
-            background: "rgba(22, 27, 46, 0.95)",
+            background: "rgba(22, 27, 46, 0.96)",
             boxShadow: "0 20px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1)",
             backdropFilter: "blur(24px)",
             padding: "8px",
@@ -986,6 +987,28 @@ let _cachedModels = null;
           className="mobile-drawer-backdrop"
           aria-label="Close conversations"
           onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Mobile backdrop for selector popups */}
+      {(showModels || showDocuments || showChunkers || showEmbeddings || showRetrieval || showReranker || showEnhancements) && (
+        <button
+          className="mobile-drawer-backdrop"
+          aria-label="Close selector"
+          onClick={() => {
+            setShowModels(false);
+            setShowDocuments(false);
+            setShowChunkers(false);
+            setShowEmbeddings(false);
+            setShowRetrieval(false);
+            setShowReranker(false);
+            setShowEnhancements(false);
+          }}
+          style={{
+            zIndex: 99990,
+            background: "rgba(0, 0, 0, 0.4)",
+            border: "none",
+          }}
         />
       )}
 
@@ -2278,6 +2301,7 @@ let _cachedModels = null;
 
                       {showEnhancements && (
                         <div
+                          className="docpilot-selector-popup"
                           style={{
                           position: "absolute",
                           bottom: "calc(100% + 8px)",
@@ -2286,7 +2310,7 @@ let _cachedModels = null;
                           maxWidth: "calc(100vw - 32px)",
                           maxHeight: "440px",
                           overflowY: "auto",
-                          zIndex: 9999,
+                          zIndex: 999999,
                           borderRadius: "18px",
                           background: "rgba(22, 27, 46, 0.96)",
                           boxShadow: "0 20px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1)",

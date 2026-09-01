@@ -102,30 +102,60 @@ export default function TraceExplorer({
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  function fetchTraces(silent = false) {
+    if (!silent) setLoadingTraces(true);
+    const mode = experimentMode ? "experimental" : "production";
+    api
+      .get("/traces", {
+        params: { mode },
+      })
+      .then((r) => {
+        const list = Array.isArray(r.data) ? r.data : [];
+        setTraces(list);
+        if (list.length > 0) {
+          if (!selectedId || !list.some((t) => t.trace_id === selectedId)) {
+            loadTrace(list[0].trace_id);
+          }
+        } else {
+          setSelectedTrace(null);
+          setSelectedId(null);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch traces", err);
+      })
+      .finally(() => {
+        if (!silent) setLoadingTraces(false);
+      });
+  }
+
   useEffect(() => {
-    const fetchIfVisible = () => {
+    fetchTraces(false);
+
+    const onVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        fetchTraces();
+        fetchTraces(true);
       }
     };
 
-    fetchIfVisible();
-    const interval = setInterval(fetchIfVisible, 15000);
-    return () => clearInterval(interval);
-  }, [experimentMode]);
+    const onFocus = () => {
+      fetchTraces(true);
+    };
 
-  function fetchTraces() {
-    setLoadingTraces(true);
-    api
-      .get("/traces", {
-        params: {
-          mode: experimentMode ? "experimental" : "production",
-        },
-      })
-      .then((r) => setTraces(r.data || []))
-      .catch(() => {})
-      .finally(() => setLoadingTraces(false));
-  }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("focus", onFocus);
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchTraces(true);
+      }
+    }, 4000);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("focus", onFocus);
+      clearInterval(interval);
+    };
+  }, [experimentMode]);
 
   async function loadTrace(traceId) {
     if (loadingTraceId) return;
@@ -408,6 +438,29 @@ export default function TraceExplorer({
               {experimentMode ? "← Production" : "🧪 Experimental"}
             </a>
 
+
+            <button
+              onClick={() => fetchTraces(false)}
+              disabled={loadingTraces}
+              title="Refresh telemetry traces"
+              style={{
+                padding: "6px 14px",
+                background: "rgba(255, 255, 255, 0.05)",
+                color: "var(--text-secondary)",
+                border: "none",
+                borderRadius: "9999px",
+                cursor: loadingTraces ? "not-allowed" : "pointer",
+                fontSize: "12px",
+                fontWeight: 500,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <span style={{ display: "inline-block", animation: loadingTraces ? "pilot-spin 0.8s linear infinite" : "none" }}>🔄</span>
+              Refresh
+            </button>
 
             <button
               onClick={resetTraces}

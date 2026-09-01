@@ -372,15 +372,58 @@ def _emit_trace(
     print("\n===== PIPELINE CONFIG =====")
     print(payload["pipeline_config"])
     print("===========================\n")
+    # 1. Direct database save for guaranteed in-process persistence
+    saved_directly = False
     try:
-        resp = requests.post(
-            f"{TRACEPILOT_URL}/tracepilot/ingest",
-            json=payload,
-            timeout=5,
+        from TracePilot.backend.app.tracing.trace_manager import save_trace as direct_save_trace
+        from TracePilot.backend.app.models.trace import Trace as TpTrace, RetrievedChunk as TpChunk
+        from datetime import datetime
+
+        tp_trace = TpTrace(
+            trace_id=payload["trace_id"],
+            query=payload["query"],
+            rewritten_query=payload.get("rewritten_query"),
+            generated_queries=payload.get("generated_queries", []),
+            transformation_state=payload.get("transformation_state"),
+            retrieved_chunks=[TpChunk(**c) for c in payload.get("retrieved_chunks", [])],
+            prompt=payload.get("prompt", ""),
+            response=payload.get("response", ""),
+            latency=payload.get("latency", 0),
+            timestamp=datetime.utcnow(),
+            model_name=payload.get("model_name"),
+            retrieval_score_avg=payload.get("retrieval_score_avg"),
+            response_length=payload.get("response_length", 0),
+            chunk_count=payload.get("chunk_count", 0),
+            parent_trace_id=payload.get("parent_trace_id"),
+            retrieval_quality=payload.get("retrieval_quality", "medium"),
+            grounded=payload.get("grounded", True),
+            top_retrieval_score=payload.get("top_retrieval_score"),
+            spans=payload.get("spans", []),
+            failure_types=payload.get("failure_types", []),
+            prompt_mode=payload.get("prompt_mode", "strict"),
+            evaluation=payload.get("evaluation", {}),
+            user_id=payload.get("user_id"),
+            source=payload.get("source"),
+            evaluator_version=payload.get("evaluator_version", "1.0"),
+            prompt_version=payload.get("prompt_version", "1.0"),
+            retriever_version=payload.get("retriever_version", "hybrid_rrf_v1"),
+            mode=payload.get("mode", "production"),
+            pipeline_config=payload.get("pipeline_config", {}),
         )
+        direct_save_trace(tp_trace)
+        saved_directly = True
+        print(f"[TracePilot] Direct DB save succeeded for trace {payload['trace_id']}")
+    except Exception as d_err:
+        print(f"[TracePilot] Direct DB save fallback failed: {repr(d_err)}")
 
-        print(f"[TracePilot] ingest status={resp.status_code}")
-        print(f"[TracePilot] response={resp.text}")
-
-    except Exception as e:
-        print(f"[TracePilot] ingest failed: {repr(e)}")
+    # 2. HTTP ingest fallback if direct DB save didn't execute
+    if not saved_directly:
+        try:
+            resp = requests.post(
+                f"{TRACEPILOT_URL}/tracepilot/ingest",
+                json=payload,
+                timeout=5,
+            )
+            print(f"[TracePilot] HTTP ingest status={resp.status_code}")
+        except Exception as e:
+            print(f"[TracePilot] HTTP ingest failed: {repr(e)}")
