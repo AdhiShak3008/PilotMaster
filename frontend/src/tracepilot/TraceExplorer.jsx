@@ -80,6 +80,13 @@ export default function TraceExplorer({
   const [isLlmOutputOpen, setIsLlmOutputOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const rootRef = useRef(null);
+  const selectedIdRef = useRef(null);
+  const loadingTraceIdRef = useRef(null);
+
+  // Keep ref in sync
+  useEffect(() => {
+    selectedIdRef.current = selectedId;
+  }, [selectedId]);
 
   useEffect(() => {
     const el = rootRef.current;
@@ -113,12 +120,14 @@ export default function TraceExplorer({
         const list = Array.isArray(r.data) ? r.data : [];
         setTraces(list);
         if (list.length > 0) {
-          if (!selectedId || !list.some((t) => t.trace_id === selectedId)) {
+          const currentSelected = selectedIdRef.current;
+          if (!currentSelected || !list.some((t) => t.trace_id === currentSelected)) {
             loadTrace(list[0].trace_id);
           }
         } else {
           setSelectedTrace(null);
           setSelectedId(null);
+          selectedIdRef.current = null;
         }
       })
       .catch((err) => {
@@ -130,6 +139,9 @@ export default function TraceExplorer({
   }
 
   useEffect(() => {
+    selectedIdRef.current = null;
+    setSelectedId(null);
+    setSelectedTrace(null);
     fetchTraces(false);
 
     const onVisibilityChange = () => {
@@ -158,16 +170,26 @@ export default function TraceExplorer({
   }, [experimentMode]);
 
   async function loadTrace(traceId) {
-    if (loadingTraceId) return;
+    if (!traceId || loadingTraceIdRef.current === traceId) return;
     setSelectedId(traceId);
+    selectedIdRef.current = traceId;
     setLoadingTraceId(traceId);
+    loadingTraceIdRef.current = traceId;
     try {
       const r = await api.get(`/traces/${traceId}`);
-      setSelectedTrace(r.data);
-      setIsLlmOutputOpen(false);
-      setSidebarOpen(false);
+      // Only update if the user hasn't switched to another trace in the meantime
+      if (selectedIdRef.current === traceId) {
+        setSelectedTrace(r.data);
+        setIsLlmOutputOpen(false);
+        setSidebarOpen(false);
+      }
+    } catch (err) {
+      console.error("Failed to load trace details", err);
     } finally {
-      setLoadingTraceId(null);
+      if (loadingTraceIdRef.current === traceId) {
+        setLoadingTraceId(null);
+        loadingTraceIdRef.current = null;
+      }
     }
   }
 
@@ -618,7 +640,8 @@ export default function TraceExplorer({
             )}
 
             {filteredTraces.map((trace) => {
-              const isSelected = selectedId === trace.trace_id;
+              const activeId = selectedId || selectedTrace?.trace_id;
+              const isSelected = activeId === trace.trace_id;
               const rel =
                 trace.evaluation?.retrieval_relevance ||
                 trace.retrieval_quality ||
