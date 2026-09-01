@@ -389,6 +389,13 @@ style.textContent = `
       padding: 8px 10px !important;
     }
 
+    .pill-scroll-bar {
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      scrollbar-width: none !important;
+      flex-wrap: nowrap !important;
+    }
+
     .docpilot-selector-popup {
       position: fixed !important;
       bottom: 84px !important;

@@ -11,7 +11,27 @@ import { cleanDocName, formatPage } from "../../utils/formatUtils";
 // ─────────────────────────────────────────────
 // Shared custom popup selector (Google Pill Style)
 // ─────────────────────────────────────────────
-function CustomSelector({ label, sublabel, open, onToggle, selectorRef, children, badge = null }) {
+function CustomSelector({
+  label,
+  sublabel,
+  badge,
+  open,
+  onToggle,
+  children,
+  selectorRef,
+  experimentMode = false,
+}) {
+  const activeBg = experimentMode
+    ? "rgba(168, 85, 247, 0.18)"
+    : "rgba(59, 130, 246, 0.18)";
+  const activeBorder = experimentMode
+    ? "1px solid rgba(168, 85, 247, 0.45)"
+    : "1px solid rgba(59, 130, 246, 0.45)";
+  const badgeBg = experimentMode
+    ? "rgba(168, 85, 247, 0.25)"
+    : "rgba(59, 130, 246, 0.25)";
+  const badgeColor = experimentMode ? "#d8b4fe" : "#93c5fd";
+
   return (
     <div
       style={{
@@ -25,8 +45,8 @@ function CustomSelector({ label, sublabel, open, onToggle, selectorRef, children
         type="button"
         onClick={onToggle}
         style={{
-          background: open ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.05)",
-          border: open ? "1px solid rgba(255, 255, 255, 0.2)" : "1px solid transparent",
+          background: open ? activeBg : "rgba(255, 255, 255, 0.05)",
+          border: open ? activeBorder : "1px solid transparent",
           color: "var(--text-primary)",
           cursor: "pointer",
           padding: "6px 12px",
@@ -49,8 +69,8 @@ function CustomSelector({ label, sublabel, open, onToggle, selectorRef, children
             style={{
               padding: "2px 8px",
               borderRadius: "9999px",
-              background: "rgba(99, 102, 241, 0.25)",
-              color: "#c7d2fe",
+              background: badgeBg,
+              color: badgeColor,
               fontSize: "12px",
               fontWeight: 700,
             }}
@@ -78,8 +98,10 @@ function CustomSelector({ label, sublabel, open, onToggle, selectorRef, children
             borderRadius: "18px",
             background: "#0f172a",
             color: "#f8fafc",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-            boxShadow: "0 24px 60px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.15)",
+            border: experimentMode ? "1px solid rgba(168, 85, 247, 0.35)" : "1px solid rgba(59, 130, 246, 0.35)",
+            boxShadow: experimentMode
+              ? "0 24px 60px rgba(0, 0, 0, 0.95), 0 0 20px rgba(168, 85, 247, 0.12)"
+              : "0 24px 60px rgba(0, 0, 0, 0.95), 0 0 20px rgba(59, 130, 246, 0.12)",
             padding: "8px",
             boxSizing: "border-box",
           }}
@@ -107,7 +129,24 @@ function CustomSelector({ label, sublabel, open, onToggle, selectorRef, children
   );
 }
 
-function SelectorItem({ label, subtitle, active, onClick, multiSelect }) {
+function SelectorItem({
+  label,
+  subtitle,
+  active,
+  onClick,
+  multiSelect,
+  experimentMode = false,
+}) {
+  const activeBg = experimentMode
+    ? "rgba(168, 85, 247, 0.22)"
+    : "rgba(59, 130, 246, 0.22)";
+  const activeBorder = experimentMode
+    ? "1px solid rgba(168, 85, 247, 0.45)"
+    : "1px solid rgba(59, 130, 246, 0.45)";
+  const activeCheckboxBg = experimentMode ? "#a855f7" : "#3b82f6";
+  const activeCheckColor = experimentMode ? "#c084fc" : "#60a5fa";
+  const activeTextColor = experimentMode ? "#f3e8ff" : "#eff6ff";
+
   return (
     <div
       onClick={onClick}
@@ -115,14 +154,17 @@ function SelectorItem({ label, subtitle, active, onClick, multiSelect }) {
         padding: "8px 12px",
         borderRadius: "12px",
         cursor: "pointer",
-        background: active ? "rgba(99, 102, 241, 0.18)" : "transparent",
-        color: active ? "#ffffff" : "var(--text-secondary)",
+        background: active ? activeBg : "transparent",
+        border: active ? activeBorder : "1px solid transparent",
+        color: active ? activeTextColor : "var(--text-secondary)",
         transition: "all 0.15s ease",
-        marginBottom: "2px",
+        marginBottom: "3px",
       }}
       onMouseEnter={(e) => {
         if (!active) {
-          e.currentTarget.style.background = "rgba(255, 255, 255, 0.06)";
+          e.currentTarget.style.background = experimentMode
+            ? "rgba(168, 85, 247, 0.08)"
+            : "rgba(59, 130, 246, 0.08)";
           e.currentTarget.style.color = "#ffffff";
         }
       }}
@@ -142,7 +184,7 @@ function SelectorItem({ label, subtitle, active, onClick, multiSelect }) {
                 height: "16px",
                 borderRadius: "5px",
                 border: active ? "none" : "1.5px solid rgba(255, 255, 255, 0.2)",
-                background: active ? "#6366f1" : "transparent",
+                background: active ? activeCheckboxBg : "transparent",
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -169,7 +211,7 @@ function SelectorItem({ label, subtitle, active, onClick, multiSelect }) {
         </div>
 
         {!multiSelect && active && (
-          <span style={{ fontSize: "12px", color: "#818cf8", fontWeight: "bold" }}>✓</span>
+          <span style={{ fontSize: "13px", color: activeCheckColor, fontWeight: "bold" }}>✓</span>
         )}
       </div>
 
@@ -177,11 +219,11 @@ function SelectorItem({ label, subtitle, active, onClick, multiSelect }) {
         <div
           style={{
             fontSize: "12px",
-            color: "var(--text-muted)",
+            color: active ? (experimentMode ? "#d8b4fe" : "#bfdbfe") : "var(--text-muted)",
             marginTop: "2px",
             paddingLeft: multiSelect ? "24px" : "0",
             lineHeight: 1.3,
-            opacity: 0.8,
+            opacity: active ? 0.95 : 0.8,
           }}
         >
           {subtitle}
@@ -989,27 +1031,6 @@ let _cachedModels = null;
           className="mobile-drawer-backdrop"
           aria-label="Close conversations"
           onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Mobile touch dismisser for selector popups (no blur, pure clean dismiss) */}
-      {(showModels || showDocuments || showChunkers || showEmbeddings || showRetrieval || showReranker || showEnhancements) && (
-        <div
-          onClick={() => {
-            setShowModels(false);
-            setShowDocuments(false);
-            setShowChunkers(false);
-            setShowEmbeddings(false);
-            setShowRetrieval(false);
-            setShowReranker(false);
-            setShowEnhancements(false);
-          }}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 999990,
-            background: "rgba(0, 0, 0, 0.3)",
-          }}
         />
       )}
 
@@ -1946,7 +1967,7 @@ let _cachedModels = null;
           <div
             style={{
               width: "100%",
-              maxWidth: "760px",
+              maxWidth: "880px",
               borderRadius: "28px",
               background: "rgba(255, 255, 255, 0.05)",
               boxShadow: "0 16px 40px rgba(0, 0, 0, 0.35)",
@@ -1997,11 +2018,10 @@ let _cachedModels = null;
             <div
               style={{
                 display: "flex",
-                alignItems: "center",
+                alignItems: "flex-end",
                 justifyContent: "space-between",
                 gap: "8px",
                 width: "100%",
-                flexWrap: "wrap",
               }}
             >
               <div
@@ -2012,9 +2032,8 @@ let _cachedModels = null;
                   gap: "6px",
                   flex: 1,
                   minWidth: 0,
-                  overflowX: "auto",
-                  WebkitOverflowScrolling: "touch",
-                  scrollbarWidth: "none",
+                  flexWrap: "wrap",
+                  overflow: "visible",
                   paddingBottom: "2px",
                 }}
               >
@@ -2025,6 +2044,7 @@ let _cachedModels = null;
                   open={showModels}
                   onToggle={() => togglePopup("models")}
                   selectorRef={modelSelectorRef}
+                  experimentMode={experimentMode}
                 >
                   <p style={{ margin: "4px 8px 8px", fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
                     Select LLM Provider
@@ -2035,6 +2055,7 @@ let _cachedModels = null;
                       label={model.label}
                       subtitle={model.subtitle}
                       active={selectedModel === model.id}
+                      experimentMode={experimentMode}
                       onClick={() => {
                         setSelectedModel(model.id);
                         setShowModels(false);
@@ -2051,6 +2072,7 @@ let _cachedModels = null;
                   open={showDocuments}
                   onToggle={() => togglePopup("documents")}
                   selectorRef={documentSelectorRef}
+                  experimentMode={experimentMode}
                 >
                   <div style={{ display: "flex", padding: "4px", gap: "4px" }}>
                     <button
@@ -2059,10 +2081,10 @@ let _cachedModels = null;
                       style={{
                         flex: 1,
                         padding: "6px 8px",
-                        background: "rgba(99, 102, 241, 0.15)",
+                        background: experimentMode ? "rgba(168, 85, 247, 0.18)" : "rgba(59, 130, 246, 0.18)",
                         border: "none",
                         borderRadius: "8px",
-                        color: "#c7d2fe",
+                        color: experimentMode ? "#d8b4fe" : "#93c5fd",
                         cursor: "pointer",
                         fontSize: "12px",
                         fontWeight: 600,
@@ -2100,6 +2122,7 @@ let _cachedModels = null;
                           label={doc.filename}
                           active={selectedDocumentIds.includes(doc.document_id)}
                           multiSelect
+                          experimentMode={experimentMode}
                           onClick={() => {
                             setSelectedDocumentIds((prev) =>
                               prev.includes(doc.document_id)
@@ -2122,6 +2145,7 @@ let _cachedModels = null;
                       open={showChunkers}
                       onToggle={() => togglePopup("chunkers")}
                       selectorRef={chunkerSelectorRef}
+                      experimentMode={experimentMode}
                     >
                       <p style={{ margin: "4px 8px 8px", fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
                         Chunking Strategy
@@ -2132,6 +2156,7 @@ let _cachedModels = null;
                           label={opt.label}
                           subtitle={opt.subtitle}
                           active={selectedChunker === opt.id}
+                          experimentMode={experimentMode}
                           onClick={() => {
                             setSelectedChunker(opt.id);
                             setShowChunkers(false);
@@ -2146,6 +2171,7 @@ let _cachedModels = null;
                       open={showEmbeddings}
                       onToggle={() => togglePopup("embeddings")}
                       selectorRef={embeddingSelectorRef}
+                      experimentMode={experimentMode}
                     >
                       <p style={{ margin: "4px 8px 8px", fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
                         Embedding Vector Model
@@ -2156,6 +2182,7 @@ let _cachedModels = null;
                           label={opt.label}
                           subtitle={opt.subtitle}
                           active={selectedEmbeddingModel === opt.id}
+                          experimentMode={experimentMode}
                           onClick={() => {
                             setSelectedEmbeddingModel(opt.id);
                             setShowEmbeddings(false);
@@ -2170,6 +2197,7 @@ let _cachedModels = null;
                       open={showRetrieval}
                       onToggle={() => togglePopup("retrieval")}
                       selectorRef={retrievalSelectorRef}
+                      experimentMode={experimentMode}
                     >
                       <p style={{ margin: "4px 8px 8px", fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
                         Retrieval Technique
@@ -2180,6 +2208,7 @@ let _cachedModels = null;
                           label={strategy.label}
                           subtitle={strategy.subtitle}
                           active={retrievalStrategy === strategy.id}
+                          experimentMode={experimentMode}
                           onClick={() => {
                             setRetrievalStrategy(strategy.id);
                             setShowRetrieval(false);
@@ -2194,6 +2223,7 @@ let _cachedModels = null;
                       open={showReranker}
                       onToggle={() => togglePopup("reranker")}
                       selectorRef={rerankerSelectorRef}
+                      experimentMode={experimentMode}
                     >
                       <p style={{ margin: "4px 8px 8px", fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
                         Cross-Encoder Reranker
@@ -2204,6 +2234,7 @@ let _cachedModels = null;
                           label={option.label}
                           subtitle={option.subtitle}
                           active={reranker === option.id}
+                          experimentMode={experimentMode}
                           onClick={() => {
                             setReranker(option.id);
                             setShowReranker(false);
@@ -2372,6 +2403,7 @@ let _cachedModels = null;
                                 subtitle={opt.subtitle}
                                 active={isEnhancementActive(selectedEnhancements, opt.id)}
                                 multiSelect
+                                experimentMode={experimentMode}
                                 onClick={() => setSelectedEnhancements((prev) => toggleEnhancement(prev, opt.id))}
                               />
                             ))}
@@ -2445,6 +2477,8 @@ let _cachedModels = null;
                   justifyContent: "center",
                   fontSize: "15px",
                   flexShrink: 0,
+                  alignSelf: "flex-end",
+                  marginBottom: "2px",
                   boxShadow: question.trim()
                     ? `0 4px 14px ${experimentMode ? "rgba(168, 85, 247, 0.4)" : "rgba(59, 130, 246, 0.4)"}`
                     : "none",
