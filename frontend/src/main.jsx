@@ -305,8 +305,9 @@ style.textContent = `
       display: block !important;
       position: fixed !important;
       inset: 0 !important;
-      background: rgba(0, 0, 0, 0.65) !important;
-      backdrop-filter: blur(4px) !important;
+      background: rgba(0, 0, 0, 0.55) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
       border: 0 !important;
       padding: 0 !important;
       z-index: 998 !important;
@@ -397,8 +398,14 @@ style.textContent = `
       max-width: 440px !important;
       margin: 0 auto !important;
       max-height: min(480px, 62vh) !important;
-      z-index: 999999 !important;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.18) !important;
+      z-index: 9999999 !important;
+      background: #0f172a !important;
+      color: #f8fafc !important;
+      border: 1px solid rgba(255, 255, 255, 0.22) !important;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.98), 0 0 0 1px rgba(255, 255, 255, 0.15) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      opacity: 1 !important;
       animation: pilot-fade-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
     }
 

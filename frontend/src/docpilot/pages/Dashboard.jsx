@@ -74,11 +74,12 @@ function CustomSelector({ label, sublabel, open, onToggle, selectorRef, children
             maxWidth: "calc(100vw - 28px)",
             maxHeight: "360px",
             overflowY: "auto",
-            zIndex: 999999,
+            zIndex: 9999999,
             borderRadius: "18px",
-            background: "rgba(22, 27, 46, 0.96)",
-            boxShadow: "0 20px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1)",
-            backdropFilter: "blur(24px)",
+            background: "#0f172a",
+            color: "#f8fafc",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
+            boxShadow: "0 24px 60px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.15)",
             padding: "8px",
             boxSizing: "border-box",
           }}
@@ -982,6 +983,7 @@ let _cachedModels = null;
         />
       )}
 
+      {/* Mobile backdrop for drawer */}
       {sidebarOpen && (
         <button
           className="mobile-drawer-backdrop"
@@ -990,11 +992,9 @@ let _cachedModels = null;
         />
       )}
 
-      {/* Mobile backdrop for selector popups */}
+      {/* Mobile touch dismisser for selector popups (no blur, pure clean dismiss) */}
       {(showModels || showDocuments || showChunkers || showEmbeddings || showRetrieval || showReranker || showEnhancements) && (
-        <button
-          className="mobile-drawer-backdrop"
-          aria-label="Close selector"
+        <div
           onClick={() => {
             setShowModels(false);
             setShowDocuments(false);
@@ -1005,9 +1005,10 @@ let _cachedModels = null;
             setShowEnhancements(false);
           }}
           style={{
-            zIndex: 99990,
-            background: "rgba(0, 0, 0, 0.4)",
-            border: "none",
+            position: "fixed",
+            inset: 0,
+            zIndex: 999990,
+            background: "rgba(0, 0, 0, 0.3)",
           }}
         />
       )}
@@ -2310,11 +2311,12 @@ let _cachedModels = null;
                           maxWidth: "calc(100vw - 32px)",
                           maxHeight: "440px",
                           overflowY: "auto",
-                          zIndex: 999999,
+                          zIndex: 9999999,
                           borderRadius: "18px",
-                          background: "rgba(22, 27, 46, 0.96)",
-                          boxShadow: "0 20px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1)",
-                          backdropFilter: "blur(24px)",
+                          background: "#0f172a",
+                          color: "#f8fafc",
+                          border: "1px solid rgba(255, 255, 255, 0.2)",
+                          boxShadow: "0 24px 60px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.15)",
                           padding: "12px",
                           boxSizing: "border-box",
                         }}
