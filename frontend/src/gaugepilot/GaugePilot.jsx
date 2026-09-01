@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import ExperimentSetup from "./pages/ExperimentSetup";
-import AIAnalysis from "./pages/Aianalysis";
-import GlossaryDrawer from "../components/GlossaryDrawer";
+const AIAnalysis = lazy(() => import("./pages/Aianalysis"));
+const GlossaryDrawer = lazy(() => import("../components/GlossaryDrawer"));
 import GlossaryButton from "../components/GlossaryButton";
 
 const NAV_GROUPS = [
@@ -429,33 +429,35 @@ export default function GaugePilot({ onHome, onDocPilot, onTracePilot }) {
 
         {/* AI Analysis section — rendered below ExperimentSetup in the
             same scroll container so the sidebar scroll-spy picks it up. */}
-        <AIAnalysis
-          selectedRun={selectedRun}
-          onRunRefresh={async () => {
-            // Re-fetch runs and update selectedRun in-place so the AI
-            // Analysis page shows new reports without any user interaction.
-            try {
-              const { getBenchmarkRuns } = await import("./api");
-              const token = localStorage.getItem("token");
-              const runs  = await getBenchmarkRuns(token);
-              const sorted = [...runs].sort(
-                (a, b) => new Date(b.created_at) - new Date(a.created_at)
-              );
-              if (!sorted.length) return;
+        <Suspense fallback={<div style={{ padding: "48px 24px", textAlign: "center", color: "var(--text-muted)", fontSize: "13px" }}>Loading AI Engineering Matrix Analysis...</div>}>
+          <AIAnalysis
+            selectedRun={selectedRun}
+            onRunRefresh={async () => {
+              // Re-fetch runs and update selectedRun in-place so the AI
+              // Analysis page shows new reports without any user interaction.
+              try {
+                const { getBenchmarkRuns } = await import("./api");
+                const token = localStorage.getItem("token");
+                const runs  = await getBenchmarkRuns(token);
+                const sorted = [...runs].sort(
+                  (a, b) => new Date(b.created_at) - new Date(a.created_at)
+                );
+                if (!sorted.length) return;
 
-              // Match on id so switching runs mid-generation still lands
-              // on the right run rather than always jumping to the latest.
-              const currentId = selectedRun?.id;
-              const refreshed = currentId
-                ? (sorted.find((r) => r.id === currentId) ?? sorted[0])
-                : sorted[0];
+                // Match on id so switching runs mid-generation still lands
+                // on the right run rather than always jumping to the latest.
+                const currentId = selectedRun?.id;
+                const refreshed = currentId
+                  ? (sorted.find((r) => r.id === currentId) ?? sorted[0])
+                  : sorted[0];
 
-              setSelectedRun(refreshed);
-            } catch (err) {
-              console.error("Failed to refresh runs after analysis", err);
-            }
-          }}
-        />
+                setSelectedRun(refreshed);
+              } catch (err) {
+                console.error("Failed to refresh runs after analysis", err);
+              }
+            }}
+          />
+        </Suspense>
       </main>
 
       {/* FLOATING GLOSSARY QUICK TRIGGER */}
@@ -466,12 +468,14 @@ export default function GaugePilot({ onHome, onDocPilot, onTracePilot }) {
       />
 
       {/* CONTEXT-AWARE GLOSSARY DRAWER */}
-      <GlossaryDrawer
-        isOpen={showGlossary}
-        onClose={() => setShowGlossary(false)}
-        page="gaugepilot"
-        mode="exp"
-      />
+      <Suspense fallback={null}>
+        <GlossaryDrawer
+          isOpen={showGlossary}
+          onClose={() => setShowGlossary(false)}
+          page="gaugepilot"
+          mode="exp"
+        />
+      </Suspense>
     </div>
   );
 }

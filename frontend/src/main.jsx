@@ -64,6 +64,15 @@ style.textContent = `
   ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.22); }
 
   @keyframes pilot-spin { to { transform: rotate(360deg); } }
+  @keyframes pilot-spin-reverse { to { transform: rotate(-360deg); } }
+  @keyframes pilot-orbit-glow {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.08); }
+  }
+  @keyframes pilot-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
 
   @keyframes pilot-mode-pulse-exp {
     0%, 100% {
@@ -439,7 +448,7 @@ style.textContent = `
 
   @media (max-width: 640px) {
     .pilot-home-topbar h1 {
-      font-size: 24px !important;
+      font-size: 22px !important;
     }
 
     .pilot-home-actions button,
@@ -447,11 +456,11 @@ style.textContent = `
     .docpilot-actions button,
     .docpilot-actions a {
       font-size: 11px !important;
-      padding: 5px 10px !important;
+      padding: 6px 11px !important;
     }
 
     .auth-title {
-      font-size: 32px !important;
+      font-size: 28px !important;
     }
 
     .trace-header {
@@ -460,6 +469,24 @@ style.textContent = `
 
     .trace-title {
       font-size: 22px !important;
+    }
+
+    .docpilot-topbar {
+      padding: 8px 10px !important;
+    }
+
+    .docpilot-chat-area {
+      padding: 12px 8px 130px !important;
+    }
+  }
+
+  /* Universal touch improvements for mobile demo */
+  @media (pointer: coarse) {
+    button, [role="button"], a {
+      min-height: 38px;
+    }
+    input, textarea, select {
+      font-size: 16px !important; /* Prevents auto-zoom on iOS safari */
     }
   }
 

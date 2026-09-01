@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, lazy, Suspense } from "react";
 import { useBenchmark } from "../hooks/useBenchmark";
 import { getModels } from "../api";
 import Leaderboards from "./Leaderboards";
-import Visualizations from "./Visualizations";
+const Visualizations = lazy(() => import("./Visualizations"));
 import ExperimentSelector from "../components/ExperimentSelector";
 import { CustomSelector, SelectorItem } from "../components/CustomSelector";
 import LoadingOverlay from "../../components/LoadingOverlay";
@@ -1219,7 +1219,9 @@ export default function ExperimentSetup({ onRunChange }) {
       {useMemo(
         () => (
           <div style={{ marginTop: "32px" }}>
-            <Visualizations leaderboard={displayedLeaderboard} />
+            <Suspense fallback={<div style={{ padding: "48px 24px", textAlign: "center", color: "var(--text-muted)", fontSize: "13px" }}>Loading Visual Analytics...</div>}>
+              <Visualizations leaderboard={displayedLeaderboard} />
+            </Suspense>
           </div>
         ),
         [displayedLeaderboard]

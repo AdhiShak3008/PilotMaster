@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { loginRequest, apiRequest } from "../docpilot/api.js";
 import GlossaryDrawer from "./GlossaryDrawer.jsx";
 import GlossaryButton from "./GlossaryButton.jsx";
+import LoadingOverlay from "./LoadingOverlay.jsx";
 
 const ARCHITECTURE_DESCRIPTIONS = {
   ecosystem: {
@@ -60,6 +61,8 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("Loading workspace...");
+  const [loadingSubtext, setLoadingSubtext] = useState("Observable AI Execution Ecosystem");
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [activeTab, setActiveTab] = useState("ecosystem"); // "ecosystem" | "docpilot" | "tracepilot" | "gaugepilot"
@@ -74,18 +77,20 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
     if (e) e.preventDefault();
     if (loading) return;
     setErrorMessage("");
+    setLoadingMessage("Authenticating & Loading PilotMaster...");
+    setLoadingSubtext("Verifying credentials and preparing workspace");
     setLoading(true);
     try {
       const data = await loginRequest(email, password);
       if (!data || !data.access_token) {
         setErrorMessage(typeof data?.detail === "string" ? data.detail : "Invalid credentials. Please check your email and password.");
+        setLoading(false);
         return;
       }
       localStorage.setItem("token", data.access_token);
-      await onLogin();
+      await onLogin("Entering PilotMaster Home...", "Initializing Observable RAG Environment");
     } catch (err) {
       setErrorMessage("Wrong email or password. Please try again.");
-    } finally {
       setLoading(false);
     }
   };
@@ -93,6 +98,8 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
   const handleQuickDemo = async () => {
     if (loading) return;
     setErrorMessage("");
+    setLoadingMessage("Initializing Quick Access Demo Mode...");
+    setLoadingSubtext("Provisioning sample knowledge base & live AI models");
     setLoading(true);
     try {
       let data = await loginRequest("demo@pilotmaster.ai", "demo12345");
@@ -108,17 +115,17 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
 
       if (data && data.access_token) {
         localStorage.setItem("token", data.access_token);
-        await onLogin();
+        await onLogin("Entering PilotMaster Sandbox Workspace...", "Launching Dual Mode Observability Ecosystem");
       } else {
         setEmail("demo@pilotmaster.ai");
         setPassword("demo12345");
         setErrorMessage("Demo initialized. Click 'Continue to Workspace' below to enter.");
+        setLoading(false);
       }
     } catch (err) {
       setEmail("demo@pilotmaster.ai");
       setPassword("demo12345");
       setErrorMessage("Demo initialized. Click 'Continue to Workspace' below to enter.");
-    } finally {
       setLoading(false);
     }
   };
@@ -127,24 +134,27 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
     if (e) e.preventDefault();
     if (loading) return;
     setErrorMessage("");
+    setLoadingMessage("Creating Account & Initializing Workspace...");
+    setLoadingSubtext("Setting up your observable AI environment");
     setLoading(true);
     try {
       const res = await apiRequest("/auth/signup", "POST", { username, email, password });
       if (res?.detail) {
         setErrorMessage(typeof res.detail === "string" ? res.detail : "Signup failed. Username or email might already exist.");
+        setLoading(false);
         return;
       }
       const data = await loginRequest(email, password);
       if (data?.access_token) {
         localStorage.setItem("token", data.access_token);
-        await onLogin();
+        await onLogin("Entering PilotMaster Home...", "Workspace successfully provisioned");
       } else {
         setSuccessMessage("Account created! Please sign in.");
         setAuthMode("login");
+        setLoading(false);
       }
     } catch (err) {
       setErrorMessage("Signup failed. Username or email might already exist.");
-    } finally {
       setLoading(false);
     }
   };
@@ -993,6 +1003,14 @@ export default function OpeningLanding({ onLogin, initialMode = "login" }) {
         page="landing"
         mode="all"
       />
+
+      {/* FULL-PAGE ROTATING WHEEL OVERLAY ON LOGIN & DEMO ACCESS */}
+      {loading && (
+        <LoadingOverlay
+          text={loadingMessage}
+          subtext={loadingSubtext}
+        />
+      )}
     </div>
   );
 }

@@ -607,10 +607,18 @@ function Dashboard({
     loadDashboard();
   }, [experimentMode]);
 
+let _cachedModels = null;
+
   useEffect(() => {
+    if (_cachedModels && _cachedModels.length > 0) {
+      setModels(_cachedModels);
+      if (!selectedModel) setSelectedModel(_cachedModels[0].id);
+      return;
+    }
     apiRequest("/models/")
       .then((data) => {
         if (Array.isArray(data)) {
+          _cachedModels = data;
           setModels(data);
           if (data.length > 0 && !selectedModel) setSelectedModel(data[0].id);
         }
@@ -1332,7 +1340,7 @@ function Dashboard({
           </div>
 
           {/* Navigation Actions */}
-          <div className="docpilot-actions" style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+          <div className="docpilot-actions pill-scroll-bar" style={{ display: "flex", gap: "8px", alignItems: "center", overflowX: "auto", maxWidth: "100%", paddingBottom: "2px" }}>
             <a
               href="/home"
               onClick={(e) => {
@@ -1969,12 +1977,17 @@ function Dashboard({
               }}
             >
               <div
+                className="pill-scroll-bar"
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: "6px",
-                  flexWrap: "wrap",
                   flex: 1,
+                  minWidth: 0,
+                  overflowX: "auto",
+                  WebkitOverflowScrolling: "touch",
+                  scrollbarWidth: "none",
+                  paddingBottom: "2px",
                 }}
               >
                 {/* MODEL SELECTOR */}
