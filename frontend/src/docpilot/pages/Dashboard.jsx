@@ -4,6 +4,7 @@ import { useDropzone } from "react-dropzone";
 import MarkdownRenderer from "../components/MarkdownRenderer";
 import GlossaryDrawer from "../../components/GlossaryDrawer";
 import GlossaryButton from "../../components/GlossaryButton";
+import LoadingOverlay from "../../components/LoadingOverlay";
 import { cleanDocName, formatPage } from "../../utils/formatUtils";
 
 
@@ -974,7 +975,10 @@ let _cachedModels = null;
       }}
     >
       {(initialLoading || uploading) && (
-        <LoadingOverlay text={uploading ? "Ingesting & indexing documents..." : "Loading DocPilot workspace..."} />
+        <LoadingOverlay
+          text={uploading ? "Ingesting & indexing documents..." : experimentMode ? "Loading Experimental DocPilot..." : "Loading Production DocPilot..."}
+          subtext={experimentMode ? "Dual Mode Laboratory · PilotCore Kernel" : "Enterprise Observable Document Intelligence"}
+        />
       )}
 
       {sidebarOpen && (
@@ -2464,28 +2468,6 @@ function ButtonContent({ text }) {
   );
 }
 
-function LoadingOverlay({ text }) {
-  return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(8, 12, 24, 0.8)",
-        backdropFilter: "blur(12px)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 99999,
-        gap: "14px",
-      }}
-    >
-      <Spinner size={32} />
-      <p style={{ margin: 0, fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>
-        {text}
-      </p>
-    </div>
-  );
-}
+
 
 export default Dashboard;

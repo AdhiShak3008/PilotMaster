@@ -1,6 +1,9 @@
-import Plot from "react-plotly.js";
+import Plotly from "plotly.js/dist/plotly.min.js";
+import createPlotlyComponent from "react-plotly.js/factory";
 import ConfigBadge from "../ConfigBadge";
 import { parseConfigDetails } from "../../utils/configUtils";
+
+const Plot = createPlotlyComponent(Plotly);
 
 const METRICS = [
   { key: "faithfulness", label: "Faithfulness" },

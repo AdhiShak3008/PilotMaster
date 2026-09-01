@@ -10,11 +10,10 @@ export default defineConfig({
     target: "esnext",
     minify: "esbuild",
     cssCodeSplit: true,
-    chunkSizeWarningLimit: 1500,
+    chunkSizeWarningLimit: 3000,
     rollupOptions: {
       output: {
         manualChunks: {
-          "vendor-plotly": ["plotly.js", "react-plotly.js"],
           "vendor-charts": ["recharts"],
           "vendor-markdown": ["react-markdown", "rehype-raw", "remark-gfm"],
         },
